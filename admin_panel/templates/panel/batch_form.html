@@ -1,0 +1,261 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="w-full max-w-[1600px] mx-auto space-y-8 animate__animated animate__fadeInUp">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-center bg-gradient-to-r from-unemi-blue to-blue-900 rounded-2xl p-6 shadow-lg border border-white/10 text-white relative overflow-hidden">
+        <div class="relative z-10">
+            <h2 class="text-2xl font-bold flex items-center gap-3">
+                <i class="fa-solid fa-cloud-arrow-up text-unemi-orange text-3xl"></i>
+                Subir Nuevo Lote
+            </h2>
+            <p class="text-blue-200 mt-1">Carga masiva de participantes desde Excel</p>
+        </div>
+        <a href="{% url 'panel:batch_list' %}" 
+           class="mt-4 md:mt-0 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all border border-white/20 flex items-center gap-2 relative z-10">
+            <i class="fa-solid fa-arrow-left"></i> Cancelar
+        </a>
+        
+        <!-- Decorative Circle -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Form Section -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-[#162054] rounded-2xl p-8 border border-gray-100 dark:border-blue-900/50 shadow-2xl relative overflow-hidden transition-colors">
+                <!-- Decorative Glow (Subtle) -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-unemi-orange/5 dark:bg-unemi-orange/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+                <form method="post" enctype="multipart/form-data" class="space-y-6 relative z-10">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl flex items-start gap-3">
+                        <i class="fa-solid fa-circle-exclamation mt-1 text-red-500"></i>
+                        <div>
+                            <p class="font-bold">Por favor corrige los siguientes errores:</p>
+                            <ul class="list-disc list-inside text-sm mt-1">
+                                {% for field in form %}
+                                    {% for error in field.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Nombre del Lote -->
+                    <div class="group">
+                        <label for="{{ form.nombre_lote.id_for_label }}" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
+                            <i class="fa-solid fa-tag mr-2 text-gray-400 dark:text-gray-500"></i>Nombre del Evento / Seminario
+                        </label>
+                        {{ form.nombre_lote }}
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Este nombre aparecerá en el certificado como "POR ASISTIR AL [NOMBRE DEL LOTE]"</p>
+                    </div>
+
+                    <!-- Facultad -->
+                    <div class="group">
+                        <label for="{{ form.facultad.id_for_label }}" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
+                            <i class="fa-solid fa-building-columns mr-2 text-gray-400 dark:text-gray-500"></i>Facultad Organizadora
+                        </label>
+                        {{ form.facultad }}
+                    </div>
+
+                    <!-- Excel Upload (Drag & Drop) -->
+                    <div class="group">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+                            <i class="fa-solid fa-file-excel mr-2 text-green-600 dark:text-green-400"></i>Archivo de Participantes (.xlsx)
+                        </label>
+                        
+                        <div id="drop-zone" 
+                             class="relative group cursor-pointer active:scale-[0.99] transition-all">
+                             
+                            <!-- Hidden Input -->
+                            {{ form.archivo_excel }}
+                            
+                            <!-- Visual Drop Zone -->
+                            <div class="h-64 rounded-2xl border-2 border-dashed border-gray-300 dark:border-blue-900 bg-gray-50 dark:bg-[#0F163A]/50 hover:bg-green-50 dark:hover:bg-green-900/10 hover:border-green-400 dark:hover:border-green-500/50 transition-all duration-300 flex flex-col justify-center items-center text-center p-6 relative overflow-hidden"
+                                 onclick="document.getElementById('file-upload').click()">
+                                
+                                <!-- Drag Overlay (Hidden by default) -->
+                                <div id="drag-overlay" class="absolute inset-0 bg-green-500/10 backdrop-blur-sm z-20 hidden flex-col items-center justify-center transition-opacity">
+                                    <div class="w-32 h-32 rounded-full bg-white dark:bg-[#162054] flex items-center justify-center animate-pulse shadow-lg">
+                                        <i class="fa-solid fa-cloud-arrow-up text-5xl text-green-500"></i>
+                                    </div>
+                                    <p class="text-green-700 dark:text-green-400 font-bold mt-4 text-lg">¡Suelta el Excel aquí!</p>
+                                </div>
+
+                                <!-- Default View -->
+                                <div id="default-view" class="space-y-4 z-10 pointer-events-none">
+                                    <div class="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 border border-green-200 dark:border-green-900 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-sm">
+                                        <i class="fa-solid fa-file-excel text-4xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-lg font-bold text-gray-700 dark:text-gray-200">Arrastra tu Excel aquí</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">o haz <span class="text-green-600 dark:text-green-400 font-bold underline decoration-green-400/30">clic para buscar</span></p>
+                                    </div>
+                                    <p class="text-xs text-gray-400 bg-white dark:bg-white/5 px-3 py-1 rounded-full inline-block border border-gray-200 dark:border-white/10 shadow-sm">
+                                        Soporta .xlsx, .xls
+                                    </p>
+                                </div>
+                                
+                                <!-- File Selected View (Hidden) -->
+                                <div id="file-view" class="hidden z-10 w-full animate-fade-in text-left">
+                                    <div class="bg-white dark:bg-[#0F163A] rounded-xl p-4 border border-green-200 dark:border-green-900 flex items-center gap-4 shadow-lg">
+                                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center text-green-700 dark:text-green-400 text-xl border border-green-200 dark:border-green-900">
+                                            <i class="fa-solid fa-file-csv"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p id="filename-display" class="font-bold text-gray-800 dark:text-gray-200 truncate">archivo.xlsx</p>
+                                            <p class="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 font-semibold">
+                                                <i class="fa-solid fa-circle-check"></i> Listo para subir
+                                            </p>
+                                        </div>
+                                        <button type="button" onclick="resetFile(event)" class="w-8 h-8 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex items-center justify-center transition-colors">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <script>
+                        const dropZone = document.getElementById('drop-zone');
+                        const fileInput = document.getElementById('file-upload');
+                        const dragOverlay = document.getElementById('drag-overlay');
+                        const defaultView = document.getElementById('default-view');
+                        const fileView = document.getElementById('file-view');
+                        const filenameDisplay = document.getElementById('filename-display');
+
+                        // Prevent defaults
+                        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                            dropZone.addEventListener(eventName, preventDefaults, false);
+                            document.body.addEventListener(eventName, preventDefaults, false);
+                        });
+
+                        function preventDefaults(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+
+                        // Drag effects
+                        ['dragenter', 'dragover'].forEach(eventName => {
+                            dropZone.addEventListener(eventName, highlight, false);
+                        });
+
+                        ['dragleave', 'drop'].forEach(eventName => {
+                            dropZone.addEventListener(eventName, unhighlight, false);
+                        });
+
+                        function highlight(e) {
+                            dragOverlay.classList.remove('hidden');
+                            dragOverlay.classList.add('flex');
+                        }
+
+                        function unhighlight(e) {
+                            dragOverlay.classList.add('hidden');
+                            dragOverlay.classList.remove('flex');
+                        }
+
+                        // Handle Drop
+                        dropZone.addEventListener('drop', handleDrop, false);
+
+                        function handleDrop(e) {
+                            const dt = e.dataTransfer;
+                            const files = dt.files;
+                            handleFiles(files);
+                        }
+
+                        // Handle Click
+                        fileInput.addEventListener('change', function() {
+                            handleFiles(this.files);
+                        });
+
+                        function handleFiles(files) {
+                            if (files.length > 0) {
+                                const file = files[0];
+                                if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                                    // Update visual
+                                    defaultView.classList.add('hidden');
+                                    fileView.classList.remove('hidden');
+                                    filenameDisplay.textContent = file.name;
+                                    
+                                    // Make sure input has the file (if dropped)
+                                    if (fileInput.files !== files) {
+                                         fileInput.files = files;
+                                    }
+                                } else {
+                                    alert('Por favor sube solo archivos Excel (.xlsx)');
+                                }
+                            }
+                        }
+                        
+                        function resetFile(event) {
+                            event.stopPropagation(); // Prevent opening dialg
+                            fileInput.value = '';
+                            defaultView.classList.remove('hidden');
+                            fileView.classList.add('hidden');
+                        }
+                    </script>
+                    
+                    <!-- Action Button -->
+                    <button type="submit" class="w-full bg-unemi-orange hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex justify-center items-center gap-3 text-lg">
+                        <i class="fa-solid fa-rocket"></i>
+                        Procesar y Generar Certificados
+                    </button>
+
+                </form>
+            </div>
+        </div>
+
+        <!-- Instructions Panel -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Format Guide -->
+            <div class="bg-white dark:bg-[#162054] rounded-2xl p-6 border border-gray-100 dark:border-blue-900/50 shadow-xl transition-colors">
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center border-b border-gray-100 dark:border-blue-900/30 pb-2">
+                    <i class="fa-solid fa-list-check text-green-600 dark:text-green-400 mr-2"></i> Guía Rápida
+                </h3>
+                <ul class="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+                    <li class="flex items-start gap-3">
+                        <div class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">1</div>
+                        <span>Sube el Excel descargado de Google Forms.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <div class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">2</div>
+                        <span>Asegúrate que tenga las columnas: <span class="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded font-mono border dark:border-white/10">Nombre Completo</span> y <span class="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded font-mono border dark:border-white/10">Correo</span>.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <div class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">3</div>
+                        <span>El sistema buscará <span class="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-1 rounded font-mono border dark:border-white/10">Teléfono</span> para usarlo como Cédula si no hay una explícita.</span>
+                    </li>
+                </ul>
+                
+                <!-- Mock Template Button -->
+                 <button type="button" class="w-full mt-6 py-2 px-4 bg-gray-50 dark:bg-[#0F163A] hover:bg-gray-100 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-400 rounded-lg text-sm border border-gray-200 dark:border-blue-900 transition-colors flex items-center justify-center gap-2 cursor-not-allowed opacity-75" title="Próximamente">
+                    <i class="fa-solid fa-download"></i> Descargar Plantilla Ejemplo
+                 </button>
+            </div>
+            
+             <!-- Help Box -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/30">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-life-ring text-unemi-blue dark:text-blue-400 text-xl mt-1"></i>
+                    <div>
+                        <h4 class="text-unemi-blue dark:text-blue-300 font-bold text-sm">¿Necesitas ayuda?</h4>
+                        <p class="text-xs text-blue-700/70 dark:text-blue-200/70 mt-1">Si el archivo falla, revisa los saltos de línea al final del Excel.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 md:py-12">
+    
+    <!-- Hero Section with 2 Columns -->
+    <div class="grid lg:grid-cols-2 gap-12 items-center mb-16">
+        
+        <!-- Left Column: Main Content -->
+        <div class="space-y-6">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+                <span class="text-gray-800 dark:text-white">Consulta tus</span><br>
+                <span class="text-[#F58830]">Certificados</span>
+            </h1>
+            
+            <p class="text-lg text-gray-600 dark:text-gray-400">
+                Valida la autenticidad de tus seminarios y capacitaciones realizadas en MUC Academy
+            </p>
+
+            <!-- Search Form -->
+            <form action="{% url 'public:search' %}" method="get" class="space-y-4">
+                <div class="neu-card-unemi">
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                        <i class="fa-solid fa-search mr-2 text-[#F58830]"></i>
+                        Busca por cédula o correo institucional
+                    </label>
+                    
+                    <div class="neu-input-unemi group">
+                        <i class="fa-solid fa-id-card text-gray-400 dark:text-gray-500"></i>
+                        <input type="search" 
+                               name="q"
+                               class="flex-1 bg-transparent border-0 outline-none ring-0 focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                               placeholder="Ej: 0999999999 o estudiante@unemi.edu.ec" 
+                               required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-unemi w-full group">
+                    <span>Buscar Certificado</span>
+                    <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                </button>
+
+                <p class="text-xs text-gray-500 dark:text-gray-500 text-center">
+                    <i class="fa-solid fa-shield-check mr-1 text-[#162054] dark:text-blue-400"></i>
+                    Búsqueda en tiempo real sobre la base de datos oficial
+                </p>
+            </form>
+        </div>
+
+        <!-- Right Column: Steps -->
+        <div class="space-y-4">
+            <h3 class="text-2xl font-bold text-[#162054] dark:text-white mb-6">
+                <i class="fa-solid fa-list-check mr-2 text-[#F58830]"></i>
+                ¿Cómo obtener tu certificado?
+            </h3>
+
+            <div class="step-card-unemi group">
+                <div class="step-number-unemi bg-[#162054]">1</div>
+                <div>
+                    <h4 class="font-bold text-gray-800 dark:text-white mb-1">Asiste al seminario</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Participa activamente en la ponencia o capacitación</p>
+                </div>
+            </div>
+
+            <div class="step-card-unemi group">
+                <div class="step-number-unemi bg-[#F58830]">2</div>
+                <div>
+                    <h4 class="font-bold text-gray-800 dark:text-white mb-1">Completa el formulario</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <strong class="text-[#F58830]">Importante:</strong> Llena el formulario compartido <strong>antes de que termine</strong> la ponencia
+                    </p>
+                </div>
+            </div>
+
+            <div class="step-card-unemi group">
+                <div class="step-number-unemi bg-[#162054]">3</div>
+                <div>
+                    <h4 class="font-bold text-gray-800 dark:text-white mb-1">Busca tu certificado</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Usa tu cédula o correo en el buscador para obtener tu PDF oficial</p>
+                </div>
+            </div>
+
+            <div class="neu-card-unemi bg-orange-50 dark:bg-orange-900/10 border-l-4 border-[#F58830]">
+                <div class="flex gap-3">
+                    <i class="fa-solid fa-info-circle text-[#F58830] text-xl flex-shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">Requisito Obligatorio</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">
+                            Solo recibirás tu certificado si completaste el formulario de asistencia <strong class="text-[#F58830]">antes del cierre de la ponencia</strong>. Sin este registro, no podrás obtener tu certificado.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="grid md:grid-cols-3 gap-6">
+        <div class="feature-card-unemi group">
+            <div class="feature-icon-unemi bg-[#162054]">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2">Oficial y Seguro</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Certificados emitidos directamente por MUC Academy con validación institucional</p>
+        </div>
+
+        <div class="feature-card-unemi group">
+            <div class="feature-icon-unemi bg-[#F58830]">
+                <i class="fa-solid fa-download"></i>
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2">Descarga Inmediata</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Obtén tu certificado en formato PDF firmado digitalmente en segundos</p>
+        </div>
+
+        <div class="feature-card-unemi group">
+            <div class="feature-icon-unemi bg-[#162054]">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2">Disponible 24/7</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Accede a tu historial de seminarios en cualquier momento y desde cualquier dispositivo</p>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --unemi-blue: #162054;
+    --unemi-orange: #F58830;
+}
+
+.neu-card-unemi {
+    background: linear-gradient(145deg, #ffffff, #f0f4f8);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 8px 8px 16px rgba(22, 32, 84, 0.08), -8px -8px 16px rgba(255, 255, 255, 0.8), inset 1px 1px 2px rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(22, 32, 84, 0.1);
+}
+.dark .neu-card-unemi {
+    background: linear-gradient(145deg, #1a2b4d, #152341);
+    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.03), inset 1px 1px 2px rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neu-input-unemi {
+    display: flex; align-items: center; gap: 1rem;
+    background: linear-gradient(145deg, #f8fafc, #e8ecf1);
+    padding: 1rem 1.25rem; border-radius: 12px;
+    box-shadow: inset 3px 3px 6px rgba(22, 32, 84, 0.1), inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease; border: 1px solid rgba(22, 32, 84, 0.1);
+}
+.neu-input-unemi:focus-within {
+    border-color: var(--unemi-orange);
+    box-shadow: inset 3px 3px 6px rgba(22, 32, 84, 0.15), inset -3px -3px 6px rgba(255, 255, 255, 0.8), 0 0 0 3px rgba(245, 136, 48, 0.2);
+}
+.dark .neu-input-unemi {
+    background: linear-gradient(145deg, #152341, #1a2b4d);
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.dark .neu-input-unemi:focus-within {
+    border-color: var(--unemi-orange);
+    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.05), 0 0 0 3px rgba(245, 136, 48, 0.25);
+}
+
+.btn-unemi {
+    background: linear-gradient(135deg, var(--unemi-orange), #ff6600);
+    color: white; font-weight: bold; padding: 1rem 2rem; border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(245, 136, 48, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    border: none; cursor: pointer;
+}
+.btn-unemi:hover {
+    background: linear-gradient(135deg, #ff6600, var(--unemi-orange));
+    box-shadow: 0 6px 16px rgba(245, 136, 48, 0.4), 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+.btn-unemi:active { transform: translateY(0); }
+
+.step-card-unemi {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    border-radius: 16px; padding: 1.25rem; display: flex; gap: 1rem;
+    box-shadow: 4px 4px 12px rgba(22, 32, 84, 0.08), -4px -4px 12px rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease; border: 1px solid rgba(22, 32, 84, 0.1);
+}
+.step-card-unemi:hover {
+    box-shadow: 6px 6px 16px rgba(22, 32, 84, 0.12), -6px -6px 16px rgba(255, 255, 255, 0.9);
+    transform: translateX(4px); border-color: var(--unemi-orange);
+}
+.dark .step-card-unemi {
+    background: linear-gradient(145deg, #1a2b4d, #152341);
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.25), -4px -4px 12px rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.dark .step-card-unemi:hover {
+    box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.35), -6px -6px 16px rgba(255, 255, 255, 0.05);
+    border-color: var(--unemi-orange);
+}
+.step-number-unemi {
+    color: white; width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 1.25rem; flex-shrink: 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.feature-card-unemi {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+    border-radius: 20px; padding: 2rem;
+    box-shadow: 6px 6px 16px rgba(22, 32, 84, 0.08), -6px -6px 16px rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease; border: 1px solid rgba(22, 32, 84, 0.1);
+}
+.feature-card-unemi:hover {
+    box-shadow: 8px 8px 20px rgba(22, 32, 84, 0.12), -8px -8px 20px rgba(255, 255, 255, 0.9);
+    transform: translateY(-4px); border-color: var(--unemi-orange);
+}
+.dark .feature-card-unemi {
+    background: linear-gradient(145deg, #1a2b4d, #152341);
+    box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.25), -6px -6px 16px rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.dark .feature-card-unemi:hover {
+    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.35), -8px -8px 20px rgba(255, 255, 255, 0.05);
+    border-color: var(--unemi-orange);
+}
+.feature-icon-unemi {
+    width: 56px; height: 56px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; color: white; margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+</style>
+{% endblock %}

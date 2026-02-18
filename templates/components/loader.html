@@ -1,0 +1,294 @@
+{% load static %}
+<!-- 
+    ╔══════════════════════════════════════════════════════════════╗
+    ║         🐯 TIGRILLO CHASE LOADER - UNEMI                     ║
+    ║  Componente reutilizable para indicar carga/procesamiento    ║
+    ║  Uso: showLoader() para mostrar, hideLoader() para ocultar   ║
+    ╚══════════════════════════════════════════════════════════════╝
+-->
+<style>
+    /* ============================================
+       LOADER OVERLAY - LIGHT MODE
+       ============================================ */
+    #tiger-chase-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        /* Light Mode: Soft gradient background */
+        background: linear-gradient(135deg, 
+            rgba(245, 248, 255, 0.98) 0%,
+            rgba(255, 255, 255, 0.99) 50%,
+            rgba(245, 240, 235, 0.98) 100%);
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    
+    /* DARK MODE SUPPORT */
+    .dark #tiger-chase-loader,
+    html.dark #tiger-chase-loader {
+        background: linear-gradient(135deg, 
+            rgba(15, 22, 58, 0.98) 0%,
+            rgba(22, 32, 84, 0.99) 50%,
+            rgba(30, 35, 60, 0.98) 100%);
+    }
+    
+    #tiger-chase-loader.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* ============================================
+       MAIN ANIMATION CONTAINER
+       ============================================ */
+    .chase-scene {
+        position: relative;
+        width: 280px;
+        height: 200px;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Tiger + Certificate Image with JUMP Animation */
+    .tiger-chase-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        animation: tiger-jump 0.8s cubic-bezier(0.36, 0, 0.66, -0.56) infinite alternate;
+        filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.25));
+    }
+
+    @keyframes tiger-jump {
+        0% {
+            transform: translateY(0) rotate(0deg) scale(1);
+        }
+        100% {
+            transform: translateY(-25px) rotate(3deg) scale(1.05);
+        }
+    }
+
+    /* ============================================
+       PULSING PROGRESS INDICATOR
+       ============================================ */
+    .progress-dots {
+        display: flex;
+        gap: 0.7rem;
+        margin-bottom: 1.2rem;
+    }
+    
+    .progress-dots span {
+        width: 14px;
+        height: 14px;
+        background: linear-gradient(135deg, #162054, #1a2b4d);
+        border-radius: 50%;
+        animation: dot-jump 0.6s ease-in-out infinite alternate;
+        box-shadow: 0 4px 12px rgba(245, 136, 48, 0.4);
+    }
+    
+    .progress-dots span:nth-child(2) { animation-delay: 0.1s; }
+    .progress-dots span:nth-child(3) { animation-delay: 0.2s; }
+    .progress-dots span:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes dot-jump {
+        0% {
+            transform: translateY(0) scale(0.8);
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-10px) scale(1);
+            opacity: 1;
+        }
+    }
+
+    /* ============================================
+       LOADING TEXT
+       ============================================ */
+    .loader-message {
+        font-family: 'Outfit', 'Inter', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #162054;
+        text-align: center;
+        letter-spacing: 0.5px;
+        animation: text-pulse 1.5s ease-in-out infinite;
+    }
+    
+    /* Dark Mode Text */
+    .dark .loader-message,
+    html.dark .loader-message {
+        color: #ffffff;
+    }
+    
+    .loader-message .highlight {
+        color: #1a2b4d;
+        font-weight: 700;
+    }
+    
+    .dark .loader-message .highlight,
+    html.dark .loader-message .highlight {
+        color: #60a5fa; /* Light Blue for visibility */
+    }
+
+    @keyframes text-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    /* ============================================
+       DECORATIVE BACKGROUND ELEMENTS
+       ============================================ */
+    .loader-bg-decor {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: -1;
+    }
+    
+    .loader-bg-decor .circle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.08;
+    }
+    
+    .loader-bg-decor .circle-1 {
+        width: 350px;
+        height: 350px;
+        background: #1a2b4d;
+        top: -120px;
+        left: -120px;
+        animation: float-slow 10s ease-in-out infinite;
+    }
+    
+    .loader-bg-decor .circle-2 {
+        width: 250px;
+        height: 250px;
+        background: #1a2b4d;
+        bottom: -80px;
+        right: -80px;
+        animation: float-slow 8s ease-in-out infinite reverse;
+    }
+    
+    .loader-bg-decor .circle-3 {
+        width: 150px;
+        height: 150px;
+        background: #1a2b4d;
+        top: 50%;
+        right: 10%;
+        animation: float-slow 6s ease-in-out infinite;
+    }
+
+    @keyframes float-slow {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(15px, 15px); }
+    }
+    
+    /* Dark mode decorations */
+    .dark .loader-bg-decor .circle,
+    html.dark .loader-bg-decor .circle {
+        opacity: 0.15;
+    }
+</style>
+
+<div id="tiger-chase-loader">
+    <!-- Background Decorations -->
+    <div class="loader-bg-decor">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+    </div>
+    
+    <!-- Main Animation -->
+    <div class="chase-scene">
+        <img src="{% static 'tiger_chase_loader.png' %}" 
+             alt="Tigrillo UNEMI buscando tu certificado" 
+             class="tiger-chase-img">
+    </div>
+    
+    <!-- Progress Indicator -->
+    <div class="progress-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    
+    <!-- Loading Message -->
+    <p class="loader-message">
+        Buscando tu <span class="highlight">certificado</span>...
+    </p>
+</div>
+
+<script>
+    // ============================================
+    // GLOBAL LOADER CONTROL FUNCTIONS
+    // ============================================
+    
+    /**
+     * Show the loader overlay with animation
+     */
+    function showLoader() {
+        const loader = document.getElementById('tiger-chase-loader');
+        if (loader) {
+            loader.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scroll
+        }
+    }
+    
+    /**
+     * Hide the loader overlay
+     */
+    function hideLoader() {
+        const loader = document.getElementById('tiger-chase-loader');
+        if (loader) {
+            loader.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scroll
+        }
+    }
+
+    // ============================================
+    // AUTOMATIC LOADER BEHAVIOR
+    // ============================================
+    
+    // Show loader immediately when script runs (page is loading)
+    (function() {
+        const loader = document.getElementById('tiger-chase-loader');
+        if (loader) {
+            loader.classList.add('active');
+        }
+    })();
+
+    // Hide when DOM is fully parsed
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(hideLoader, 300); // Small delay for smooth transition
+    });
+
+    // Hide on page show (back/forward navigation)
+    window.addEventListener('pageshow', function(event) {
+        setTimeout(hideLoader, 200);
+    });
+
+    // Show loader when navigating away
+    window.addEventListener('beforeunload', function() {
+        showLoader();
+    });
+
+    // Show loader on link clicks (internal navigation)
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a[href]:not([target="_blank"]):not([href^="#"]):not([href^="javascript"])');
+        if (link && link.href && !link.hasAttribute('data-no-loader')) {
+            showLoader();
+        }
+    });
+
+    // Show loader on form submissions
+    document.addEventListener('submit', function(e) {
+        if (!e.target.hasAttribute('data-no-loader')) {
+            showLoader();
+        }
+    });
+</script>

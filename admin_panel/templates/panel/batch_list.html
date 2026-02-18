@@ -1,0 +1,229 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="animate__animated animate__fadeIn">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+                Lotes de Certificados
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Gestiona los grupos de certificados subidos.</p>
+        </div>
+        <a href="{% url 'panel:batch_list' %}" 
+           class="group relative inline-flex items-center justify-center px-6 py-3 text-base font-bold text-white transition-all duration-200 bg-unemi-orange font-pj rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-unemi-orange hover:bg-orange-600 shadow-sm hover:shadow-md">
+            <i class="fa-solid fa-cloud-arrow-up mr-2 group-hover:-translate-y-1 transition-transform"></i>
+            Subir Nuevo Lote
+        </a>
+    </div>
+
+    <!-- Table Card -->
+    <div class="bg-white dark:bg-[#162054]/50 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 dark:border-blue-900/50 overflow-hidden">
+        
+        <!-- Toolbar -->
+        <div class="p-6 border-b border-gray-100 dark:border-blue-900/30 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Search (Left) -->
+            <div class="relative w-full md:w-64">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                </div>
+                <input type="text" id="searchInput" onkeyup="filterTable()" 
+                       class="bg-gray-50 dark:bg-[#0F163A] border border-gray-200 dark:border-blue-900 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-unemi-blue focus:border-unemi-blue block w-full pl-10 p-2.5 placeholder-gray-400" 
+                       placeholder="Buscar lote...">
+            </div>
+
+            <!-- Length Menu (Right) -->
+            <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <span>Mostrar</span>
+                <select id="rowsPerPage" onchange="updateTable()" class="bg-gray-50 dark:bg-[#0F163A] border border-gray-200 dark:border-blue-900 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-unemi-blue focus:border-unemi-blue block w-16 p-2">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+                <span>registros</span>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400" id="lotesTable">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0F163A] dark:text-gray-300 sticky top-0">
+                    <tr>
+                        <th scope="col" class="px-6 py-4">#</th>
+                        <th scope="col" class="px-6 py-4">Nombre Lote</th>
+                        <th scope="col" class="px-6 py-4">Administrador</th>
+                        <th scope="col" class="px-6 py-4">Fecha Creación</th>
+                        <th scope="col" class="px-6 py-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-blue-900/30">
+                    {% for lote in lotes %}
+                    <tr class="bg-white dark:bg-[#162054]/20 hover:bg-gray-50 dark:hover:bg-blue-900/20 transition-colors group">
+                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white transition-colors">
+                            {{ lote.id }}
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                            {{ lote.nombre_lote }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs">
+                                    {{ lote.administrador.username|first|upper }}
+                                </div>
+                                {{ lote.administrador.username }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-regular fa-calendar text-gray-400"></i>
+                                {{ lote.fecha_creacion|date:"d M Y" }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{% url 'panel:batch_detail' lote.id %}" 
+                                   class="text-unemi-blue dark:text-blue-400 hover:text-white hover:bg-unemi-blue dark:hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-3 py-2 transition-all border border-transparent hover:border-blue-600">
+                                    <i class="fa-solid fa-eye mr-1"></i> Ver
+                                </a>
+                                
+                                <form action="{% url 'panel:batch_delete' lote.id %}" method="post" class="inline delete-lote-form">
+                                    {% csrf_token %}
+                                    <button type="button" onclick="confirmDeleteList(this)" class="text-red-500 hover:text-white hover:bg-red-500 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-3 py-2 transition-all border border-transparent hover:border-red-500" title="Eliminar Lote">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <script>
+                function confirmDeleteList(btn) {
+                    const form = btn.closest('form');
+                    showConfirm(
+                        'Eliminar Lote',
+                        '¿Estás seguro de que deseas eliminar este lote? Todos los certificados asociados también serán borrados.',
+                        function() {
+                            form.submit();
+                        }
+                    );
+                }
+            </script>
+                </tbody>
+            </table>
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden p-8 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-white/5 mb-4">
+                    <i class="fa-solid fa-magnifying-glass text-2xl text-gray-400"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">No se encontraron resultados</h3>
+                <p class="text-gray-500 dark:text-gray-400">Intenta con otros términos de búsqueda.</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="p-4 border-t border-gray-100 dark:border-blue-900/30 flex flex-col md:flex-row justify-between items-center gap-4">
+            <span class="text-sm text-gray-700 dark:text-gray-400">
+                Mostrando <span id="startIdx" class="font-semibold text-gray-900 dark:text-white">1</span> a <span id="endIdx" class="font-semibold text-gray-900 dark:text-white">10</span> de <span id="totalRows" class="font-semibold text-gray-900 dark:text-white">...</span> entradas
+            </span>
+            <div class="inline-flex rounded-md shadow-sm">
+                <button onclick="prevPage()" id="prevBtn" class="px-4 py-2 text-sm font-medium text-gray-500 bg-white dark:bg-[#0F163A] border border-gray-200 dark:border-blue-900 rounded-l-lg hover:bg-gray-100 dark:hover:bg-blue-900/50 hover:text-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Anterior
+                </button>
+                <button onclick="nextPage()" id="nextBtn" class="px-4 py-2 text-sm font-medium text-gray-500 bg-white dark:bg-[#0F163A] border-t border-b border-r border-gray-200 dark:border-blue-900 rounded-r-lg hover:bg-gray-100 dark:hover:bg-blue-900/50 hover:text-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    Siguiente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let rows = [];
+    let filteredRows = [];
+    let currentPage = 1;
+    let rowsPerPage = 10;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.querySelector('#lotesTable tbody');
+        // Store original rows
+        rows = Array.from(tbody.querySelectorAll('tr'));
+        filteredRows = [...rows];
+        
+        // Initial Count
+        document.getElementById('totalRows').textContent = rows.length;
+        
+        updateTable();
+    });
+
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        
+        filteredRows = rows.filter(row => {
+            const text = row.innerText.toLowerCase();
+            return text.includes(query);
+        });
+
+        currentPage = 1;
+        updateTable();
+    }
+
+    function updateTable() {
+        const tbody = document.querySelector('#lotesTable tbody');
+        const emptyState = document.getElementById('emptyState');
+        const rppSelect = document.getElementById('rowsPerPage');
+        
+        rowsPerPage = parseInt(rppSelect.value);
+        
+        // Pagination logic
+        const total = filteredRows.length;
+        const totalPages = Math.ceil(total / rowsPerPage);
+        
+        // Clamp page
+        if (currentPage > totalPages) currentPage = totalPages || 1;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        
+        // Clear table
+        tbody.innerHTML = '';
+        
+        if (total === 0) {
+            emptyState.classList.remove('hidden');
+            document.getElementById('startIdx').textContent = 0;
+            document.getElementById('endIdx').textContent = 0;
+        } else {
+            emptyState.classList.add('hidden');
+            
+            // Append visible rows
+            filteredRows.slice(start, end).forEach(row => tbody.appendChild(row));
+            
+            document.getElementById('startIdx').textContent = start + 1;
+            document.getElementById('endIdx').textContent = Math.min(end, total);
+        }
+        
+        document.getElementById('totalRows').textContent = total;
+        
+        // Buttons
+        document.getElementById('prevBtn').disabled = currentPage === 1;
+        document.getElementById('nextBtn').disabled = currentPage === totalPages || total === 0;
+    }
+
+    function nextPage() {
+        currentPage++;
+        updateTable();
+    }
+
+    function prevPage() {
+        currentPage--;
+        updateTable();
+    }
+</script>
+{% endblock %}

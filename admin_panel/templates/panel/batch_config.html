@@ -1,0 +1,319 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="h-[calc(100vh-64px)] overflow-hidden flex flex-col md:flex-row bg-gray-50 dark:bg-[#0F163A]">
+    
+    <!-- Left Panel: Configurations (Scrollable, Wider) -->
+    <div class="w-full md:w-3/5 h-1/2 md:h-full overflow-y-auto bg-white dark:bg-[#162054] custom-scrollbar border-r border-gray-200 dark:border-blue-900/50 order-2 md:order-1">
+        <div class="p-6 md:p-10 max-w-4xl mx-auto">
+            <div class="flex justify-between items-start mb-8 border-b border-gray-100 dark:border-blue-900/30 pb-4">
+                 <div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Diseñador de Certificados</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Personaliza cada detalle y visualiza en tiempo real.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" form="configForm" class="bg-unemi-blue text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-lg active:scale-95 text-sm font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                    </button>
+                    <a href="{% url 'panel:batch_detail' lote.id %}" class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors bg-gray-50 dark:bg-blue-900/20 p-2 rounded-lg">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </a>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="space-y-10" id="configForm">
+                {% csrf_token %}
+                
+                <!-- Template Selector & Colors -->
+                <div class="space-y-6">
+                    <label class="block text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-blue-300 flex items-center gap-2 border-b border-gray-100 dark:border-blue-900/30 pb-2">
+                        <i class="fa-solid fa-palette text-purple-500"></i> Estilo y Colores
+                    </label>
+
+                    <!-- Template Grid -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Clásico -->
+                        <label class="cursor-pointer group relative">
+                            <input type="radio" name="plantilla" value="clasico" {% if lote.plantilla == 'clasico' %}checked{% endif %} class="peer sr-only">
+                            <div class="aspect-video p-4 rounded-xl border-2 border-gray-100 dark:border-blue-900/30 peer-checked:border-unemi-blue peer-checked:bg-blue-50/50 dark:peer-checked:bg-blue-900/40 hover:border-gray-300 dark:hover:border-blue-700 transition-all text-center flex flex-col items-center justify-center gap-2">
+                                <div class="w-10 h-10 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-gray-400 peer-checked:text-unemi-blue peer-checked:scale-110 transition-transform">
+                                    <i class="fa-solid fa-landmark text-lg"></i>
+                                </div>
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Clásico Elegante</span>
+                            </div>
+                        </label>
+
+                        <!-- Moderno -->
+                        <label class="cursor-pointer group relative">
+                            <input type="radio" name="plantilla" value="moderno" {% if lote.plantilla == 'moderno' %}checked{% endif %} class="peer sr-only">
+                            <div class="aspect-video p-4 rounded-xl border-2 border-gray-100 dark:border-blue-900/30 peer-checked:border-unemi-orange peer-checked:bg-orange-50/50 dark:peer-checked:bg-orange-900/20 hover:border-gray-300 dark:hover:border-blue-700 transition-all text-center flex flex-col items-center justify-center gap-2">
+                                <div class="w-10 h-10 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-gray-400 peer-checked:text-unemi-orange peer-checked:scale-110 transition-transform">
+                                    <i class="fa-solid fa-pager text-lg"></i>
+                                </div>
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Moderno Lateral</span>
+                            </div>
+                        </label>
+
+                        <!-- Geométrico -->
+                        <label class="cursor-pointer group relative">
+                            <input type="radio" name="plantilla" value="geometrico" {% if lote.plantilla == 'geometrico' %}checked{% endif %} class="peer sr-only">
+                            <div class="aspect-video p-4 rounded-xl border-2 border-gray-100 dark:border-blue-900/30 peer-checked:border-pink-500 peer-checked:bg-pink-50/50 dark:peer-checked:bg-pink-900/20 hover:border-gray-300 dark:hover:border-blue-700 transition-all text-center flex flex-col items-center justify-center gap-2">
+                                <div class="w-10 h-10 rounded-full bg-white dark:bg-white/10 shadow-sm flex items-center justify-center text-gray-400 peer-checked:text-pink-500 peer-checked:scale-110 transition-transform">
+                                    <i class="fa-solid fa-shapes text-lg"></i>
+                                </div>
+                                <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Geométrico 3 Colores</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Colors -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-gray-100 dark:border-blue-900/30">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-2">Principal</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" name="color_primario" value="{{ lote.color_primario }}" 
+                                    class="h-12 w-16 p-1 rounded-lg border border-gray-200 cursor-pointer bg-white shadow-sm"
+                                    onchange="document.getElementById('hexPri').value = this.value">
+                                <input type="text" id="hexPri" value="{{ lote.color_primario }}" 
+                                    class="text-xs w-full font-mono bg-transparent border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-unemi-blue" readonly>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-2">Secundario</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" name="color_secundario" value="{{ lote.color_secundario }}" 
+                                    class="h-12 w-16 p-1 rounded-lg border border-gray-200 cursor-pointer bg-white shadow-sm"
+                                    onchange="document.getElementById('hexSec').value = this.value">
+                                <input type="text" id="hexSec" value="{{ lote.color_secundario }}" 
+                                    class="text-xs w-full font-mono bg-transparent border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-unemi-blue" readonly>
+                            </div>
+                        </div>
+                         <div>
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-2">Detalles / Formas</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" name="color_terciario" value="{{ lote.color_terciario }}" 
+                                    class="h-12 w-16 p-1 rounded-lg border border-gray-200 cursor-pointer bg-white shadow-sm"
+                                    onchange="document.getElementById('hexTer').value = this.value">
+                                <input type="text" id="hexTer" value="{{ lote.color_terciario }}" 
+                                    class="text-xs w-full font-mono bg-transparent border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-unemi-blue" readonly>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-2">Texto</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" name="color_texto" value="{{ lote.color_texto }}" 
+                                    class="h-12 w-16 p-1 rounded-lg border border-gray-200 cursor-pointer bg-white shadow-sm"
+                                    onchange="document.getElementById('hexTxt').value = this.value">
+                                <input type="text" id="hexTxt" value="{{ lote.color_texto }}" 
+                                    class="text-xs w-full font-mono bg-transparent border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 focus:outline-none focus:border-unemi-blue" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cuerpo del Certificado -->
+                <div class="group">
+                    <label class="block mb-3 text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-blue-300 flex items-center gap-2">
+                        <i class="fa-solid fa-align-left text-unemi-blue dark:text-blue-400"></i> Texto Principal
+                    </label>
+                    <textarea name="cuerpo_certificado" rows="5"
+                        class="block p-4 w-full text-sm text-gray-700 bg-gray-50 rounded-2xl border-transparent focus:border-unemi-blue focus:ring-4 focus:ring-blue-50/50 dark:bg-[#0F163A] dark:text-gray-200 dark:placeholder-gray-500 transition-all resize-none shadow-inner"
+                        placeholder="Por haber completado satisfactoriamente...">{{ lote.cuerpo_certificado }}</textarea>
+                    <div class="flex gap-2 mt-3">
+                        <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 cursor-pointer hover:bg-blue-100" onclick="insertTag('{curso}')">{curso}</span>
+                        <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-900/50 cursor-pointer hover:bg-blue-100" onclick="insertTag('{horas}')">{horas}</span>
+                    </div>
+                </div>
+
+                <!-- Firmas Section -->
+                 <div class="space-y-6">
+                     <label class="block text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-blue-300 flex items-center gap-2 border-b border-gray-100 dark:border-blue-900/30 pb-2">
+                        <i class="fa-solid fa-signature text-unemi-orange"></i> Autoridades Firmantes
+                    </label>
+                    
+                    <div class="grid grid-cols-1 gap-4">
+                        <!-- Helper Mixin for Authority Card -->
+                        {% for i in "12"|make_list %}
+                            {% with auth_name="nombre_firma_"|add:i auth_cargo="cargo_firma_"|add:i auth_img="imagen_firma_"|add:i count=i %}
+                            <div class="p-5 rounded-2xl border border-gray-100 dark:border-blue-900/30 bg-white dark:bg-[#0F163A] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <i class="fa-solid fa-user-pen text-4xl text-unemi-blue dark:text-white"></i>
+                                </div>
+                                <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase mb-3">Autoridad {{ count }}</h4>
+                                
+                                <div class="space-y-3 relative z-10">
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-gray-400 mb-1">Nombre Completo</label>
+                                        <input type="text" name="nombre_firma_{{ count }}" 
+                                            value="{% if count == '1' %}{{ lote.nombre_firma_1 }}{% else %}{{ lote.nombre_firma_2 }}{% endif %}"
+                                            class="bg-gray-50 dark:bg-[#162054] border-gray-200 dark:border-blue-900/50 text-sm rounded-lg w-full p-2.5 text-gray-800 dark:text-white focus:ring-unemi-blue dark:focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-medium text-gray-400 mb-1">Cargo</label>
+                                        <input type="text" name="cargo_firma_{{ count }}" 
+                                            value="{% if count == '1' %}{{ lote.cargo_firma_1 }}{% else %}{{ lote.cargo_firma_2 }}{% endif %}"
+                                            class="bg-gray-50 dark:bg-[#162054] border-gray-200 dark:border-blue-900/50 text-sm rounded-lg w-full p-2.5 text-gray-800 dark:text-white focus:ring-unemi-blue dark:focus:ring-blue-500">
+                                    </div>
+                                     <div class="pt-2">
+                                        <label class="flex items-center gap-3 cursor-pointer w-full group/file">
+                                            <div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-blue-900/30 flex items-center justify-center text-gray-400 group-hover/file:bg-unemi-blue group-hover/file:text-white transition-colors">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-xs font-medium text-gray-700 dark:text-gray-300 group-hover/file:text-unemi-blue transition-colors">Subir Firma Digital</p>
+                                                <p class="text-[10px] text-gray-400">PNG Transparente preferido</p>
+                                            </div>
+                                            <input type="file" name="imagen_firma_{{ count }}" class="hidden">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- More Authorities (Collapsible or just simple) -->
+                    <details class="group rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
+                        <summary class="flex justify-between items-center p-4 cursor-pointer font-medium text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <span>Más Autoridades (Opcional)</span>
+                            <span class="transition group-open:rotate-180">
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </span>
+                        </summary>
+                        <div class="p-4 border-t border-gray-100 dark:border-gray-700 space-y-4 bg-gray-50 dark:bg-gray-800/50">
+                             <!-- Authority 3 -->
+                             <div>
+                                <h5 class="text-xs font-bold text-gray-500 mb-2">Autoridad 3</h5>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" name="nombre_firma_3" value="{{ lote.nombre_firma_3 }}" placeholder="Nombre" class="config-input">
+                                    <input type="text" name="cargo_firma_3" value="{{ lote.cargo_firma_3 }}" placeholder="Cargo" class="config-input">
+                                    <input type="file" name="imagen_firma_3" class="col-span-2 text-xs">
+                                </div>
+                             </div>
+                             <!-- Authority 4 -->
+                             <div>
+                                <h5 class="text-xs font-bold text-gray-500 mb-2">Autoridad 4</h5>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" name="nombre_firma_4" value="{{ lote.nombre_firma_4 }}" placeholder="Nombre" class="config-input">
+                                    <input type="text" name="cargo_firma_4" value="{{ lote.cargo_firma_4 }}" placeholder="Cargo" class="config-input">
+                                    <input type="file" name="imagen_firma_4" class="col-span-2 text-xs">
+                                </div>
+                             </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Logos Header -->
+                <div class="space-y-4">
+                     <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-2">
+                        <i class="fa-solid fa-images text-purple-500"></i> Logos Cabecera
+                    </label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <!-- Left -->
+                        <div class="border border-gray-100 dark:border-gray-700 rounded-xl p-3 text-center bg-white dark:bg-gray-800 shadow-sm relative group/item">
+                            <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Izquierda</span>
+                            <div class="h-14 flex items-center justify-center mb-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                                {% if lote.logo_header_1 %}
+                                    <img src="{{lote.logo_header_1.url}}" class="h-full object-contain">
+                                {% else %}
+                                    <img src="/static/img/muc.png" class="h-full object-contain" title="Logo por defecto">
+                                {% endif %}
+                            </div>
+                            <label class="cursor-pointer block w-full">
+                                <span class="flex items-center justify-center gap-2 w-full py-2 px-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-lg transition-colors text-xs font-bold">
+                                    <i class="fa-solid fa-pen"></i> Cambiar
+                                </span>
+                                <input type="file" name="logo_header_1" class="hidden">
+                            </label>
+                        </div>
+                        
+                        <!-- Center -->
+                        <div class="border border-gray-100 dark:border-gray-700 rounded-xl p-3 text-center bg-white dark:bg-gray-800 shadow-sm relative group/item">
+                             <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Centro</span>
+                             <div class="h-14 flex items-center justify-center mb-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                                {% if lote.logo_header_2 %}
+                                    <img src="{{lote.logo_header_2.url}}" class="h-full object-contain">
+                                {% else %}
+                                    <img src="/static/img/logo-unemi-removebg-preview.png" class="h-full object-contain" title="Logo por defecto">
+                                {% endif %}
+                            </div>
+                            <label class="cursor-pointer block w-full">
+                                <span class="flex items-center justify-center gap-2 w-full py-2 px-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-lg transition-colors text-xs font-bold">
+                                    <i class="fa-solid fa-pen"></i> Cambiar
+                                </span>
+                                <input type="file" name="logo_header_2" class="hidden">
+                            </label>
+                        </div>
+                        
+                        <!-- Right -->
+                         <div class="border border-gray-100 dark:border-gray-700 rounded-xl p-3 text-center bg-white dark:bg-gray-800 shadow-sm relative group/item">
+                             <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Derecha</span>
+                             <div class="h-14 flex items-center justify-center mb-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2">
+                                {% if lote.logo_header_3 %}
+                                    <img src="{{lote.logo_header_3.url}}" class="h-full object-contain">
+                                {% else %}
+                                    <img src="/static/img/feue.png" class="h-full object-contain" title="Logo por defecto">
+                                {% endif %}
+                            </div>
+                            <label class="cursor-pointer block w-full">
+                                <span class="flex items-center justify-center gap-2 w-full py-2 px-3 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-lg transition-colors text-xs font-bold">
+                                    <i class="fa-solid fa-pen"></i> Cambiar
+                                </span>
+                                <input type="file" name="logo_header_3" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="sticky bottom-0 bg-white/80 dark:bg-[#162054]/90 backdrop-blur-md pt-4 border-t border-gray-100 dark:border-blue-900/30 mt-8 flex justify-end gap-3 z-10 pb-4">
+                    <button type="submit" name="preview" value="true" onclick="setTimeout(()=>document.getElementById('pdfPreview').contentWindow.location.reload(), 1000)"
+                        class="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        Guardar Cambios
+                    </button>
+                    <button type="submit" 
+                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-unemi-blue to-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 transition-all">
+                        Finalizar Configuración
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Panel: Preview (Sticky, 40%) -->
+    <div class="w-full md:w-2/5 h-1/2 md:h-full flex flex-col items-center justify-center bg-gray-800 dark:bg-[#0B1129] relative border-l border-gray-200 dark:border-blue-900/50 order-1 md:order-2">
+        <div class="absolute top-4 left-0 right-0 z-10 flex justify-center">
+             <div class="bg-black/60 text-white px-3 py-1.5 rounded-lg text-xs backdrop-blur-md flex items-center gap-2 shadow-lg border border-white/10">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Vista Previa en Vivo
+            </div>
+        </div>
+        
+        <!-- PDF Container -->
+        <div class="w-full h-full p-4 md:p-6 flex items-center justify-center overflow-hidden">
+             <!-- Aspect Ratio Wrapper -->
+             <div class="relative w-full shadow-2xl rounded-sm overflow-hidden bg-white max-h-[90%]" style="aspect-ratio: 1.414 / 1; min-height: 300px;">
+                <iframe id="pdfPreview" src="{% url 'panel:batch_preview' lote.id %}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" 
+                    class="absolute inset-0 w-full h-full" frameborder="0">
+                </iframe>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-6 flex gap-3">
+             <button onclick="document.getElementById('pdfPreview').contentWindow.location.reload();" 
+                class="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 rounded-full px-5 py-2.5 text-xs font-semibold transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2">
+                <i class="fa-solid fa-rotate"></i> Actualizar Vista
+            </button>
+             <a href="{% url 'panel:batch_preview' lote.id %}" target="_blank"
+                class="bg-blue-600 hover:bg-blue-700 text-white backdrop-blur-md rounded-full px-5 py-2.5 text-xs font-semibold transition-all shadow-xl hover:scale-105 active:scale-95 flex items-center gap-2">
+                <i class="fa-solid fa-external-link-alt"></i> Abrir PDF
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .config-input {
+        @apply bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-xs rounded-lg w-full p-2;
+    }
+</style>
+{% endblock %}

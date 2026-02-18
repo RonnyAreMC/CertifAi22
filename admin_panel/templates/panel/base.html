@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNEMI Admin - Gestión de Certificados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        unemi: { blue: '#162054', orange: '#F58830', dark: '#0F163A' },
+                        neon: { blue: '#00f2ff', purple: '#bd00ff', orange: '#ff9100' }
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3)',
+                        'neon-orange': '0 0 10px rgba(245, 136, 48, 0.5), 0 0 20px rgba(245, 136, 48, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 dark:bg-[#0f1d3d] dark:text-gray-100 transition-colors duration-300">
+    {% include 'components/background_decor.html' %}
+    {% include 'components/loader.html' %}
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-24 right-5 z-[60] flex flex-col gap-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast-enter max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 {% if message.tags == 'error' %}border-red-500{% else %}border-green-500{% endif %} overflow-hidden transform transition-all hover:scale-105 duration-300">
+                    <div class="p-4 flex items-start gap-3">
+                        <div class="flex-shrink-0">
+                            {% if message.tags == 'error' %}
+                                <i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>
+                            {% else %}
+                                <i class="fa-solid fa-circle-check text-green-500 text-xl"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium {% if message.tags == 'error' %}text-red-600 dark:text-red-400{% else %}text-green-600 dark:text-green-400{% endif %}">
+                                {% if message.tags == 'error' %}¡Error!{% else %}¡Éxito!{% endif %}
+                            </p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ message }}</p>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Top Navigation -->
+    <nav class="bg-[#1a2b4d] sticky top-0 z-50 shadow-lg relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center gap-8">
+                    <div class="flex-shrink-0 flex items-center gap-3">
+                        <i class="fa-solid fa-shield-halved text-unemi-orange text-3xl animate-pulse"></i>
+                        <span class="text-2xl font-bold text-white tracking-wide">
+                            UNEMI <span class="text-sm font-light opacity-80 uppercase tracking-widest ml-1">Admin</span>
+                        </span>
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center space-x-1">
+                        <a href="{% url 'panel:dashboard' %}" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if request.resolver_match.url_name == 'dashboard' %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-chart-pie mr-2"></i>Dashboard
+                        </a>
+                        <a href="{% url 'panel:batch_list' %}" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'batch' in request.resolver_match.url_name and 'create' not in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-folder-open mr-2"></i>Lotes
+                        </a>
+                        <a href="{% url 'panel:batch_create' %}" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'create' in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Subir
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Side -->
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:block relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
+                        </div>
+                        <input type="text" class="bg-black/20 border border-white/10 text-white text-sm rounded-full focus:ring-unemi-orange focus:border-unemi-orange block w-48 pl-9 p-2 placeholder-gray-400 transition-all focus:w-64" placeholder="Buscar...">
+                    </div>
+
+                    <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-yellow-300 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20">
+                        <i id="theme-icon" class="fa-solid fa-sun text-sm"></i>
+                    </button>
+
+                    <div class="flex items-center gap-3 pl-4 border-l border-white/10">
+                        <div class="hidden md:block text-right">
+                            <p class="text-sm font-bold text-white leading-tight">{{ user.first_name }}</p>
+                            <p class="text-xs text-blue-200">Administrador</p>
+                        </div>
+                        <div class="h-10 w-10 rounded-full bg-unemi-orange border-2 border-white/20 flex items-center justify-center text-white shadow-lg">
+                            <span class="font-bold text-lg">{{ user.username|first|upper }}</span>
+                        </div>
+                        
+                        <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden ml-2 text-white p-2">
+                            <i class="fa-solid fa-bars text-xl"></i>
+                        </button>
+                        
+                        <form action="{% url 'panel:logout' %}" method="post" class="hidden md:block ml-2">
+                             {% csrf_token %}
+                             <button type="submit" class="text-gray-400 hover:text-red-400 transition-colors" title="Cerrar Sesión">
+                                 <i class="fa-solid fa-power-off text-lg"></i>
+                             </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#0F163A] border-t border-white/10">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                 <a href="{% url 'panel:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Dashboard</a>
+                 <a href="{% url 'panel:batch_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Lotes</a>
+                 <a href="{% url 'panel:batch_create' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Subir Nuevo</a>
+                 <div class="border-t border-white/10 my-2"></div>
+                 <form action="{% url 'panel:logout' %}" method="post" class="block w-full">
+                     {% csrf_token %}
+                     <button type="submit" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-400 hover:bg-white/10">
+                         Cerrar Sesión
+                     </button>
+                 </form>
+            </div>
+        </div>
+        <div class="h-1 flex w-full absolute bottom-0 left-0">
+            <div class="w-[75%] bg-[#F58830]"></div>
+            <div class="w-[25%] bg-[#162054] dark:bg-white"></div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-80px)]">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-[#0F163A] border-t border-gray-100 dark:border-blue-900/30 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                &copy; 2026 Universidad Estatal de Milagro (UNEMI) - Sistema de Certificación v2.0
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toasts = document.querySelectorAll('.toast-enter');
+            toasts.forEach(toast => {
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-x-full');
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
+            });
+        });
+    </script>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity opacity-0 duration-300" id="modalBackdrop"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#162054] text-left shadow-2xl transition-all duration-300 sm:my-8 sm:w-full sm:max-w-lg opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 border border-indigo-100 dark:border-blue-900/50" id="modalPanel">
+                    <div class="bg-white dark:bg-[#162054] px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                                <h3 class="text-xl font-semibold leading-6 text-gray-900 dark:text-white" id="modalTitle">Confirmar Acción</h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-300" id="modalMessage">¿Estás seguro?</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-[#0F163A]/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+                        <button type="button" id="confirmBtn" class="inline-flex w-full justify-center rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto transition-colors focus:ring-4 focus:ring-red-200">Confirmar</button>
+                        <button type="button" onclick="closeModal()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white dark:bg-transparent px-5 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 sm:mt-0 sm:w-auto transition-colors">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let confirmCallback = null;
+        window.showConfirm = function(title, message, callback) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            confirmCallback = callback;
+            const modal = document.getElementById('confirmationModal');
+            const backdrop = document.getElementById('modalBackdrop');
+            const panel = document.getElementById('modalPanel');
+            modal.classList.remove('hidden');
+            void modal.offsetWidth;
+            backdrop.classList.remove('opacity-0');
+            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+            panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+        };
+        window.closeModal = function() {
+            const backdrop = document.getElementById('modalBackdrop');
+            const panel = document.getElementById('modalPanel');
+            backdrop.classList.add('opacity-0');
+            panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
+            panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
+            setTimeout(() => { document.getElementById('confirmationModal').classList.add('hidden'); confirmCallback = null; }, 300);
+        };
+        document.getElementById('confirmBtn').addEventListener('click', () => { if (confirmCallback) confirmCallback(); closeModal(); });
+    </script>
+</body>
+</html>

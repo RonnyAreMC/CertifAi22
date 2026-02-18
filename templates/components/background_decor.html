@@ -1,0 +1,81 @@
+<style>
+    /* ============================================
+       GLOBAL BACKGROUND DECORATION
+       ============================================ */
+    #global-bg-decor {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: -50; /* Behind everything */
+    }
+    
+    #global-bg-decor .circle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.12; /* More visible in light mode */
+        filter: blur(30px);
+    }
+    
+    /* Circle 1: Top Left - Large */
+    #global-bg-decor .circle-1 {
+        width: 600px;
+        height: 600px;
+        background: #1a2b4d; /* Navy */
+        top: -200px;
+        left: -200px;
+        animation: float-global 15s ease-in-out infinite;
+    }
+    
+    /* Circle 2: Bottom Right - Medium */
+    #global-bg-decor .circle-2 {
+        width: 500px;
+        height: 500px;
+        background: #F58830; /* Orange */
+        bottom: -150px;
+        right: -150px;
+        animation: float-global 12s ease-in-out infinite reverse;
+    }
+    
+    /* Circle 3: Center/Random - Small */
+    #global-bg-decor .circle-3 {
+        width: 300px;
+        height: 300px;
+        background: #1a2b4d; /* Navy */
+        top: 40%;
+        right: 15%;
+        opacity: 0.08;
+        animation: float-global 10s ease-in-out infinite;
+    }
+
+    @keyframes float-global {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -30px) scale(1.05); }
+        66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+    
+    /* Dark mode adjustments */
+    .dark #global-bg-decor .circle {
+        opacity: 0.25; /* More visible in dark mode */
+        filter: blur(45px); /* Softer glow */
+    }
+    
+    .dark #global-bg-decor .circle-1 {
+        background: #162054; /* Darker Blue */
+    }
+    
+    .dark #global-bg-decor .circle-2 {
+        background: #F58830; /* Orange Glow */
+        opacity: 0.15;
+    }
+    
+    .dark #global-bg-decor .circle-3 {
+        background: #1a2f6b; /* Lighter Navy */
+    }
+</style>
+
+<div id="global-bg-decor">
+    <div class="circle circle-1"></div>
+    <div class="circle circle-2"></div>
+    <div class="circle circle-3"></div>
+</div>

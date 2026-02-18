@@ -1,0 +1,172 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUC Academy - Certificados de Seminarios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        unemi: {
+                            blue: '#162054',
+                            orange: '#F58830',
+                            dark: '#0F163A'
+                        },
+                        faculty: {
+                            faci: '#0071CE',
+                            facs: '#10B981',
+                            face: '#EC4899',
+                            facsecyd: '#8B5CF6',
+                            posgrado: '#FF9100'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 10px rgba(0, 242, 255, 0.5), 0 0 20px rgba(0, 242, 255, 0.3)',
+                        'neon-orange': '0 0 10px rgba(245, 136, 48, 0.5), 0 0 20px rgba(245, 136, 48, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .unemi-header-bar { border-bottom: 4px solid #F58830; }
+        .btn-unemi-primary { background-color: #162054; color: white; transition: all 0.3s; }
+        .btn-unemi-primary:hover { background-color: #0F163A; }
+        .btn-unemi-action { background-color: #F58830; color: white; transition: all 0.3s; }
+        .btn-unemi-action:hover { background-color: #D97520; }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0f1d3d] text-gray-800 dark:text-gray-100 flex flex-col min-h-screen transition-colors duration-300">
+    {% include 'components/background_decor.html' %}
+    {% include 'components/loader.html' %}
+    
+    <!-- Navbar -->
+    <nav class="bg-[#1a2b4d] shadow-lg sticky top-0 z-50 relative">
+        <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+            <a href="{% url 'public:home' %}" class="flex items-center space-x-3 rtl:space-x-reverse group">
+                <div class="flex items-center gap-2">
+                    <div class="bg-unemi-orange rounded-full w-10 h-10 flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="self-center text-2xl font-bold whitespace-nowrap text-white tracking-wide">MUC Academy</span>
+                        <span class="text-xs text-white opacity-80 uppercase tracking-widest" style="font-size: 0.65rem;">Seminarios y Certificados</span>
+                    </div>
+                </div>
+            </a>
+
+            <div class="flex items-center md:order-2 space-x-3 md:space-x-6 rtl:space-x-reverse">
+                <div class="text-white text-right hidden md:block border-r border-white/20 pr-6">
+                    <p class="text-xs opacity-75 uppercase tracking-wider">Periodo Académico</p>
+                    <p class="text-sm font-bold">2026</p>
+                </div>
+
+                <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-yellow-300 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20">
+                    <i id="theme-icon" class="fa-solid fa-sun text-sm"></i>
+                </button>
+
+                <a href="{% url 'panel:login' %}"
+                    class="flex items-center gap-2 text-white/90 hover:text-unemi-orange transition-colors group"
+                    title="Acceso Administrativo">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs opacity-75">Zona Segura</p>
+                        <p class="text-sm font-medium group-hover:underline">Administración</p>
+                    </div>
+                    <div class="relative w-10 h-10 overflow-hidden bg-white/10 rounded-full flex items-center justify-center border border-white/20 group-hover:bg-unemi-orange/20 transition-colors">
+                        <i class="fa-solid fa-user-lock text-sm"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div class="h-1 flex w-full absolute bottom-0 left-0">
+            <div class="w-[75%] bg-[#F58830]"></div>
+            <div class="w-[25%] bg-[#162054] dark:bg-white"></div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 dark:bg-[#1a2b4d] mt-auto relative">
+        <div class="h-1 flex w-full">
+            <div class="w-[75%] bg-[#F58830]"></div>
+            <div class="w-[25%] bg-[#162054] dark:bg-white"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center gap-6">
+                    <img src="{% static 'img/logo-unemi-removebg-preview.png' %}" alt="UNEMI" class="h-10 object-contain opacity-90 hover:opacity-100 transition-opacity dark:hidden">
+                    <img src="{% static 'images-removebg-preview.png' %}" alt="UNEMI" class="h-10 object-contain opacity-90 hover:opacity-100 transition-opacity hidden dark:block">
+                    <img src="{% static 'img/muc.png' %}" alt="MUC" class="h-10 object-contain opacity-90 hover:opacity-100 transition-opacity">
+                    <img src="{% static 'img/feue.png' %}" alt="FEUE" class="h-10 object-contain opacity-90 hover:opacity-100 transition-opacity">
+                </div>
+                
+                <div class="flex flex-col items-center md:items-end gap-1 text-sm text-gray-600 dark:text-gray-400">
+                    <div class="flex items-center gap-4 mb-1">
+                        <a href="https://wa.me/593967094252" target="_blank" class="hover:text-unemi-orange dark:hover:text-unemi-orange transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-headset text-unemi-orange"></i>
+                            <span>Quejas o Soporte</span>
+                        </a>
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-xs">
+                        <span>Desarrollado por <a href="https://wa.me/593967094252" target="_blank" class="text-unemi-orange hover:underline font-bold">Ronny Arellano</a></span>
+                        <span class="hidden md:inline text-gray-400">|</span>
+                        <span>&copy; 2026 MUC Academy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
+            }
+        }
+    </script>
+</body>
+
+</html>
