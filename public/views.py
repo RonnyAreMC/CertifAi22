@@ -6,6 +6,7 @@ from core.models import Certificado
 from core.services.pdf_service import generate_certificate_pdf
 import zipfile
 import io
+from django.utils.text import slugify
 
 
 def home(request):
@@ -18,19 +19,16 @@ def search(request):
     query = request.GET.get('q', '').strip()
     certificados = []
 
-    if query and len(query) >= 3:
+    if query:
+        query_lower = query.lower()
         certificados = list(
             Certificado.objects.filter(
-                Q(cedula__icontains=query)
-                | Q(email__icontains=query)
-                | Q(nombres__icontains=query)
-                | Q(apellidos__icontains=query)
-            )
-            .select_related('lote')
-            .order_by('-created_at')
+                Q(cedula__iexact=query) |
+                Q(email__iexact=query_lower) |
+                Q(hash_verificacion__iexact=query)
+            ).select_related('lote')
         )
 
-        # Update search metrics
         for c in certificados:
             c.veces_buscado += 1
             c.save(update_fields=['veces_buscado'])
@@ -90,7 +88,8 @@ def download_zip(request):
         for cert in certificados:
             try:
                 pdf_buffer = generate_certificate_pdf(cert)
-                filename = f"{cert.curso}_{cert.cedula}.pdf".replace("/", "-")
+                safe_curso = slugify(cert.curso)
+                filename = f"{safe_curso}_{cert.cedula}.pdf"
                 zip_file.writestr(filename, pdf_buffer.getvalue())
             except Exception:
                 continue

@@ -4,53 +4,94 @@ from core.models import LoteCertificados, Certificado
 import uuid
 from core.validators import validate_file_content, sanitize_text
 
-def procesar_archivo_excel_lote_business(lote_id):
+def analyze_excel_headers(lote_id):
+    """
+    Analyzes the Excel file of a Lote and returns headers, preview data, and suggested mapping.
+    """
+    try:
+        lote = LoteCertificados.objects.get(id=lote_id)
+        file_path = lote.archivo_excel.path
+        
+        # Read Excel (Force all to string to avoid auto-formatting issues)
+        # Read only first 5 rows for preview
+        df = pd.read_excel(file_path, dtype=str, nrows=5) 
+        
+        columns = [str(c).strip() for c in df.columns]
+        
+        # Smart suggestions
+        suggestions = {}
+        original_cols_lower = {c.lower(): c for c in columns}
+        
+        # Helper to find best match
+        def find_match(keywords, exclude=None):
+            for k in keywords:
+                for col_lower in original_cols_lower:
+                    # Skip excluded terms (e.g. don't match 'apellidos' for 'id')
+                    if exclude and any(ex in col_lower for ex in exclude):
+                        continue
+                        
+                    if k in col_lower:
+                        return original_cols_lower[col_lower]
+            return None
+
+        # Exclude name-related columns from Cédula detection to prevent 'id' matching 'apell(id)os'
+        suggestions['cedula'] = find_match(['cedula', 'dni', 'identidad', 'documento', 'identificación'], exclude=['nombre', 'apellido', 'participante'])
+        
+        suggestions['nombres'] = find_match(['nombres', 'nombre', 'participante', 'estudiante'])
+        suggestions['apellidos'] = find_match(['apellidos', 'apellido'])
+        suggestions['email'] = find_match(['email', 'correo', 'e-mail', 'mail'])
+        suggestions['celular'] = find_match(['celular', 'telefono', 'movil', 'whatsapp', 'tlf'])
+        suggestions['curso'] = find_match(['curso', 'seminario', 'tema', 'capacitacion'])
+        
+        # Preview data (list of lists)
+        preview = df.fillna('').values.tolist()
+        
+        return {
+            'success': True,
+            'columns': columns,
+            'suggestions': suggestions,
+            'preview': preview
+        }
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+def procesar_archivo_excel_lote_business(lote_id, mapping=None):
     """
     Business logic to process an Excel file for a Lote.
-    Uses atomic transactions to ensure data integrity: either all certificates are created, or none.
+    Recieves optional 'mapping' dict: {'cedula': 'ColName', 'nombres': 'ColName', ...}
     """
     try:
         with transaction.atomic():
             lote = LoteCertificados.objects.select_for_update().get(id=lote_id)
             file_path = lote.archivo_excel.path
             
-            # Read Excel (Force all to string to avoid auto-formatting issues)
+            # Read Excel
             df = pd.read_excel(file_path, dtype=str)
             
-            # Normalize headers
-            df.columns = [str(c).strip().lower() for c in df.columns]
+            # Clean headers/columns: strip whitespace
+            df.columns = [str(c).strip() for c in df.columns]
             
             created_count = 0
             nombre_lote_upper = lote.nombre_lote.upper().strip()
             curso_context = f"POR ASISTIR AL SEMINARIO {nombre_lote_upper}"
             
             # ---------------------------------------------------------
-            # Column Mapping Logic (Robust)
+            # Column Determination
             # ---------------------------------------------------------
-            col_cedula = None
-            col_nombres = None
-            col_email = None
+            col_cedula = mapping.get('cedula') if mapping else None
+            col_nombres = mapping.get('nombres') if mapping else None
+            col_apellidos = mapping.get('apellidos') if mapping else None
+            col_email = mapping.get('email') if mapping else None
+            col_celular = mapping.get('celular') if mapping else None
+            col_curso = mapping.get('curso') if mapping else None
             
-            for c in df.columns:
-                # Name
-                if not col_nombres and ('nombre' in c and 'completo' in c): col_nombres = c
-                elif not col_nombres and 'participante' in c: col_nombres = c
-                elif not col_nombres and 'nombres' in c: col_nombres = c
-                
-                # Email
-                if not col_email and ('correo' in c or 'email' in c): col_email = c
-                
-                # ID
-                if not col_cedula and 'cedula' in c: col_cedula = c
-                elif not col_cedula and 'identidad' in c: col_cedula = c
-                elif not col_cedula and 'dni' in c: col_cedula = c
-                
-            # Fallback for ID (Phone/Cell if no ID)
-            if not col_cedula:
+            # Auto-detect if no mapping provided (Legacy support)
+            if not mapping:
                 for c in df.columns:
-                    if 'celular' in c or 'movil' in c or 'telf' in c or 'telefono' in c:
-                        col_cedula = c
-                        break
+                    cl = c.lower()
+                    if not col_nombres and ('nombre' in cl or 'participante' in cl): col_nombres = c
+                    if not col_email and ('correo' in cl or 'email' in cl): col_email = c
+                    if not col_cedula and ('cedula' in cl or 'dni' in cl or 'identidad' in cl): col_cedula = c
             
             # ---------------------------------------------------------
             # Row Processing
@@ -58,59 +99,102 @@ def procesar_archivo_excel_lote_business(lote_id):
             certificates_to_create = []
             
             for index, row in df.iterrows():
-                # Extract and Sanitize
-                nombre_raw = sanitize_text(str(row.get(col_nombres, ''))) if col_nombres else ""
-                email_raw = sanitize_text(str(row.get(col_email, ''))) if col_email else ""
-                cedula_raw = sanitize_text(str(row.get(col_cedula, ''))) if col_cedula else ""
+                # Extract Data using Mapping
                 
-                # Handle Pandas NaNs converted to string
+                # 1. Cedula
+                cedula_raw = ""
+                if col_cedula and col_cedula in df.columns:
+                    cedula_raw = sanitize_text(str(row[col_cedula]))
+                
+                # 2. Email (Mandatory & Lowercase)
+                email_raw = ""
+                if col_email and col_email in df.columns:
+                    email_raw = sanitize_text(str(row[col_email])).lower().strip()
+                
+                # 3. Nombres & Apellidos Logic
+                nombre_raw = ""
+                apellido_raw = ""
+                
+                if col_nombres and col_nombres in df.columns:
+                    nombre_raw = sanitize_text(str(row[col_nombres]))
+                    
+                if col_apellidos and col_apellidos in df.columns:
+                    apellido_raw = sanitize_text(str(row[col_apellidos]))
+
+                # 4. Celular
+                celular_raw = ""
+                if col_celular and col_celular in df.columns:
+                    # Sanitize: Keep only digits
+                    val = str(row[col_celular])
+                    if val.lower() != 'nan':
+                        nums = ''.join(filter(str.isdigit, val))
+                        
+                        # Logic: 10 digits starting with 0
+                        if len(nums) == 10 and nums.startswith('0'):
+                            celular_raw = nums
+                        
+                        # Logic: 9 digits (missing leading zero) -> Prepend 0
+                        elif len(nums) == 9:
+                            celular_raw = f"0{nums}"
+                            
+                        # Else: Invalid (too short, too long, or weird format) -> Leave empty
+                
+                # Cleanup NaNs / Empty Strings
                 if nombre_raw.lower() == 'nan': nombre_raw = ""
-                if email_raw.lower() == 'nan': email_raw = ""
+                if apellido_raw.lower() == 'nan': apellido_raw = ""
                 if cedula_raw.lower() == 'nan': cedula_raw = ""
-                
-                # Skip empty rows
-                if not nombre_raw and not email_raw and not cedula_raw:
-                    continue
-                
-                # Clean ID
+                if email_raw.lower() == 'nan': email_raw = ""
+                if celular_raw.lower() == 'nan': celular_raw = ""
+
+                # SKIP VALIDATION: Email is Mandatory
+                if not email_raw:
+                    continue # Skip this row if no email
+                    
+                # Cedula Cleanup
                 cedula = cedula_raw
                 if cedula.endswith('.0'): cedula = cedula[:-2]
-                
-                if not cedula:
-                     # Generate fallback ID if missing
-                    cedula = f"GEN-{uuid.uuid4().hex[:8].upper()}"
+                if not cedula: cedula = f"GEN-{uuid.uuid4().hex[:8].upper()}"
 
-                # Name Parsing
-                nombres = "PARTICIPANTE"
-                apellidos = "S/N"
+                # Name Parsing / Splitting
+                final_nombres = "PARTICIPANTE"
+                final_apellidos = "S/N"
                 
-                if nombre_raw:
+                if apellido_raw:
+                    # Explicit columns
+                    final_nombres = nombre_raw
+                    final_apellidos = apellido_raw
+                elif nombre_raw:
+                    # Split Full Name
                     parts = nombre_raw.split()
                     if len(parts) >= 2:
                         if len(parts) == 2:
-                            nombres = parts[0]
-                            apellidos = parts[1]
+                            final_nombres = parts[0]
+                            final_apellidos = parts[1]
                         elif len(parts) == 3:
-                            nombres = parts[0]
-                            apellidos = f"{parts[1]} {parts[2]}"
-                        else: # 4+
+                            final_nombres = parts[0]
+                            final_apellidos = f"{parts[1]} {parts[2]}"
+                        else: 
                             mid = len(parts) // 2
-                            nombres = " ".join(parts[:mid])
-                            apellidos = " ".join(parts[mid:])
+                            final_nombres = " ".join(parts[:mid])
+                            final_apellidos = " ".join(parts[mid:])
                     else:
-                        nombres = nombre_raw
+                        final_nombres = nombre_raw
+                        
+                # Custom Course Name from Column?
+                final_curso = curso_context
+                if col_curso and col_curso in df.columns:
+                    val = str(row[col_curso]).strip()
+                    if val and val.lower() != 'nan':
+                        final_curso = val.upper()
 
-                # Email Fallback
-                final_email = email_raw if email_raw else f"sin_correo_{uuid.uuid4().hex[:6]}@unemi.edu.ec"
-                
-                # Add to bulk list
                 certificates_to_create.append(Certificado(
                     lote=lote,
                     cedula=cedula,
-                    nombres=nombres.upper(),
-                    apellidos=apellidos.upper(),
-                    email=final_email,
-                    curso=curso_context,
+                    nombres=final_nombres.upper(),
+                    apellidos=final_apellidos.upper(),
+                    email=email_raw, # Already lowered
+                    celular=celular_raw,
+                    curso=final_curso,
                     hash_verificacion=uuid.uuid4()
                 ))
                 created_count += 1
@@ -122,10 +206,10 @@ def procesar_archivo_excel_lote_business(lote_id):
             return True, f"Se procesaron {created_count} participantes exitosamente."
 
     except Exception as e:
-        # Atomic block will auto-rollback here
         print(f"Error processing Excel in business layer: {e}")
         return False, str(e)
 
 
 # English alias for clean imports
 process_excel_batch = procesar_archivo_excel_lote_business
+analyze_headers = analyze_excel_headers

@@ -130,7 +130,14 @@
                             {{ cert.nombres }} {{ cert.apellidos }}
                         </td>
                         <td class="px-6 py-4">
-                           {{ cert.email }}
+                           <div class="flex flex-col items-start gap-1">
+                               <span class="text-sm">{{ cert.email }}</span>
+                               {% if cert.celular %}
+                               <a href="https://wa.me/{{ cert.celular }}" target="_blank" class="inline-flex items-center gap-1 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors text-xs font-medium bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full border border-green-100 dark:border-green-500/20" title="Chat en WhatsApp">
+                                   <i class="fa-brands fa-whatsapp"></i> {{ cert.celular }}
+                               </a>
+                               {% endif %}
+                           </div>
                         </td>
                         <td class="px-6 py-4 text-xs max-w-xs truncate" title="{{ cert.curso }}">
                             {{ cert.curso }}

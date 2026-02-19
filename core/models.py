@@ -91,6 +91,7 @@ class Certificado(models.Model):
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
     email = models.EmailField(max_length=200, db_index=True)
+    celular = models.CharField(max_length=20, null=True, blank=True)
     
     # Metadata del curso/evento
     curso = models.CharField(max_length=255)

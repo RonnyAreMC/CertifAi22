@@ -10,7 +10,7 @@ from datetime import timedelta, datetime, date
 
 from core.models import LoteCertificados, Certificado, Auditoria
 from core.services.pdf_service import generate_certificate_pdf
-from core.services.excel_service import process_excel_batch
+from core.services.excel_service import process_excel_batch, analyze_headers
 from .forms import BatchForm
 
 import base64
@@ -119,22 +119,70 @@ def create_batch(request):
             lote.save()
             _log_audit(request.user, 'CREAR_LOTE', f'Lote creado: {lote.nombre_lote}')
 
-            try:
-                success, msg = process_excel_batch(lote.id)
-                if success:
-                    messages.success(request, f'Lote cargado. {msg}')
-                    # Clean up Excel file to save space
-                    if lote.archivo_excel:
-                        lote.archivo_excel.delete(save=True)
-                else:
-                    messages.error(request, f'Error al procesar archivo: {msg}')
-            except Exception as e:
-                messages.error(request, f'Error crítico: {str(e)}')
-
-            return redirect('panel:batch_list')
+            # Redirect to mapping page instead of immediate processing
+            messages.info(request, "Lote creado. Por favor confirma las columnas del Excel.")
+            return redirect('panel:batch_process_mapping', id=lote.id)
     else:
         form = BatchForm()
     return render(request, 'panel/batch_form.html', {'form': form})
+
+
+@login_required
+@user_passes_test(_is_admin)
+def process_batch_mapping(request, id):
+    """Analyze Excel headers and allow user to map them to system fields."""
+    lote = get_object_or_404(LoteCertificados, id=id)
+
+    # 1. POST: Process with mapping
+    if request.method == 'POST':
+        name_strategy = request.POST.get('name_strategy', 'single')
+        
+        col_nombres = None
+        col_apellidos = None
+        
+        if name_strategy == 'split':
+            col_nombres = request.POST.get('col_nombres_split')
+            col_apellidos = request.POST.get('col_apellidos')
+        else:
+            col_nombres = request.POST.get('col_nombres')
+            
+        mapping = {
+            'cedula': request.POST.get('col_cedula'),
+            'nombres': col_nombres,
+            'apellidos': col_apellidos,
+            'email': request.POST.get('col_email'),
+            'celular': request.POST.get('col_celular'),
+            'curso': request.POST.get('col_curso'),
+        }
+
+        try:
+            success, msg = process_excel_batch(lote.id, mapping=mapping)
+            if success:
+                messages.success(request, f'Lote cargado exitosamente. {msg}')
+                if lote.archivo_excel:
+                    lote.archivo_excel.delete(save=True) # Cleanup
+                return redirect('panel:batch_list')
+            else:
+                 messages.error(request, f'Error al procesar: {msg}')
+        except Exception as e:
+             messages.error(request, f'Error crítico: {str(e)}')
+        
+        # If error, stay on same page (get logic will re-run) or redirect
+        return redirect('panel:batch_process_mapping', id=lote.id)
+
+    # 2. GET: Analyze and show form
+    analysis = analyze_headers(lote.id)
+    
+    if not analysis['success']:
+        messages.error(request, f"Error leyendo el archivo Excel: {analysis.get('error')}")
+        return redirect('panel:batch_list')
+
+    return render(request, 'panel/batch_mapping.html', {
+        'lotes': lote, # using 'lotes' to match template variable if any
+        'columns': analysis['columns'],
+        'suggestions': analysis['suggestions'],
+        'preview': analysis['preview'],
+    })
 
 
 @login_required
