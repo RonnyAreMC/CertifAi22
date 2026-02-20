@@ -35,7 +35,7 @@
         background: linear-gradient(135deg, 
             rgba(15, 22, 58, 0.98) 0%,
             rgba(22, 32, 84, 0.99) 50%,
-            rgba(30, 35, 60, 0.98) 100%);
+            rgba(30, 35, 60, 0.98) 100%) !important;
     }
     
     #tiger-chase-loader.active {
@@ -219,7 +219,11 @@
     
     <!-- Loading Message -->
     <p class="loader-message">
-        Buscando tu <span class="highlight">certificado</span>...
+        {% if '/panel/' in request.path or 'admin' in request.path %}
+            Cargando <span class="highlight">información</span>...
+        {% else %}
+            Buscando tu <span class="highlight">certificado</span>...
+        {% endif %}
     </p>
 </div>
 

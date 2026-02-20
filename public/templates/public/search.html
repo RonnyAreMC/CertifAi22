@@ -37,7 +37,7 @@
             </a>
             {% endif %}
             
-            <a href="{% url 'public:search' %}" 
+            <a href="{% url 'public:home' %}" 
                class="flex-1 md:flex-none bg-gray-100 dark:bg-blue-900/30 hover:bg-gray-200 dark:hover:bg-blue-900/50 text-gray-700 dark:text-gray-200 font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
                 <i class="fa-solid fa-arrow-left"></i>
                 Volver
@@ -97,7 +97,7 @@
             <p class="text-gray-500 dark:text-gray-400 mb-8">
                 No hay registros asociados a "<strong>{{ query }}</strong>". Verifique que la cédula o correo sean correctos.
             </p>
-            <a href="{% url 'public:search' %}" onclick="showLoader()"
+            <a href="{% url 'public:home' %}" onclick="showLoader()"
                 class="inline-flex items-center px-8 py-3 text-base font-medium text-white bg-unemi-blue dark:bg-blue-700 rounded-full hover:bg-blue-900 dark:hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20">
                 <i class="fa-solid fa-rotate-left mr-2"></i>Intentar otra búsqueda
             </a>

@@ -73,7 +73,8 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
             
             created_count = 0
             nombre_lote_upper = lote.nombre_lote.upper().strip()
-            curso_context = f"POR ASISTIR AL SEMINARIO {nombre_lote_upper}"
+            nombre_lote_upper = lote.nombre_lote.upper().strip()
+            curso_context = nombre_lote_upper
             
             # ---------------------------------------------------------
             # Column Determination
@@ -199,13 +200,22 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
                 ))
                 created_count += 1
             
+
             # Bulk Create for performance
             if certificates_to_create:
-                Certificado.objects.bulk_create(certificates_to_create)
+                # We need to save first to get IDs if needed, but for sending email we have the objects.
+                # However, bulk_create on SQLite/Postgres returns objects with IDs.
+                created_certs = Certificado.objects.bulk_create(certificates_to_create)
+                
+                # Send Emails (Async/Threaded inside the service)
+                from core.services.email_service import send_certificate_email
+                for cert in created_certs:
+                    send_certificate_email(cert)
                 
             return True, f"Se procesaron {created_count} participantes exitosamente."
 
     except Exception as e:
+
         print(f"Error processing Excel in business layer: {e}")
         return False, str(e)
 

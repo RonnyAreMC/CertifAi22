@@ -53,7 +53,7 @@ class LoteCertificados(models.Model):
     color_texto = models.CharField(max_length=7, default='#333333', help_text="Color del Texto (Hex)")
 
     cuerpo_certificado = models.TextField(
-        default="Por haber completado satisfactoriamente el curso de capacitación continua, demostrando compromiso y excelencia académica.",
+        default="Por haber asistido al seminario {curso}, demostrando compromiso y excelencia en la adquisición de nuevos conocimientos.",
         help_text="Texto principal del certificado"
     )
     

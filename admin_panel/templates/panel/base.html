@@ -26,6 +26,15 @@
                 }
             }
         }
+        
+        // Immediate Theme Check
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+        }
     </script>
     <style>
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -176,12 +185,13 @@
     </footer>
 
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
+        // Icon update
+        if (document.documentElement.classList.contains('dark')) {
+            const icon = document.getElementById('theme-icon');
+            if(icon) icon.classList.replace('fa-sun', 'fa-moon');
         } else {
-            document.documentElement.classList.remove('dark');
-            document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            const icon = document.getElementById('theme-icon');
+            if(icon) icon.classList.replace('fa-moon', 'fa-sun');
         }
 
         function toggleTheme() {
