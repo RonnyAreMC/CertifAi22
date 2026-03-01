@@ -1,0 +1,122 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-16 md:py-24 flex flex-col items-center justify-center min-h-[70vh]">
+    
+    <!-- Hero Section -->
+    <div class="text-center space-y-8 mb-16 max-w-3xl">
+        <h1 class="text-4xl md:text-6xl font-bold leading-tight">
+            <span class="text-gray-800 dark:text-white">Bienvenido a</span><br>
+            <span class="text-[#F58830]">MUC Academy</span>
+        </h1>
+        
+        <p class="text-xl text-gray-600 dark:text-gray-400">
+            Tu plataforma de formación continua y certificación profesional. Elige cómo deseas continuar hoy.
+        </p>
+    </div>
+
+    <!-- Selection Grid -->
+    <div class="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
+        
+        <!-- Option 1: Search Certificates -->
+        <a href="{% url 'public:home' %}" class="option-card-unemi group">
+            <div class="option-icon-unemi bg-[#162054]">
+                <i class="fa-solid fa-certificate"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white group-hover:text-[#F58830] transition-colors">
+                    Búsqueda de Certificados
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Valida y descarga tus certificados de seminarios y capacitaciones mediante tu cédula o correo.
+                </p>
+            </div>
+            <div class="mt-4 flex items-center text-[#162054] dark:text-blue-400 font-semibold group-hover:translate-x-2 transition-transform">
+                <span>Ir a buscar</span>
+                <i class="fa-solid fa-arrow-right ml-2 text-[#F58830]"></i>
+            </div>
+        </a>
+
+        <!-- Option 2: Attendance System -->
+        <a href="{% url 'public:attendance_search' %}" class="option-card-unemi group">
+            <div class="option-icon-unemi bg-[#F58830]">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white group-hover:text-[#F58830] transition-colors">
+                    Registro de Asistencia
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                    Realiza la verificación de tus datos para registrar tu asistencia a los eventos y seminarios.
+                </p>
+            </div>
+            <div class="mt-4 flex items-center text-[#162054] dark:text-blue-400 font-semibold group-hover:translate-x-2 transition-transform">
+                <span>Registrar ahora</span>
+                <i class="fa-solid fa-arrow-right ml-2 text-[#F58830]"></i>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- Simple Stats or Footer Info -->
+    <div class="mt-20 text-center">
+        <p class="text-sm text-gray-500 dark:text-gray-500 italic">
+            <i class="fa-solid fa-award mr-2 text-[#F58830]"></i>
+            Comprometidos con la excelencia académica y profesional.
+        </p>
+    </div>
+</div>
+
+<style>
+:root {
+    --unemi-blue: #162054;
+    --unemi-orange: #F58830;
+}
+
+.option-card-unemi {
+    background: linear-gradient(145deg, #ffffff, #f0f4f8);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: 10px 10px 20px rgba(22, 32, 84, 0.08), -10px -10px 20px rgba(255, 255, 255, 0.8);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(22, 32, 84, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dark .option-card-unemi {
+    background: linear-gradient(145deg, #1a2b4d, #152341);
+    box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.35), -10px -10px 25px rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.option-card-unemi:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 15px 15px 30px rgba(22, 32, 84, 0.12), -15px -15px 30px rgba(255, 255, 255, 0.9);
+    border-color: var(--unemi-orange);
+}
+
+.option-icon-unemi {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: white;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.option-card-unemi:hover .option-icon-unemi {
+    transform: rotate(-5deg) scale(1.1);
+}
+
+</style>
+{% endblock %}

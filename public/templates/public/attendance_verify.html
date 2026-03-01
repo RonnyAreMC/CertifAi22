@@ -1,0 +1,70 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 md:py-12 max-w-2xl animate__animated animate__fadeIn">
+    
+    <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Verificación de Datos</h1>
+        <p class="text-gray-600 dark:text-gray-400">Por favor, confirma que la siguiente información es correcta.</p>
+    </div>
+
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-blue-900/30">
+        <!-- Header Info -->
+        <div class="bg-gray-50 dark:bg-[#0F163A]/50 p-6 border-b border-gray-100 dark:border-blue-900/30">
+            <h2 class="text-lg font-bold text-unemi-blue dark:text-blue-300 flex items-center gap-2">
+                <i class="fa-solid fa-address-card text-[#F58830]"></i>
+                Perfil Encontrado
+            </h2>
+        </div>
+
+        <!-- Data Grid -->
+        <div class="p-6 md:p-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombres Completos</label>
+                    <p class="text-lg font-bold text-gray-800 dark:text-white">JUAN PABLO PEREZ ZAMBRANO</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Identificación / Cédula</label>
+                    <p class="text-lg font-bold text-gray-800 dark:text-white">{{ query }}</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Correo Electrónico</label>
+                    <p class="text-lg font-bold text-gray-800 dark:text-white">jperez@unemi.edu.ec</p>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Carrera / Unidad</label>
+                    <p class="text-lg font-bold text-gray-800 dark:text-white">Ingeniería en Tecnologías de la Información</p>
+                </div>
+            </div>
+
+            <hr class="border-gray-100 dark:border-blue-900/30">
+
+            <div class="space-y-4">
+                <p class="text-sm text-center text-gray-500 italic">
+                    ¿Esta información es correcta? Si no es así, por favor contacta al administrador.
+                </p>
+                
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-check-circle"></i>
+                        Sí, Registrar Asistencia
+                    </button>
+                    <a href="{% url 'public:attendance_search' %}?q={{ query }}" class="flex-1 bg-gray-100 dark:bg-blue-900/30 hover:bg-gray-200 dark:hover:bg-blue-900/50 text-gray-700 dark:text-gray-200 font-bold py-4 rounded-xl text-center transition-all flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-xmark-circle"></i>
+                        No, Corregir Datos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="mt-8 text-center text-xs text-gray-500">
+        Unemi - MUC Academy &copy; 2026. Sistema de Gestión de Asistencias.
+    </p>
+</div>
+{% endblock %}

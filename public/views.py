@@ -9,6 +9,25 @@ import io
 from django.utils.text import slugify
 
 
+def landing(request):
+    """Landing page with options."""
+    return render(request, 'public/landing.html')
+
+
+def attendance_search(request):
+    """Search for attendance verification."""
+    query = request.GET.get('q', '').strip()
+    return render(request, 'public/attendance_search.html', {'query': query})
+
+
+def attendance_verify(request):
+    """Verify data for a person."""
+    query = request.GET.get('q', '').strip()
+    # Placeholder for logic
+    return render(request, 'public/attendance_verify.html', {'query': query})
+
+
+
 def home(request):
     """Public homepage."""
     return render(request, 'public/home.html')

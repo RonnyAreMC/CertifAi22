@@ -1,0 +1,66 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 md:py-12 max-w-4xl">
+    
+    <div class="text-center mb-12">
+        <h1 class="text-3xl md:text-5xl font-bold text-gray-800 dark:text-white mb-4">
+            Registro de <span class="text-[#F58830]">Asistencia</span>
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">
+            Ingresa tu número de cédula o nombres completos para verificar tus datos y registrar tu asistencia.
+        </p>
+    </div>
+
+    <!-- Search Box -->
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-xl p-6 md:p-10 border border-gray-100 dark:border-blue-900/30">
+        <form action="{% url 'public:attendance_verify' %}" method="get" class="space-y-6">
+            <div class="neu-card-unemi p-1">
+                <div class="flex items-center gap-4 bg-gray-50 dark:bg-[#0F163A]/50 rounded-xl p-4 border border-gray-200 dark:border-blue-900/50 focus-within:border-[#F58830] transition-all">
+                    <i class="fa-solid fa-id-card text-2xl text-gray-400"></i>
+                    <input type="text" 
+                           name="q" 
+                           value="{{ query|default:'' }}"
+                           placeholder="Cédula o Nombres completos..." 
+                           class="flex-1 bg-transparent border-none outline-none focus:ring-0 text-lg text-gray-800 dark:text-white"
+                           required>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-[#F58830] hover:bg-[#e07720] text-white font-bold py-4 rounded-xl text-lg shadow-lg shadow-orange-500/20 transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Verificar Datos
+            </button>
+        </form>
+
+        <div class="mt-8 flex items-start gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30 text-sm">
+            <i class="fa-solid fa-circle-info text-unemi-blue dark:text-blue-400 text-xl mt-0.5"></i>
+            <div class="text-gray-700 dark:text-gray-300">
+                <p class="font-bold mb-1">Nota importante:</p>
+                <p>Asegúrate de que tus datos coincidan exactamente con tu documento de identidad para evitar inconvenientes con tu certificación posterior.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{% url 'public:landing' %}" class="inline-flex items-center text-gray-500 hover:text-unemi-blue transition-colors">
+            <i class="fa-solid fa-arrow-left mr-2"></i>
+            Volver al menú principal
+        </a>
+    </div>
+
+</div>
+
+<style>
+.neu-card-unemi {
+    background: linear-gradient(145deg, #ffffff, #f0f4f8);
+    border-radius: 20px;
+    box-shadow: 8px 8px 16px rgba(22, 32, 84, 0.08), -8px -8px 16px rgba(255, 255, 255, 0.8);
+}
+.dark .neu-card-unemi {
+    background: linear-gradient(145deg, #1a2b4d, #152341);
+    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.03);
+}
+</style>
+{% endblock %}
