@@ -1,0 +1,299 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 md:py-12 max-w-lg">
+
+    <!-- Session Info Header -->
+    <div class="text-center mb-10">
+        <div class="w-20 h-20 bg-[#F58830]/10 text-[#F58830] rounded-full flex items-center justify-center mx-auto mb-4 text-4xl animate__animated animate__pulse animate__infinite">
+            <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-black text-[#162054] dark:text-white tracking-tight mb-2">
+            Check-in de <span class="text-[#F58830]">Asistencia</span>
+        </h1>
+        <div class="inline-flex items-center gap-2 bg-white dark:bg-[#162054] px-5 py-2.5 rounded-full shadow-md border border-gray-100 dark:border-blue-900/30 text-sm font-bold text-gray-600 dark:text-gray-300 mt-2">
+            <i class="fa-solid fa-calendar-day text-[#F58830]"></i>
+            {{ sesion.dia_semana }} — {{ sesion.label }}
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 mt-4 text-sm font-medium">Busca tu nombre para registrar tu asistencia</p>
+    </div>
+
+    <!-- Search Box -->
+    <div class="qr-search-wrapper mb-6">
+        <div class="qr-search-box" id="searchBox">
+            <i class="fa-solid fa-magnifying-glass qr-search-icon"></i>
+            <input type="text" id="searchInput" class="qr-search-input" placeholder="Cédula, nombre o correo..." autocomplete="off" autofocus>
+            <i id="spinner" class="fa-solid fa-spinner fa-spin qr-search-spinner hidden"></i>
+            <button id="clearBtn" class="qr-search-clear hidden" onclick="clearSearch()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Results Dropdown -->
+        <div id="resultsDropdown" class="qr-results-dropdown hidden"></div>
+    </div>
+
+    <!-- States -->
+    <div id="state-idle" class="text-center py-8">
+        <p class="text-gray-400 dark:text-gray-500 text-sm font-medium">
+            <i class="fa-solid fa-keyboard mr-1"></i>
+            Escribe al menos 3 caracteres para buscar
+        </p>
+    </div>
+
+    <!-- Success State -->
+    <div id="state-success" class="hidden text-center py-8 animate__animated animate__fadeIn">
+        <div class="bg-white dark:bg-[#162054] rounded-3xl shadow-2xl p-8 border border-gray-100 dark:border-blue-900/30 space-y-6">
+            <div class="w-24 h-24 bg-green-100 dark:bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto text-5xl animate__animated animate__bounceIn">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 class="text-2xl font-black text-gray-800 dark:text-white mb-2" id="successTitle">¡Gracias!</h3>
+                <p id="successMessage" class="text-gray-500 dark:text-gray-400 font-medium"></p>
+            </div>
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 text-sm text-blue-700 dark:text-blue-300">
+                <i class="fa-solid fa-clock mr-1"></i>
+                Registrado a las <strong id="successTime"></strong>
+            </div>
+            <button onclick="resetSearch()" class="text-[#F58830] font-bold hover:underline flex items-center justify-center gap-2 mx-auto">
+                <i class="fa-solid fa-rotate-right"></i>
+                Registrar otra persona
+            </button>
+        </div>
+    </div>
+
+    <!-- Error / Blocked State -->
+    <div id="state-error" class="hidden text-center py-8 animate__animated animate__fadeIn">
+        <div class="bg-white dark:bg-[#162054] rounded-3xl shadow-2xl p-8 border border-red-200 dark:border-red-900/30 space-y-4">
+            <div class="w-20 h-20 bg-red-100 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto text-4xl">
+                <i class="fa-solid fa-ban"></i>
+            </div>
+            <h3 class="text-xl font-black text-red-600 dark:text-red-400" id="errorTitle">Error</h3>
+            <p id="errorMessage" class="text-gray-500 dark:text-gray-400 text-sm"></p>
+            <button onclick="resetSearch()" class="text-[#F58830] font-bold hover:underline text-sm">Intentar de nuevo</button>
+        </div>
+    </div>
+
+    <p class="mt-10 text-center text-xs text-gray-500">
+        MUC Academy &copy; 2026
+    </p>
+</div>
+
+<style>
+.qr-search-wrapper { position: relative; width: 100%; }
+
+.qr-search-box {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.85rem 1.25rem; border-radius: 18px;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(0,0,0,0.08); transition: all 0.25s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.dark .qr-search-box { background: rgba(15,22,58,0.7); border-color: rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.qr-search-box:focus-within { border-color: #F58830; box-shadow: 0 0 0 4px rgba(245,136,48,0.15); background: white; }
+.dark .qr-search-box:focus-within { background: rgba(15,22,58,0.9); border-color: #F58830; box-shadow: 0 0 0 4px rgba(245,136,48,0.25); }
+
+.qr-search-icon { color: #94a3b8; font-size: 1rem; flex-shrink: 0; }
+.qr-search-input {
+    flex: 1; background: transparent; border: none !important; outline: none !important;
+    box-shadow: none !important; -webkit-appearance: none; font-size: 1.05rem;
+    font-weight: 600; color: #1e293b; padding: 0;
+}
+.dark .qr-search-input { color: white; }
+.qr-search-input::placeholder { color: #94a3b8; font-weight: 400; }
+
+.qr-search-spinner { color: #F58830; font-size: 1rem; }
+.qr-search-clear {
+    width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; background: rgba(0,0,0,0.06); color: #64748b;
+    border: none; cursor: pointer; font-size: 0.7rem; transition: all 0.2s; flex-shrink: 0;
+}
+.dark .qr-search-clear { background: rgba(255,255,255,0.15); color: #cbd5e1; }
+
+.qr-results-dropdown {
+    position: absolute; top: calc(100% + 10px); left: 0; right: 0; z-index: 100;
+    border-radius: 18px; background: rgba(255,255,255,0.95); backdrop-filter: blur(30px);
+    border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+    overflow: hidden; max-height: 350px; overflow-y: auto;
+    animation: dropIn 0.2s ease;
+}
+.dark .qr-results-dropdown { background: rgba(15,22,58,0.95); border-color: rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+
+@keyframes dropIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+.qr-result-item {
+    display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem;
+    cursor: pointer; transition: background 0.15s; border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.dark .qr-result-item { border-bottom-color: rgba(255,255,255,0.05); }
+.qr-result-item:hover { background: rgba(245,136,48,0.08); }
+.qr-result-item:last-child { border-bottom: none; }
+
+.qr-result-avatar {
+    width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-weight: 800; font-size: 0.85rem;
+    background: #162054; color: white; flex-shrink: 0;
+}
+
+.qr-result-already {
+    font-size: 0.65rem; font-weight: 700; color: #10B981; text-transform: uppercase;
+    letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.25rem;
+}
+</style>
+
+<script>
+const codigoQR = '{{ codigo_qr }}';
+const csrfToken = '{{ csrf_token }}';
+let debounceTimer;
+
+const searchInput = document.getElementById('searchInput');
+const resultsDropdown = document.getElementById('resultsDropdown');
+const spinner = document.getElementById('spinner');
+const clearBtn = document.getElementById('clearBtn');
+
+searchInput.addEventListener('input', function() {
+    const val = this.value.trim();
+    clearBtn.classList.toggle('hidden', val.length === 0);
+    
+    clearTimeout(debounceTimer);
+    
+    if (val.length < 3) {
+        resultsDropdown.classList.add('hidden');
+        document.getElementById('state-idle').classList.remove('hidden');
+        return;
+    }
+    
+    document.getElementById('state-idle').classList.add('hidden');
+    spinner.classList.remove('hidden');
+    
+    debounceTimer = setTimeout(() => searchPeople(val), 300);
+});
+
+async function searchPeople(query) {
+    try {
+        const res = await fetch(`/checkin/${codigoQR}/search/?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        spinner.classList.add('hidden');
+        
+        if (data.results.length === 0) {
+            resultsDropdown.innerHTML = `
+                <div class="p-6 text-center text-gray-400 dark:text-gray-500 text-sm">
+                    <i class="fa-solid fa-user-xmark text-2xl mb-2 block opacity-50"></i>
+                    No se encontraron resultados
+                </div>`;
+        } else {
+            resultsDropdown.innerHTML = `
+                <div class="px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                    ${data.results.length} resultado${data.results.length > 1 ? 's' : ''}
+                </div>
+                ${data.results.map(p => `
+                    <div class="qr-result-item ${!p.is_confirmed ? 'opacity-75' : ''}" onclick="registerAttendance(${p.id}, '${escapeHtml(p.nombres)} ${escapeHtml(p.apellidos)}', ${p.already_registered}, ${p.is_confirmed})">
+                        <div class="qr-result-avatar" style="background: ${p.is_confirmed ? '#162054' : '#94a3b8'}">
+                            ${p.nombres.charAt(0)}${p.apellidos.charAt(0)}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-gray-800 dark:text-white text-sm truncate">${p.nombres} ${p.apellidos}</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                ${p.cedula ? '<i class="fa-solid fa-id-card mr-1"></i>' + p.cedula + ' · ' : ''}
+                                <i class="fa-solid fa-envelope mr-1"></i>${p.email}
+                            </p>
+                            ${p.already_registered 
+                                ? '<div class="qr-result-already text-green-500"><i class="fa-solid fa-check-circle"></i> Ya registrado</div>' 
+                                : !p.is_confirmed 
+                                    ? '<div class="qr-result-already text-red-500"><i class="fa-solid fa-calendar-xmark"></i> Sin reserva para esta sesión</div>'
+                                    : '<div class="qr-result-already text-blue-500"><i class="fa-solid fa-calendar-check"></i> Cupo confirmado</div>'
+                            }
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-gray-300 dark:text-gray-600 text-xs"></i>
+                    </div>
+                `).join('')}`;
+        }
+        
+        resultsDropdown.classList.remove('hidden');
+    } catch (err) {
+        spinner.classList.add('hidden');
+        console.error('Search error:', err);
+    }
+}
+
+async function registerAttendance(certId, nombre, alreadyRegistered, isConfirmed) {
+    if (alreadyRegistered) {
+        showSuccess(nombre, '¡Ya habías registrado tu asistencia!', new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }));
+        return;
+    }
+
+    if (!isConfirmed) {
+        showError(`Lo sentimos, ${nombre}. No tienes una reserva confirmada para esta sesión específica.`);
+        return;
+    }
+    
+    resultsDropdown.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    
+    try {
+        const res = await fetch(`/checkin/${codigoQR}/register/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ cert_id: certId })
+        });
+        
+        const data = await res.json();
+        spinner.classList.add('hidden');
+        
+        if (data.ok) {
+            showSuccess(data.nombre, data.message, data.hora || new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }));
+        } else {
+            showError(data.error || 'Error al registrar.');
+        }
+    } catch (err) {
+        spinner.classList.add('hidden');
+        showError('Error de conexión. Inténtalo de nuevo.');
+    }
+}
+
+function showSuccess(nombre, message, time) {
+    document.getElementById('state-idle').classList.add('hidden');
+    document.getElementById('state-error').classList.add('hidden');
+    resultsDropdown.classList.add('hidden');
+    
+    document.getElementById('successTitle').textContent = `¡Bienvenido/a, ${nombre}!`;
+    document.getElementById('successMessage').textContent = message;
+    document.getElementById('successTime').textContent = time;
+    
+    const el = document.getElementById('state-success');
+    el.classList.remove('hidden');
+}
+
+function showError(message) {
+    document.getElementById('state-idle').classList.add('hidden');
+    document.getElementById('state-success').classList.add('hidden');
+    resultsDropdown.classList.add('hidden');
+    
+    document.getElementById('errorMessage').textContent = message;
+    document.getElementById('state-error').classList.remove('hidden');
+}
+
+function clearSearch() {
+    searchInput.value = '';
+    clearBtn.classList.add('hidden');
+    resultsDropdown.classList.add('hidden');
+    document.getElementById('state-idle').classList.remove('hidden');
+    searchInput.focus();
+}
+
+function resetSearch() {
+    clearSearch();
+    document.getElementById('state-success').classList.add('hidden');
+    document.getElementById('state-error').classList.add('hidden');
+    document.getElementById('state-idle').classList.remove('hidden');
+}
+
+function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+{% endblock %}

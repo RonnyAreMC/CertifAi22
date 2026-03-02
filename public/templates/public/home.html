@@ -4,18 +4,25 @@
 {% block content %}
 <div class="container mx-auto px-4 py-8 md:py-12">
     
+    <!-- iOS Style Back Button -->
+    <div class="mb-6 flex justify-start">
+        <a href="{% url 'public:landing' %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
+            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+        </a>
+    </div>
+
     <!-- Hero Section with 2 Columns -->
     <div class="grid lg:grid-cols-2 gap-12 items-center mb-16">
         
         <!-- Left Column: Main Content -->
         <div class="space-y-6">
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                <span class="text-gray-800 dark:text-white">Consulta tus</span><br>
-                <span class="text-[#F58830]">Certificados</span>
+            <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] tracking-tighter">
+                <span class="text-[#162054] dark:text-white">Consulta tus</span><br>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#F58830] to-[#FF9100]">Certificados</span>
             </h1>
             
-            <p class="text-lg text-gray-600 dark:text-gray-400">
-                Valida la autenticidad de tus seminarios y capacitaciones realizadas en MUC Academy
+            <p class="text-xl text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-lg">
+                Valida la autenticidad de tus seminarios y capacitaciones realizadas en MUC Academy.
             </p>
 
             <!-- Search Form -->

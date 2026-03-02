@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
         tailwind.config = {
@@ -64,6 +65,10 @@
         .btn-unemi-primary:hover { background-color: #0F163A; }
         .btn-unemi-action { background-color: #F58830; color: white; transition: all 0.3s; }
         .btn-unemi-action:hover { background-color: #D97520; }
+        
+        /* SweetAlert2 Button Overrides for Tailwind conflict */
+        button.swal2-confirm.swal-btn-confirm { background-color: #10B981 !important; color: white !important; outline: none !important; border: none !important; }
+        button.swal2-cancel.swal-btn-cancel { background-color: #EF4444 !important; color: white !important; outline: none !important; border: none !important; }
     </style>
 </head>
 

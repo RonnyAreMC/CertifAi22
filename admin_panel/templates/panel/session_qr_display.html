@@ -1,0 +1,173 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-6 min-h-[calc(100vh-120px)]">
+
+    <!-- LEFT: QR Code + Session Info -->
+    <div class="flex-1 bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-gray-100 dark:border-blue-900/30 p-8 lg:p-12 flex flex-col items-center justify-center text-center">
+        <!-- Header Compacto -->
+        <div class="flex items-center gap-4 mb-2">
+            <h1 class="text-3xl lg:text-4xl font-black text-[#162054] dark:text-white tracking-tight">
+                {{ sesion.dia_semana }}
+            </h1>
+            <div class="inline-flex items-center gap-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-xs font-bold animate__animated animate__pulse animate__infinite animate__slower">
+                <i class="fa-solid fa-circle text-[8px]"></i>
+                SESION ACTIVA
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-6">
+            <p class="text-base lg:text-lg text-gray-500 dark:text-gray-400 font-bold">
+                <i class="fa-regular fa-calendar text-[#F58830] mr-1"></i> {{ sesion.fecha|date:"d/m/Y" }}
+            </p>
+            <p class="text-base lg:text-lg text-[#F58830] font-mono font-bold">
+                <i class="fa-solid fa-clock mr-1"></i> {{ sesion.hora_inicio|time:"H:i" }} - {{ sesion.hora_fin|time:"H:i" }}
+            </p>
+            <p class="text-sm font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                <i class="fa-solid fa-location-dot mr-1 text-red-500"></i>
+                UNEMI - Auditorio Bloque W
+            </p>
+        </div>
+
+        <!-- QR Code -->
+        <div class="bg-white p-4 lg:p-6 rounded-3xl shadow-xl border-4 border-[#F58830]/20 mb-4 transition-transform hover:scale-105 duration-300">
+            <div id="qr-container" class="w-64 h-64 sm:w-80 sm:h-80 lg:w-[400px] lg:h-[400px] flex items-center justify-center">
+                <i class="fa-solid fa-spinner fa-spin text-5xl text-[#F58830]"></i>
+            </div>
+        </div>
+
+        <p class="text-gray-400 dark:text-gray-500 text-sm font-medium max-w-sm">
+            <i class="fa-solid fa-mobile-screen-button mr-1"></i>
+            Escanea este codigo QR con tu celular para registrar tu asistencia
+        </p>
+
+        <!-- Counter -->
+        <div class="mt-4 bg-[#162054] dark:bg-[#F58830] text-white px-6 py-3 rounded-2xl shadow-lg flex items-center gap-4 border border-[#0F163A]/20">
+            <span class="text-4xl lg:text-5xl font-black" id="attendee-counter">{{ total_registros }}</span>
+            <span class="text-xs sm:text-sm font-medium opacity-90 uppercase tracking-widest text-left leading-tight border-l border-white/20 pl-4 py-1">
+                Asistentes<br>Registrados
+            </span>
+        </div>
+    </div>
+
+    <!-- RIGHT: Live Attendee Feed -->
+    <div class="w-full lg:w-96 bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-gray-100 dark:border-blue-900/30 flex flex-col max-h-[calc(100vh-120px)]">
+        <!-- Feed Header -->
+        <div class="p-6 border-b border-gray-100 dark:border-blue-900/30">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-black text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-satellite-dish text-[#F58830] animate-pulse"></i>
+                        Feed en Vivo
+                    </h2>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 font-medium mt-0.5">Actualizando cada 3 segundos</p>
+                </div>
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+            </div>
+        </div>
+
+        <!-- Attendee List -->
+        <div id="attendee-feed" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <div id="feed-empty" class="text-center py-12 text-gray-400 dark:text-gray-500">
+                <i class="fa-solid fa-users text-4xl mb-3 block opacity-30"></i>
+                <p class="text-sm font-medium">Esperando que los asistentes escaneen el QR...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QRCode.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<script>
+const sessionId = {{ sesion.id }};
+const checkinUrl = '{{ checkin_url }}';
+let lastTimestamp = '';
+let knownIds = new Set();
+
+// Generate QR Code
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+    new QRCode(container, {
+        text: checkinUrl,
+        width: container.clientWidth,
+        height: container.clientHeight,
+        colorDark: '#162054',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H,
+    });
+});
+
+// Polling for Attendees
+async function pollAttendees() {
+    try {
+        const url = `/panel/sessions/${sessionId}/attendees/?since=${encodeURIComponent(lastTimestamp)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        // Update counter
+        document.getElementById('attendee-counter').textContent = data.total;
+        
+        if (data.attendees.length > 0) {
+            // Hide empty state
+            const empty = document.getElementById('feed-empty');
+            if (empty) empty.remove();
+            
+            const feed = document.getElementById('attendee-feed');
+            
+            // Add new entries at the top
+            data.attendees.reverse().forEach(a => {
+                if (!knownIds.has(a.id)) {
+                    knownIds.add(a.id);
+                    appendAttendee(feed, a);
+                }
+            });
+            
+            // Update timestamp for next poll
+            if (data.attendees.length > 0) {
+                lastTimestamp = data.server_time;
+            }
+        }
+    } catch (err) {
+        console.error('Poll error:', err);
+    }
+}
+
+function appendAttendee(feed, attendee) {
+    const initials = attendee.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const colors = ['#F58830', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#14B8A6'];
+    const color = colors[attendee.id % colors.length];
+    
+    const el = document.createElement('div');
+    el.className = 'flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#0F163A]/50 rounded-2xl border border-gray-100 dark:border-blue-900/20 animate__animated animate__fadeInRight animate__faster';
+    el.innerHTML = `
+        <div class="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0" style="background: ${color}">
+            ${initials}
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-gray-800 dark:text-white text-sm truncate">${attendee.nombre}</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 truncate">
+                <i class="fa-solid fa-id-card mr-0.5"></i> ${attendee.cedula}
+            </p>
+        </div>
+        <span class="text-xs font-mono text-[#F58830] font-bold flex-shrink-0">${attendee.hora}</span>
+    `;
+    
+    feed.insertBefore(el, feed.firstChild);
+}
+
+// Initial load
+pollAttendees();
+
+// Start polling every 3 seconds
+setInterval(pollAttendees, 3000);
+</script>
+
+<style>
+#attendee-feed::-webkit-scrollbar { width: 4px; }
+#attendee-feed::-webkit-scrollbar-track { background: transparent; }
+#attendee-feed::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+.dark #attendee-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+</style>
+{% endblock %}

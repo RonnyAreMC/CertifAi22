@@ -2,13 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.contrib import messages
-from django.http import FileResponse, HttpResponse
-from django.db.models import Sum, Count
+from django.http import FileResponse, HttpResponse, JsonResponse
+from django.db.models import Sum, Count, F
 from django.db.models.functions import TruncDate
 from django.utils import timezone
-from datetime import timedelta, datetime, date
+from datetime import timedelta, datetime, date, time
 
-from core.models import LoteCertificados, Certificado, Auditoria
+from core.models import (
+    LoteCertificados, Certificado, Auditoria,
+    SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia,
+)
 from core.services.pdf_service import generate_certificate_pdf
 from core.services.excel_service import process_excel_batch, analyze_headers
 from .forms import BatchForm
@@ -16,6 +19,8 @@ from .forms import BatchForm
 import base64
 import uuid
 import random
+import json
+from io import BytesIO
 
 
 # ---------------------------------------------------------------------------
@@ -328,3 +333,213 @@ def add_certificate(request, id):
         return redirect('panel:batch_detail', id=lote.id)
 
     return redirect('panel:batch_detail', id=lote.id)
+
+
+# ---------------------------------------------------------------------------
+# Session Management (QR Attendance)
+# ---------------------------------------------------------------------------
+
+@login_required
+@user_passes_test(_is_admin)
+def session_list(request):
+    """List all attendance sessions with status and QR links."""
+    fecha_filter = request.GET.get('fecha', '')
+    estado_filter = request.GET.get('estado', '')
+
+    sesiones = SesionAsistencia.objects.select_related('lote').annotate(
+        total_confirmados=Count('confirmaciones'),
+        total_asistentes=Count('registros'),
+    )
+
+    if fecha_filter:
+        sesiones = sesiones.filter(fecha=fecha_filter)
+        
+    if estado_filter == 'llenas':
+        sesiones = sesiones.filter(total_confirmados__gte=F('capacidad'))
+    elif estado_filter == 'con_registro':
+        sesiones = sesiones.filter(total_asistentes__gt=0)
+    elif estado_filter == 'sin_registro':
+        sesiones = sesiones.filter(total_asistentes=0)
+
+    sesiones = sesiones.order_by('-fecha', '-hora_inicio')
+
+    lotes = LoteCertificados.objects.filter(activo=True).order_by('nombre_lote')
+
+    # Get distinct dates that have at least one session
+    fechas_disponibles = SesionAsistencia.objects.dates('fecha', 'day', order='DESC')
+
+    return render(request, 'panel/session_list.html', {
+        'sesiones': sesiones,
+        'lotes': lotes,
+        'fechas_disponibles': fechas_disponibles,
+        'fecha_filter': fecha_filter,
+        'estado_filter': estado_filter,
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_create(request):
+    """Create a new attendance session."""
+    if request.method == 'POST':
+        fecha_str = request.POST.get('fecha')
+        dia_semana = request.POST.get('dia_semana')
+        hora_inicio_str = request.POST.get('hora_inicio')
+        hora_fin_str = request.POST.get('hora_fin')
+        titulo = request.POST.get('titulo', '')
+
+        try:
+            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+            hora_inicio = datetime.strptime(hora_inicio_str, '%H:%M').time()
+            hora_fin = datetime.strptime(hora_fin_str, '%H:%M').time()
+
+            SesionAsistencia.objects.create(
+                titulo=titulo,
+                fecha=fecha,
+                dia_semana=dia_semana,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+            )
+            _log_audit(request.user, 'CREAR_SESION',
+                       f'Sesión creada: {dia_semana} {fecha} {hora_inicio_str}-{hora_fin_str}')
+            messages.success(request, 'Sesión creada exitosamente.')
+        except Exception as e:
+            messages.error(request, f'Error al crear sesión: {str(e)}')
+
+        return redirect('panel:session_list')
+
+    return redirect('panel:session_list')
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_toggle(request, id):
+    """Toggle session active/inactive."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    sesion.activa = not sesion.activa
+    sesion.save(update_fields=['activa'])
+    status = 'activada' if sesion.activa else 'desactivada'
+    messages.success(request, f'Sesión {status}.')
+    return redirect('panel:session_list')
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_delete(request, id):
+    """Delete a session if it has no attendees."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    if request.method == 'POST':
+        if sesion.confirmaciones.exists() or sesion.registros.exists():
+            messages.error(request, 'No puedes eliminar una sesión que ya tiene participantes registrados o confirmados.')
+        else:
+            sesion.delete()
+            _log_audit(request.user, 'ELIMINAR_SESION', f'Sesión eliminada: {sesion.id}')
+            messages.success(request, 'Sesión eliminada correctamente.')
+    return redirect('panel:session_list')
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_qr_display(request, id):
+    """Full-screen QR display with real-time attendee feed."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    total_registros = RegistroAsistencia.objects.filter(sesion=sesion).count()
+
+    # Build full URL for QR
+    checkin_url = request.build_absolute_uri(f'/checkin/{sesion.codigo_qr}/')
+
+    return render(request, 'panel/session_qr_display.html', {
+        'sesion': sesion,
+        'checkin_url': checkin_url,
+        'total_registros': total_registros,
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_attendees_api(request, id):
+    """JSON API: return latest attendees for polling (real-time feed)."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    
+    # Get 'since' parameter for incremental updates
+    since_str = request.GET.get('since', '')
+    
+    registros = RegistroAsistencia.objects.filter(sesion=sesion).select_related('certificado')
+    
+    if since_str:
+        try:
+            since_dt = datetime.fromisoformat(since_str)
+            registros = registros.filter(fecha_registro__gt=since_dt)
+        except (ValueError, TypeError):
+            pass
+    
+    registros = registros.order_by('-fecha_registro')[:50]
+    
+    total = RegistroAsistencia.objects.filter(sesion=sesion).count()
+    
+    attendees = []
+    for r in registros:
+        attendees.append({
+            'id': r.id,
+            'nombre': f'{r.certificado.nombres} {r.certificado.apellidos}',
+            'cedula': r.certificado.cedula,
+            'email': r.certificado.email,
+            'hora': r.fecha_registro.strftime('%H:%M:%S'),
+            'timestamp': r.fecha_registro.isoformat(),
+        })
+    
+    return JsonResponse({
+        'total': total,
+        'attendees': attendees,
+        'server_time': timezone.now().isoformat(),
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_bulk_pdf(request, id):
+    """Generate a single PDF with all certificates for enrolled participants in a session."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+
+    # Get all confirmed participants for this session
+    confirmaciones = ConfirmacionAsistencia.objects.filter(
+        sesion=sesion, confirmado=True
+    ).select_related('certificado', 'certificado__lote')
+
+    if not confirmaciones.exists():
+        messages.warning(request, 'No hay participantes confirmados para esta sesión.')
+        return redirect('panel:session_list')
+
+    # Build one big PDF by merging individual certificate PDFs
+    from PyPDF2 import PdfMerger
+
+    merger = PdfMerger()
+    count = 0
+
+    for conf in confirmaciones:
+        try:
+            cert = conf.certificado
+            pdf_buffer = generate_certificate_pdf(cert)
+            merger.append(pdf_buffer)
+            count += 1
+        except Exception as e:
+            # Skip problematic certificates, continue with the rest
+            continue
+
+    if count == 0:
+        messages.error(request, 'No se pudo generar ningún certificado.')
+        return redirect('panel:session_list')
+
+    # Write merged PDF to response
+    output_buffer = BytesIO()
+    merger.write(output_buffer)
+    merger.close()
+    output_buffer.seek(0)
+
+    safe_dia = sesion.dia_semana.replace('é', 'e').replace('á', 'a')
+    filename = f"Certificados_{safe_dia}_{sesion.hora_inicio:%H%M}_{count}personas.pdf"
+
+    response = HttpResponse(output_buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+

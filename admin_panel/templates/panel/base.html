@@ -109,6 +109,10 @@
                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'create' in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
                             <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Subir
                         </a>
+                        <a href="{% url 'panel:session_list' %}" 
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'session' in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
+                            <i class="fa-solid fa-qrcode mr-2"></i>Sesiones
+                        </a>
                     </div>
                 </div>
 
@@ -155,6 +159,7 @@
                  <a href="{% url 'panel:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Dashboard</a>
                  <a href="{% url 'panel:batch_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Lotes</a>
                  <a href="{% url 'panel:batch_create' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Subir Nuevo</a>
+                 <a href="{% url 'panel:session_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Sesiones QR</a>
                  <div class="border-t border-white/10 my-2"></div>
                  <form action="{% url 'panel:logout' %}" method="post" class="block w-full">
                      {% csrf_token %}

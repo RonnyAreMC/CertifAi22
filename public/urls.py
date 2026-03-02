@@ -6,8 +6,21 @@ app_name = 'public'
 urlpatterns = [
     path('', views.landing, name='landing'),
     path('inicio/', views.home, name='home'),
+
+    # Attendance
     path('attendance/', views.attendance_search, name='attendance_search'),
     path('attendance/verify/', views.attendance_verify, name='attendance_verify'),
+    path('attendance/autocomplete/', views.attendance_autocomplete, name='attendance_autocomplete'),
+    path('attendance/sessions/', views.attendance_sessions_api, name='attendance_sessions_api'),
+    path('attendance/confirm/', views.attendance_confirm, name='attendance_confirm'),
+    path('attendance/update-phone/', views.attendance_update_phone, name='attendance_update_phone'),
+
+    # QR Check-in (public scan)
+    path('checkin/<str:codigo_qr>/', views.qr_checkin, name='qr_checkin'),
+    path('checkin/<str:codigo_qr>/search/', views.qr_checkin_search, name='qr_checkin_search'),
+    path('checkin/<str:codigo_qr>/register/', views.qr_checkin_register, name='qr_checkin_register'),
+
+    # Certificate search & download
     path('search/', views.search, name='search'),
     path('download/<str:hash>/', views.download_pdf, name='download_pdf'),
     path('download-all/', views.download_zip, name='download_zip'),

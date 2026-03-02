@@ -2,69 +2,449 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 md:py-12 max-w-2xl animate__animated animate__fadeIn">
-    
-    <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
-            <i class="fa-solid fa-user-check"></i>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Verificación de Datos</h1>
-        <p class="text-gray-600 dark:text-gray-400">Por favor, confirma que la siguiente información es correcta.</p>
+<div class="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
+
+    <!-- iOS Style Back Button -->
+    <div class="mb-6 flex justify-start">
+        <a href="{% url 'public:attendance_search' %}{% if query %}?q={{ query }}{% endif %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
+            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+        </a>
     </div>
 
-    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-blue-900/30">
-        <!-- Header Info -->
-        <div class="bg-gray-50 dark:bg-[#0F163A]/50 p-6 border-b border-gray-100 dark:border-blue-900/30">
-            <h2 class="text-lg font-bold text-unemi-blue dark:text-blue-300 flex items-center gap-2">
-                <i class="fa-solid fa-address-card text-[#F58830]"></i>
-                Perfil Encontrado
-            </h2>
+    {% if no_query %}
+    <!-- No query provided -->
+    <div class="text-center py-16">
+        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">Ingresa un término de búsqueda</h2>
+        <p class="text-gray-500">Por favor, vuelve al buscador e ingresa tu cédula, correo o nombre.</p>
+    </div>
+
+    {% elif total_resultados == 0 %}
+    <!-- No results found -->
+    <div class="text-center py-16">
+        <div class="w-20 h-20 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <i class="fa-solid fa-user-xmark"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">No se encontraron resultados</h2>
+        <p class="text-gray-500 mb-2">No pudimos encontrar registros con: <strong class="text-gray-700 dark:text-white">"{{ query }}"</strong></p>
+        <p class="text-sm text-gray-400 mb-6">Verifica que tu cédula, correo o nombre estén escritos correctamente.</p>
+    </div>
+
+    {% elif persona %}
+    <!-- Single person found - show verification -->
+    <div class="animate__animated animate__fadeIn">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Verificación de Datos</h1>
+            <p class="text-gray-600 dark:text-gray-400">Por favor, confirma que la siguiente información es correcta.</p>
         </div>
 
-        <!-- Data Grid -->
-        <div class="p-6 md:p-8 space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombres Completos</label>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">JUAN PABLO PEREZ ZAMBRANO</p>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Identificación / Cédula</label>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">{{ query }}</p>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Correo Electrónico</label>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">jperez@unemi.edu.ec</p>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Carrera / Unidad</label>
-                    <p class="text-lg font-bold text-gray-800 dark:text-white">Ingeniería en Tecnologías de la Información</p>
-                </div>
+        <div class="bg-white dark:bg-[#162054] rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-blue-900/30">
+            <!-- Refined Header -->
+            <div class="px-8 pt-8 pb-4">
+                <h2 class="text-xs font-black text-[#F58830] uppercase tracking-[0.2em] mb-1">
+                    Información Oficial
+                </h2>
+                <h3 class="text-2xl font-extrabold text-[#162054] dark:text-white tracking-tight">
+                    Perfil del Participante
+                </h3>
             </div>
 
-            <hr class="border-gray-100 dark:border-blue-900/30">
+            <div class="p-8 pt-4 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                    <div class="space-y-1.5 p-4 rounded-2xl bg-gray-50/50 dark:bg-[#0F163A]/30">
+                        <label class="text-[0.65rem] font-bold text-[#F58830] opacity-90 uppercase tracking-widest block">Nombres Completos</label>
+                        <p class="text-xl font-bold text-gray-800 dark:text-white leading-tight">{{ persona.nombres }} {{ persona.apellidos }}</p>
+                    </div>
+                    
+                    <div class="space-y-1.5 p-4 rounded-2xl bg-gray-50/50 dark:bg-[#0F163A]/30">
+                        <label class="text-[0.65rem] font-bold text-[#F58830] opacity-90 uppercase tracking-widest block">Identificación</label>
+                        <p class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">{{ persona.cedula }}</p>
+                    </div>
 
-            <div class="space-y-4">
-                <p class="text-sm text-center text-gray-500 italic">
-                    ¿Esta información es correcta? Si no es así, por favor contacta al administrador.
-                </p>
-                
-                <div class="flex flex-col md:flex-row gap-4">
-                    <button class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3">
-                        <i class="fa-solid fa-check-circle"></i>
-                        Sí, Registrar Asistencia
-                    </button>
-                    <a href="{% url 'public:attendance_search' %}?q={{ query }}" class="flex-1 bg-gray-100 dark:bg-blue-900/30 hover:bg-gray-200 dark:hover:bg-blue-900/50 text-gray-700 dark:text-gray-200 font-bold py-4 rounded-xl text-center transition-all flex items-center justify-center gap-3">
-                        <i class="fa-solid fa-xmark-circle"></i>
-                        No, Corregir Datos
+                    <div class="space-y-1.5 p-4 rounded-2xl bg-gray-50/50 dark:bg-[#0F163A]/30">
+                        <label class="text-[0.65rem] font-bold text-[#F58830] opacity-90 uppercase tracking-widest block">Correo Electrónico</label>
+                        <p class="text-lg font-semibold text-[#162054] dark:text-blue-300 break-all leading-tight">{{ persona.email }}</p>
+                    </div>
+
+                    <div class="space-y-1.5 p-4 rounded-2xl bg-gray-50/50 dark:bg-[#0F163A]/30 relative transition-all focus-within:ring-2 focus-within:ring-[#F58830]/30 focus-within:bg-white dark:focus-within:bg-[#162054]/50">
+                        <label class="text-[0.65rem] font-bold text-[#F58830] opacity-90 uppercase tracking-widest block">Contacto Celular</label>
+                        <div class="relative flex items-center">
+                            <input type="tel" id="input-celular" 
+                                   class="w-full bg-transparent text-xl font-bold text-gray-800 dark:text-white border-none p-0 focus:ring-0 placeholder-gray-400/50 dark:placeholder-gray-500/50" 
+                                   placeholder="09..." 
+                                   value="{{ persona.celular }}" 
+                                   onblur="savePhone()">
+                            <i id="phone-status-icon" class="fa-solid fa-pen text-gray-400 dark:text-gray-500 text-sm absolute right-2 pointer-events-none transition-all"></i>
+                        </div>
+                    </div>
+                </div>
+
+                {% if persona.cursos %}
+                <div class="pt-2">
+                    <details class="group">
+                        <summary class="flex items-center justify-between p-5 bg-[#162054] dark:bg-white/10 text-white rounded-2xl cursor-pointer list-none select-none shadow-lg active:scale-[0.98] transition-all">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                                    <i class="fa-solid fa-graduation-cap text-white"></i>
+                                </div>
+                                <div>
+                                    <span class="block text-[0.6rem] uppercase tracking-widest opacity-70 font-bold mb-0.5">Historial</span>
+                                    <span class="font-bold text-lg leading-none">{{ persona.cursos|length }} Seminarios Registrados</span>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down opacity-50 group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <div class="mt-4 space-y-3 px-1 animate__animated animate__fadeIn animate__faster">
+                            {% for curso in persona.cursos %}
+                            <div class="flex items-start gap-4 p-4 bg-white dark:bg-[#0F163A]/50 rounded-2xl border border-gray-100 dark:border-blue-900/30 shadow-sm">
+                                <div class="mt-1 w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                                    <i class="fa-solid fa-check text-green-500 text-[10px]"></i>
+                                </div>
+                                <span class="text-gray-700 dark:text-gray-300 font-semibold text-sm leading-snug">{{ curso }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
+                {% endif %}
+
+                <hr class="border-gray-100 dark:border-blue-900/30">
+
+                {% if confirmacion_existente %}
+                <!-- Already confirmed - locked state -->
+                <div class="text-center py-6 space-y-6 animate__animated animate__fadeIn">
+                    <div class="w-20 h-20 bg-green-100 dark:bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto text-4xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-800 dark:text-white mb-2">Ya estas confirmado/a</h3>
+                        <p class="text-gray-500 dark:text-gray-400 font-medium">Tu asistencia ya fue registrada para la siguiente sesion:</p>
+                    </div>
+                    <div class="bg-[#162054] dark:bg-[#F58830]/10 rounded-2xl p-5 text-left">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-calendar-check text-[#F58830] text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-black text-white dark:text-[#F58830]">{{ confirmacion_existente.dia }} - {{ confirmacion_existente.fecha }}</p>
+                                <p class="text-white/70 dark:text-gray-400 text-sm font-mono">{{ confirmacion_existente.horario }}</p>
+                                <p class="text-white/50 dark:text-gray-500 text-xs mt-1"><i class="fa-solid fa-location-dot mr-1"></i>UNEMI - Auditorio Bloque W</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-2xl p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-lock text-amber-600 dark:text-amber-400 mt-0.5"></i>
+                            <p class="text-amber-700 dark:text-amber-400/80 text-sm leading-relaxed">
+                                <strong>No puedes cambiar tu sesion.</strong> Recuerda asistir puntualmente. El dia del evento, escanea el codigo QR que se proyectara en pantalla para marcar tu asistencia.
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{% url 'public:landing' %}" class="inline-flex items-center gap-2 text-[#F58830] font-bold hover:underline">
+                        <i class="fa-solid fa-arrow-left"></i> Volver al inicio
                     </a>
                 </div>
+                {% else %}
+                <!-- STEP 1: Select Schedule -->
+                <div id="step-schedule" class="space-y-6 animate__animated animate__fadeIn">
+                    <p class="text-sm text-center text-gray-400 dark:text-gray-500 font-medium italic">
+                        Esta información es correcta? Selecciona tu horario a continuación.
+                    </p>
+
+                    <!-- Double Select: Day then Time -->
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-black text-[#F58830] uppercase tracking-[0.2em]">Selecciona tu horario</h4>
+
+                        <!-- Day Select -->
+                        <div>
+                            <label class="text-[0.65rem] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mb-2">Día</label>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // Populate day select immediately
+                                    const selectDia = document.getElementById('select-dia');
+                                    selectDia.innerHTML = '<option value="">— Selecciona un día —</option>';
+                                    Object.keys(diasDisponibles).forEach(dia => {
+                                        const opt = document.createElement('option');
+                                        opt.value = dia;
+                                        opt.textContent = dia;
+                                        selectDia.appendChild(opt);
+                                    });
+                                });
+                            </script>
+                            <select id="select-dia" onchange="onDayChange()" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-semibold appearance-none cursor-pointer focus:outline-none focus:border-[#F58830] focus:ring-2 focus:ring-[#F58830]/20 transition-all">
+                                <option value="">— Selecciona un día —</option>
+                            </select>
+                        </div>
+
+                        <!-- Time Select (dependent) -->
+                        <div id="horario-wrapper" class="hidden animate__animated animate__fadeIn animate__faster">
+                            <label class="text-[0.65rem] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest block mb-2">Horario</label>
+                            <select id="select-horario" class="w-full p-4 rounded-2xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-semibold appearance-none cursor-pointer focus:outline-none focus:border-[#F58830] focus:ring-2 focus:ring-[#F58830]/20 transition-all">
+                                <option value="">— Selecciona un horario —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Confirm interaction sequence button -->
+                    <div class="flex flex-col gap-3">
+                        <button id="btn-final-confirm" onclick="triggerConfirmationPopup()" disabled class="w-full bg-[#10B981] hover:bg-[#059669] text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                            <i class="fa-solid fa-lock"></i>
+                            Confirmar Asistencia
+                        </button>
+                        <a href="{% url 'public:attendance_search' %}?q={{ query }}" class="w-full bg-gray-100 dark:bg-[#0F163A]/50 hover:bg-gray-200 dark:hover:bg-[#0F163A] text-gray-500 dark:text-gray-400 font-bold py-4 rounded-2xl text-center transition-all flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            No, Corregir Datos
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ═══ STEP 3: Success ═══ -->
+                <div id="step-success" class="hidden text-center py-8 space-y-6 animate__animated animate__fadeIn">
+                    <div class="w-24 h-24 bg-green-100 dark:bg-green-900/20 text-green-500 rounded-full flex items-center justify-center mx-auto text-5xl animate__animated animate__bounceIn">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-800 dark:text-white mb-2">¡Confirmación Exitosa!</h3>
+                        <p id="success-message" class="text-gray-500 dark:text-gray-400 font-medium"></p>
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-5 text-left">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-info-circle text-blue-500 mt-0.5"></i>
+                            <p class="text-blue-700 dark:text-blue-300 text-sm leading-relaxed">
+                                El día del evento, se proyectará un <strong>código QR</strong> en la pantalla. Escanéalo con tu celular para marcar tu asistencia.
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{% url 'public:landing' %}" class="inline-flex items-center gap-2 text-[#F58830] font-bold hover:underline">
+                        <i class="fa-solid fa-arrow-left"></i> Volver al inicio
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    {% else %}
+    <!-- Multiple results found - let user pick -->
+    <div class="animate__animated animate__fadeIn">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-lg">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Múltiples Resultados</h1>
+            <p class="text-gray-600 dark:text-gray-400">
+                Se encontraron <strong class="text-[#F58830]">{{ total_resultados }}</strong> personas para: "<strong>{{ query }}</strong>"
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Selecciona tu perfil para continuar con la verificación.</p>
+        </div>
+
+        <div class="space-y-4">
+            {% for p in personas %}
+            <a href="{% url 'public:attendance_verify' %}?q={{ p.cedula }}" 
+               class="block bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-5 transition-all hover:-translate-y-1 hover:shadow-xl hover:border-[#F58830] group">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gray-100 dark:bg-[#0F163A] rounded-xl flex items-center justify-center text-[#F58830] text-xl flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-gray-800 dark:text-white text-lg truncate">
+                            {{ p.nombres }} {{ p.apellidos }}
+                        </h3>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            {% if p.cedula %}
+                            <span class="flex items-center gap-1">
+                                <i class="fa-solid fa-id-card text-xs"></i>
+                                {{ p.cedula }}
+                            </span>
+                            {% endif %}
+                            <span class="flex items-center gap-1">
+                                <i class="fa-solid fa-envelope text-xs"></i>
+                                {{ p.email }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">
+                            {{ p.cursos|length }} seminario{{ p.cursos|length|pluralize:"s" }} registrado{{ p.cursos|length|pluralize:"s" }}
+                        </p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-300 dark:text-gray-600 group-hover:text-[#F58830] transition-colors"></i>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <p class="mt-8 text-center text-xs text-gray-500">
         Unemi - MUC Academy &copy; 2026. Sistema de Gestión de Asistencias.
     </p>
 </div>
+
+{% if persona %}
+<script>
+// ─── Session data from server ─────────────────────────
+const diasDisponibles = {{ dias_disponibles_json|safe }};
+const certId = '{{ persona.cert_id }}';
+const csrfToken = '{{ csrf_token }}';
+
+// ─── Step Navigation ──────────────────────────────────
+// Functions show/hide schedule logic simplified as it's the first step now.
+
+// Dependent Select
+function onDayChange() {
+    const dia = document.getElementById('select-dia').value;
+    const wrapper = document.getElementById('horario-wrapper');
+    const selectHorario = document.getElementById('select-horario');
+    const btn = document.getElementById('btn-final-confirm');
+    
+    if (!dia) {
+        wrapper.classList.add('hidden');
+        btn.disabled = true;
+        return;
+    }
+    
+    // Populate time slots for selected day
+    selectHorario.innerHTML = '<option value="">-- Selecciona un horario --</option>';
+    const slots = diasDisponibles[dia] || [];
+    slots.forEach(slot => {
+        const opt = document.createElement('option');
+        opt.value = slot.id;
+        if (slot.llena) {
+            opt.textContent = '[AGOTADO] ' + slot.label;
+            opt.disabled = true;
+            opt.style.color = '#999';
+        } else {
+            opt.textContent = slot.label + ' (' + slot.cupos + ' cupos disponibles)';
+        }
+        selectHorario.appendChild(opt);
+    });
+    
+    wrapper.classList.remove('hidden');
+    btn.disabled = true;
+    
+    selectHorario.addEventListener('change', () => {
+        btn.disabled = !selectHorario.value;
+    });
+}
+
+// ─── Save Phone (Auto-saved on blur) ──────────────────
+async function savePhone() {
+    const input = document.getElementById('input-celular');
+    const icon = document.getElementById('phone-status-icon');
+    const celular = input.value.trim();
+    
+    // Si no hay id, no hacemos nada (ej: vista inicial sin persona seleccionada)
+    if (!certId) return;
+    
+    // UI Progress
+    icon.className = 'fa-solid fa-spinner fa-spin text-[#F58830] text-sm absolute right-2 pointer-events-none';
+    
+    const formData = new FormData();
+    formData.append('cert_id', certId);
+    formData.append('celular', celular);
+    formData.append('csrfmiddlewaretoken', csrfToken);
+
+    try {
+        const response = await fetch("{% url 'public:attendance_update_phone' %}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        
+        if (response.ok) {
+            icon.className = 'fa-solid fa-check text-[#10B981] text-sm absolute right-2 pointer-events-none animate__animated animate__bounceIn';
+        } else {
+            throw new Error('Server error');
+        }
+    } catch (e) {
+        icon.className = 'fa-solid fa-triangle-exclamation text-[#EF4444] text-sm absolute right-2 pointer-events-none animate__animated animate__headShake';
+        console.error("Error guardando celular", e);
+    }
+    
+    // Reset icon after 2 seconds
+    setTimeout(() => {
+        icon.className = 'fa-solid fa-pen text-gray-400 dark:text-gray-500 text-sm absolute right-2 pointer-events-none transition-all';
+    }, 2000);
+}
+
+// ─── Trigger SweetAlert Confirmation ──────────────────
+function triggerConfirmationPopup() {
+    const sesionId = document.getElementById('select-horario').value;
+    if (!sesionId) return;
+
+    Swal.fire({
+        title: '¡Compromiso de Asistencia!',
+        html: `
+            <div class="text-left mt-2">
+                <p class="mb-4 text-gray-600 dark:text-gray-300">Al confirmar, te comprometes a asistir a la sesión seleccionada.</p>
+                <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-lg">
+                    <p class="text-amber-800 dark:text-amber-400 text-sm font-bold m-0"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Si faltas, tu cuenta será bloqueada y no podrás recibir certificados.</p>
+                </div>
+                <p class="mt-4 text-gray-600 dark:text-gray-300 text-sm font-semibold text-center">Ese día, se tomará asistencia proyectando un Código QR.</p>
+            </div>
+        `,
+        icon: 'warning',
+        iconColor: '#F58830',
+        showCancelButton: true,
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#EF4444',
+        confirmButtonText: 'Sí, Acepto el compromiso',
+        cancelButtonText: 'Cancelar',
+        background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
+        color: document.documentElement.classList.contains('dark') ? '#fff' : '#1e293b',
+        customClass: {
+            title: 'font-black text-2xl',
+            confirmButton: 'font-bold px-6 py-3 rounded-xl shadow-lg swal-btn-confirm',
+            cancelButton: 'font-bold px-6 py-3 rounded-xl swal-btn-cancel'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            submitConfirmation();
+        }
+    });
+}
+
+// ─── Submit Confirmation ──────────────────────────────
+async function submitConfirmation() {
+    const sesionId = document.getElementById('select-horario').value;
+    if (!sesionId || !certId) return;
+    
+    const btn = document.getElementById('btn-final-confirm');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('cert_id', certId);
+        formData.append('sesion_id', sesionId);
+        
+        const res = await fetch("{% url 'public:attendance_confirm' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken },
+            body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+            document.getElementById('step-schedule').classList.add('hidden');
+            document.getElementById('step-success').classList.remove('hidden');
+            document.getElementById('success-message').textContent = data.message;
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-lock"></i> <span>Confirmar Asistencia — Acepto el compromiso</span>';
+            alert(data.error || 'Error al confirmar.');
+        }
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-lock"></i> <span>Confirmar Asistencia — Acepto el compromiso</span>';
+        alert('Error de conexión. Inténtalo de nuevo.');
+    }
+}
+</script>
+{% endif %}
 {% endblock %}

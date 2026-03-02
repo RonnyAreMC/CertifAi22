@@ -1,0 +1,151 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="ios-denied-container flex-col">
+    <!-- iOS Style Back Button -->
+    <div class="mb-6 w-full max-w-[420px] flex justify-start">
+        <a href="{% url 'public:landing' %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
+            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+        </a>
+    </div>
+
+    <div class="ios-denied-card animate-fade-in-up">
+        <!-- Lock Icon -->
+        <div class="ios-denied-icon flex justify-center">
+            <img src="{% static 'denied.png' %}" alt="Acceso Denegado" class="w-40 h-auto drop-shadow-2xl" style="animation: ios-pulse-denied 2s ease-in-out infinite;">
+        </div>
+        
+        <h1 class="ios-denied-title">Módulo No Disponible</h1>
+        
+        <p class="ios-denied-subtitle">
+            Este módulo se encuentra temporalmente deshabilitado. Estamos trabajando para ofrecerte la mejor experiencia.
+        </p>
+        
+        <div class="ios-denied-badge">
+            <i class="fa-solid fa-clock"></i>
+            <span>Próximamente</span>
+        </div>
+        
+        <a href="{% url 'public:landing' %}" class="ios-denied-btn group">
+            <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+            <span>Volver al Inicio</span>
+        </a>
+    </div>
+</div>
+
+<style>
+.ios-denied-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    padding: 2rem 1rem;
+}
+
+.ios-denied-card {
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    padding: 3rem 2rem;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.dark .ios-denied-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.ios-denied-icon {
+    margin-bottom: 1.5rem;
+}
+.ios-denied-icon-ring {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    font-size: 2rem;
+    color: white;
+    box-shadow: 0 8px 24px rgba(238, 90, 36, 0.3);
+    animation: ios-pulse-denied 2s ease-in-out infinite;
+}
+
+.ios-denied-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #1a2b4d;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+}
+.dark .ios-denied-title { color: #f1f5f9; }
+
+.ios-denied-subtitle {
+    font-size: 1rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+.dark .ios-denied-subtitle { color: #94a3b8; }
+
+.ios-denied-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 100px;
+    background: rgba(245, 136, 48, 0.12);
+    color: #F58830;
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+}
+.dark .ios-denied-badge {
+    background: rgba(245, 136, 48, 0.2);
+}
+
+.ios-denied-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 2rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #162054, #1e3a8a);
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(22, 32, 84, 0.25);
+}
+.ios-denied-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(22, 32, 84, 0.35);
+}
+.ios-denied-btn:active {
+    transform: translateY(0);
+}
+
+@keyframes ios-pulse-denied {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}

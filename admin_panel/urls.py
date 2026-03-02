@@ -26,4 +26,13 @@ urlpatterns = [
 
     # Certificate Management
     path('batches/<int:id>/add-certificate/', views.add_certificate, name='add_certificate'),
+
+    # Session Management (QR Attendance)
+    path('sessions/', views.session_list, name='session_list'),
+    path('sessions/create/', views.session_create, name='session_create'),
+    path('sessions/<int:id>/toggle/', views.session_toggle, name='session_toggle'),
+    path('sessions/<int:id>/delete/', views.session_delete, name='session_delete'),
+    path('sessions/<int:id>/qr/', views.session_qr_display, name='session_qr_display'),
+    path('sessions/<int:id>/attendees/', views.session_attendees_api, name='session_attendees_api'),
+    path('sessions/<int:id>/bulk-pdf/', views.session_bulk_pdf, name='session_bulk_pdf'),
 ]

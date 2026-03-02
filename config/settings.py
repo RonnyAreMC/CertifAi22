@@ -148,3 +148,7 @@ LOGOUT_REDIRECT_URL = 'public:home'
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Certificate Search Module Toggle
+# Set to True to enable public certificate search/download
+CERT_SEARCH_ENABLED = False

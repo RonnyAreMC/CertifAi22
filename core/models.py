@@ -126,3 +126,124 @@ class Auditoria(models.Model):
         
     def __str__(self):
         return f"{self.usuario} - {self.accion} - {self.fecha}"
+
+
+class SesionAsistencia(models.Model):
+    """Una sesión de un día/horario específico para tomar asistencia."""
+    DIAS_SEMANA = [
+        ('Lunes', 'Lunes'),
+        ('Martes', 'Martes'),
+        ('Miércoles', 'Miércoles'),
+        ('Jueves', 'Jueves'),
+        ('Viernes', 'Viernes'),
+        ('Sábado', 'Sábado'),
+        ('Domingo', 'Domingo'),
+    ]
+
+    lote = models.ForeignKey(
+        LoteCertificados, on_delete=models.CASCADE,
+        related_name='sesiones', verbose_name='Seminario',
+        null=True, blank=True
+    )
+    titulo = models.CharField(
+        max_length=200, blank=True,
+        help_text='Título descriptivo (ej: "Sesión Mañana - Lunes")'
+    )
+    fecha = models.DateField(verbose_name='Fecha de la Sesión')
+    dia_semana = models.CharField(
+        max_length=12, choices=DIAS_SEMANA, verbose_name='Día'
+    )
+    hora_inicio = models.TimeField(verbose_name='Hora Inicio')
+    hora_fin = models.TimeField(verbose_name='Hora Fin')
+    codigo_qr = models.CharField(
+        max_length=64, unique=True, default=uuid.uuid4,
+        editable=False, db_index=True
+    )
+    capacidad = models.PositiveIntegerField(
+        default=250, verbose_name='Cupos Máximos',
+        help_text='Máximo de participantes (por defecto 250)'
+    )
+    activa = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['fecha', 'hora_inicio']
+        verbose_name = 'Sesión de Asistencia'
+        verbose_name_plural = 'Sesiones de Asistencia'
+        indexes = [
+            models.Index(fields=['codigo_qr']),
+            models.Index(fields=['fecha', 'activa']),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.dia_semana} {self.fecha} "
+            f"({self.hora_inicio:%H:%M}–{self.hora_fin:%H:%M})"
+        )
+
+    @property
+    def label(self):
+        return f"{self.hora_inicio:%H:%M} – {self.hora_fin:%H:%M}"
+
+    @property
+    def confirmados_count(self):
+        return self.confirmaciones.count()
+
+    @property
+    def cupos_disponibles(self):
+        return max(0, self.capacidad - self.confirmados_count)
+
+    @property
+    def esta_llena(self):
+        return self.confirmados_count >= self.capacidad
+
+
+class RegistroAsistencia(models.Model):
+    """Marca de asistencia al escanear el QR durante la sesión."""
+    sesion = models.ForeignKey(
+        SesionAsistencia, on_delete=models.CASCADE,
+        related_name='registros'
+    )
+    certificado = models.ForeignKey(
+        Certificado, on_delete=models.CASCADE,
+        related_name='asistencias'
+    )
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+
+    class Meta:
+        unique_together = [('sesion', 'certificado')]
+        ordering = ['-fecha_registro']
+        verbose_name = 'Registro de Asistencia'
+        verbose_name_plural = 'Registros de Asistencia'
+
+    def __str__(self):
+        return f"{self.certificado.nombres} → {self.sesion}"
+
+
+class ConfirmacionAsistencia(models.Model):
+    """Confirmación previa: el participante se compromete a asistir."""
+    certificado = models.ForeignKey(
+        Certificado, on_delete=models.CASCADE,
+        related_name='confirmaciones'
+    )
+    sesion = models.ForeignKey(
+        SesionAsistencia, on_delete=models.CASCADE,
+        related_name='confirmaciones'
+    )
+    confirmado = models.BooleanField(default=True)
+    bloqueado = models.BooleanField(
+        default=False,
+        help_text='Si faltó sin justificación, se bloquea la cuenta.'
+    )
+    fecha_confirmacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('certificado', 'sesion')]
+        ordering = ['-fecha_confirmacion']
+        verbose_name = 'Confirmación de Asistencia'
+        verbose_name_plural = 'Confirmaciones de Asistencia'
+
+    def __str__(self):
+        status = '🔒 Bloqueado' if self.bloqueado else '✅ Confirmado'
+        return f"{self.certificado.nombres} — {status}"

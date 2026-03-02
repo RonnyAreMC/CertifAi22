@@ -2,7 +2,13 @@
 {% load static %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto animate__animated animate__fadeIn">
+    <!-- iOS Style Back Button -->
+    <div class="mb-6 flex justify-start">
+        <a href="{% url 'public:home' %}{% if query %}?q={{ query }}{% endif %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
+            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+        </a>
+    </div>
+
     <!-- Greeting and Stats -->
     <div class="bg-white dark:bg-[#162054] rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-blue-900/30 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div class="flex items-center gap-4">
@@ -36,12 +42,6 @@
                 Descargar Todo (ZIP)
             </a>
             {% endif %}
-            
-            <a href="{% url 'public:home' %}" 
-               class="flex-1 md:flex-none bg-gray-100 dark:bg-blue-900/30 hover:bg-gray-200 dark:hover:bg-blue-900/50 text-gray-700 dark:text-gray-200 font-medium py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
-                <i class="fa-solid fa-arrow-left"></i>
-                Volver
-            </a>
         </div>
     </div>
 
