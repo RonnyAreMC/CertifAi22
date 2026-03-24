@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud Rechazada - MUC Academy Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        unemi: {
+                            blue: '#162054',
+                            orange: '#F58830',
+                            dark: '#0F163A'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+    </style>
+</head>
+<body class="bg-[#0f1d3d] text-gray-100 min-h-screen relative overflow-x-hidden">
+    
+    <!-- Background Decor (same as base.html) -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none opacity-50">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-500/20 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]"></div>
+        <div class="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-purple-600/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="relative z-10 max-w-4xl mx-auto px-6 py-12">
+        <!-- Brand Header -->
+        <div class="flex items-center justify-center gap-3 mb-10">
+            <i class="fa-solid fa-shield-halved text-unemi-orange text-4xl"></i>
+            <span class="text-3xl font-bold text-white tracking-wide">
+                MUC Academy <span class="text-base font-light opacity-80 uppercase tracking-widest ml-1">Admin</span>
+            </span>
+        </div>
+
+        <div class="glass rounded-3xl p-8 md:p-12 mb-8 text-center">
+            <!-- Icon -->
+            <div class="w-28 h-28 mx-auto mb-8 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
+                <i class="fas fa-times-circle text-red-500 text-6xl"></i>
+            </div>
+
+            <!-- Title & Description -->
+            <h1 class="text-4xl font-black text-white mb-4 tracking-tight">
+                Acceso Denegado
+            </h1>
+            <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+                Desafortunadamente, tu solicitud para acceder al panel administrativo ha sido denegada tras la revisión.
+            </p>
+
+            <!-- Rejection Reason -->
+            {% if solicitud.motivo_rechazo %}
+            <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 mb-10 text-left relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <i class="fas fa-quote-right text-6xl text-red-500"></i>
+                </div>
+                <p class="text-red-400 text-sm font-black uppercase tracking-widest mb-4">
+                    <i class="fas fa-comment-dots mr-2"></i>Motivo de la Decisión:
+                </p>
+                <p class="text-white text-lg font-medium leading-relaxed italic">
+                    "{{ solicitud.motivo_rechazo }}"
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- Details Card -->
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10 text-left">
+                <p class="text-unemi-orange text-xs font-black uppercase tracking-widest mb-4">
+                    <i class="fas fa-id-card-alt mr-2"></i>Detalles del Registro
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-gray-500 text-xs">Email Registrado</p>
+                        <p class="text-white font-bold break-all">{{ solicitud.email }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-xs">Fecha de Solicitud</p>
+                        <p class="text-white font-bold">{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Box -->
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mb-10 text-left flex items-start gap-4">
+                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-info-circle text-blue-400 text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-blue-200 text-sm font-bold">¿Qué puedo hacer ahora?</p>
+                    <p class="text-blue-100/60 text-sm leading-relaxed mt-1">
+                        Si crees que ha habido un error o deseas proporcionar información adicional para una nueva solicitud, puedes contactar al departamento técnico o intentar realizar una solicitud corregida.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a href="{% url 'panel:register' %}" class="flex-1 bg-gradient-to-r from-unemi-orange to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-unemi-orange/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 no-underline">
+                    <i class="fas fa-plus"></i>
+                    Nueva Solicitud
+                </a>
+                
+                <a href="{% url 'panel:login' %}" class="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-2xl border border-white/10 transition-all flex items-center justify-center gap-3 no-underline">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Volver al Login
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center">
+            <p class="text-gray-600 text-sm font-medium">
+                Soporte Técnico: <span class="text-blue-400">soporte@unemi.edu.ec</span>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+

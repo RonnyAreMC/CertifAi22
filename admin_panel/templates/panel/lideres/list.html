@@ -1,0 +1,159 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
+                <i class="fa-solid fa-user-tie text-[#F58830] mr-2"></i>
+                Líderes Académicos
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">
+                <span class="font-bold text-[#F58830]">{{ total }}</span> líderes registrados. Los eventos "Solo Líderes" restringen el registro a estas personas.
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('uploadPanel').classList.toggle('hidden')" class="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl transition-all flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-file-excel"></i> Subir Excel
+            </button>
+            <button onclick="document.getElementById('manualPanel').classList.toggle('hidden')" class="bg-[#F58830] hover:bg-[#D97520] text-white font-bold px-5 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-user-plus"></i> Registrar Manual
+            </button>
+        </div>
+    </div>
+
+    <!-- Upload Excel Panel -->
+    <div id="uploadPanel" class="hidden bg-white dark:bg-[#162054] rounded-2xl shadow-lg border-2 border-green-500/30 overflow-hidden">
+        <div class="px-6 py-4 bg-green-50 dark:bg-green-900/10 border-b border-green-500/20 flex items-center justify-between">
+            <h3 class="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-green-600"></i> Subir Excel de Líderes
+            </h3>
+            <button onclick="this.closest('#uploadPanel').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="POST" action="{% url 'panel:lideres_upload_excel' %}" enctype="multipart/form-data" class="p-6">
+            {% csrf_token %}
+            <div class="mb-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    El Excel debe tener al menos una columna de <strong>cédula</strong> o <strong>correo</strong>.
+                    Se detectan automáticamente columnas como: cedula, email, correo, nombres, apellidos, celular.
+                </p>
+                <label class="block w-full p-8 rounded-xl border-2 border-dashed border-gray-300 dark:border-blue-900/30 text-center cursor-pointer hover:border-green-500 transition-all bg-gray-50 dark:bg-[#0F163A]/30">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 mb-2 block"></i>
+                    <span class="text-sm text-gray-500 font-bold" id="upload-filename">Click para seleccionar archivo Excel</span>
+                    <input type="file" name="archivo" accept=".xlsx,.xls" class="hidden" required onchange="document.getElementById('upload-filename').textContent = this.files[0]?.name || 'Click para seleccionar'">
+                </label>
+            </div>
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all">
+                <i class="fa-solid fa-upload mr-1"></i> Procesar Excel
+            </button>
+        </form>
+    </div>
+
+    <!-- Manual Registration Panel -->
+    <div id="manualPanel" class="hidden bg-white dark:bg-[#162054] rounded-2xl shadow-lg border-2 border-[#F58830]/30 overflow-hidden">
+        <div class="px-6 py-4 bg-[#F58830]/5 dark:bg-[#F58830]/10 border-b border-[#F58830]/20 flex items-center justify-between">
+            <h3 class="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-[#F58830]"></i> Registrar Líder Manual
+            </h3>
+            <button onclick="this.closest('#manualPanel').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form method="POST" action="{% url 'panel:lideres_add_manual' %}" class="p-6">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Cédula</label>
+                    <input type="text" name="cedula" placeholder="Ej: 0912345678" inputmode="numeric" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Email <span class="text-red-500">*</span></label>
+                    <input type="email" name="email" required placeholder="correo@ejemplo.com" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Nombres <span class="text-red-500">*</span></label>
+                    <input type="text" name="nombres" required placeholder="Nombres" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Apellidos <span class="text-red-500">*</span></label>
+                    <input type="text" name="apellidos" required placeholder="Apellidos" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Celular</label>
+                    <input type="tel" name="celular" placeholder="Ej: 0997541322" inputmode="numeric" maxlength="10" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+            </div>
+            <button type="submit" class="w-full bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3 rounded-xl transition-all">
+                <i class="fa-solid fa-check mr-1"></i> Registrar Líder
+            </button>
+        </form>
+    </div>
+
+    <!-- Search -->
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-sm border border-gray-100 dark:border-blue-900/30 p-4">
+        <form method="GET" class="flex gap-3">
+            <div class="flex-1 relative">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <input type="text" name="q" value="{{ q }}" placeholder="Buscar por cédula, correo o nombre..." class="w-full pl-11 p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+            </div>
+            <button type="submit" class="bg-[#162054] dark:bg-blue-600 text-white font-bold px-6 py-3 rounded-xl transition-all">Buscar</button>
+            {% if q %}<a href="{% url 'panel:lideres_list' %}" class="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-bold px-4 py-3 rounded-xl"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+        </form>
+    </div>
+
+    <!-- Table -->
+    {% if lideres %}
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 dark:bg-[#0F163A]/50 text-left">
+                        <th class="px-5 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                        <th class="px-5 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cédula</th>
+                        <th class="px-5 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+                        <th class="px-5 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Celular</th>
+                        <th class="px-5 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-blue-900/20">
+                    {% for p in lideres %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-[#0F163A]/30 transition-all">
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-[#F58830]/10 flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-user-tie text-[#F58830] text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800 dark:text-white text-sm">{{ p.nombres }} {{ p.apellidos }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">{{ p.cedula|default:"—" }}</td>
+                        <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{{ p.email|default:"—" }}</td>
+                        <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400">{{ p.celular|default:"—" }}</td>
+                        <td class="px-5 py-3 text-right">
+                            <form method="POST" action="{% url 'panel:lideres_remove' p.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 transition-all" title="Quitar líder" onclick="return confirm('¿Quitar a {{ p.nombres }} como líder?')">
+                                    <i class="fa-solid fa-user-minus mr-1"></i> Quitar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-16">
+        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-gray-300">
+            <i class="fa-solid fa-user-tie"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-500 dark:text-gray-400">
+            {% if q %}No se encontraron líderes para "{{ q }}"{% else %}No hay líderes registrados{% endif %}
+        </h3>
+        <p class="text-gray-400 dark:text-gray-500 mt-1 text-sm">Sube un Excel o registra líderes manualmente.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

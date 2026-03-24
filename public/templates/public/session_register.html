@@ -1,0 +1,422 @@
+{% extends 'public/base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-4 md:py-8">
+
+    <!-- Session Info Header -->
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
+        <div class="flex items-start gap-4">
+            <div class="bg-[#F58830]/10 rounded-xl w-14 h-14 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-calendar-check text-[#F58830] text-2xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-black text-gray-800 dark:text-white tracking-tight">
+                    {{ sesion.titulo|default:"Registro de Asistencia" }}
+                </h1>
+                {% if sesion.descripcion %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ sesion.descripcion }}</p>
+                {% endif %}
+                <div class="flex flex-wrap gap-3 mt-3 text-sm text-gray-500 dark:text-gray-400">
+                    <span><i class="fa-solid fa-calendar-day mr-1 text-[#F58830]"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
+                    <span><i class="fa-solid fa-clock mr-1 text-[#F58830]"></i>{{ sesion.hora_inicio|time:"H:i" }} – {{ sesion.hora_fin|time:"H:i" }}</span>
+                    {% if sesion.lugar %}
+                    <span><i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i>{{ sesion.lugar }}</span>
+                    {% endif %}
+                </div>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    {% if sesion.solo_lideres %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
+                        <i class="fa-solid fa-user-tie text-[10px]"></i> Solo Líderes Académicos
+                    </span>
+                    {% endif %}
+                    {% if capacidad_ilimitada %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                        <i class="fa-solid fa-infinity text-[10px]"></i> Cupos ilimitados
+                    </span>
+                    {% elif cupos > 0 %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                        <i class="fa-solid fa-users text-[10px]"></i> {{ cupos }} cupos disponibles
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400">
+                        <i class="fa-solid fa-ban text-[10px]"></i> Sin cupos disponibles
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if cupos == 0 and not capacidad_ilimitada %}
+    <!-- No capacity -->
+    <div class="text-center py-12">
+        <div class="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-red-500">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300">Sesión sin cupos</h3>
+        <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Lo sentimos, esta sesión ya alcanzó su capacidad máxima.</p>
+    </div>
+    {% else %}
+
+    <!-- Step 1: Search / Question -->
+    <div id="step-search" class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
+        <h2 class="text-lg font-black text-gray-800 dark:text-white mb-1">
+            <i class="fa-solid fa-magnifying-glass text-[#F58830] mr-2"></i>
+            ¿Ya has participado en eventos anteriores?
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Ingresa tu cédula o correo para buscarte en el sistema.</p>
+
+        <div class="relative">
+            <input type="text" id="search-input" placeholder="Ej: 0912345678 o correo@ejemplo.com"
+                class="w-full p-4 pl-12 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] focus:ring-2 focus:ring-[#F58830]/20 transition-all text-lg"
+                autocomplete="off">
+            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <div id="search-spinner" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
+                <i class="fa-solid fa-spinner fa-spin text-[#F58830]"></i>
+            </div>
+        </div>
+
+        <!-- Search Result: Found -->
+        <div id="result-found" class="hidden mt-5">
+            <div class="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <p class="font-black text-green-800 dark:text-green-300 text-lg" id="found-nombre"></p>
+                        <p class="text-xs text-green-600 dark:text-green-400">Ya existe un registro con tus datos</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                    <div>
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Cédula</span>
+                        <p class="text-gray-800 dark:text-white font-medium" id="found-cedula">—</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Email</span>
+                        <p class="text-gray-800 dark:text-white font-medium" id="found-email">—</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Celular</span>
+                        <input type="text" id="found-celular" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white text-sm focus:outline-none focus:border-[#F58830]" placeholder="Actualizar celular">
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Eventos previos</span>
+                        <p class="text-gray-800 dark:text-white font-medium text-sm" id="found-cursos">—</p>
+                    </div>
+                </div>
+                <input type="hidden" id="found-participante-id">
+
+                <div id="found-ya-confirmado" class="hidden">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-blue-700 dark:text-blue-300 text-sm">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Ya estás registrado en esta sesión.
+                    </div>
+                </div>
+
+                <button id="btn-confirm-existing" onclick="confirmExisting()"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all mt-3">
+                    <i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Result: Not Found -->
+        <div id="result-not-found" class="hidden mt-5">
+            <div class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-4 text-yellow-700 dark:text-yellow-300 text-sm">
+                <i class="fa-solid fa-user-plus mr-2"></i>
+                No encontramos un registro con esos datos. Completa el formulario para registrarte.
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <button onclick="showNewForm()" class="text-sm text-[#F58830] hover:underline font-bold">
+                <i class="fa-solid fa-user-plus mr-1"></i> Soy nuevo, quiero registrarme
+            </button>
+        </div>
+    </div>
+
+    <!-- Step 2: New Registration Form -->
+    <div id="step-new-form" class="hidden bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
+        <h2 class="text-lg font-black text-gray-800 dark:text-white mb-4">
+            <i class="fa-solid fa-user-plus text-[#F58830] mr-2"></i>
+            Registro de Participante
+        </h2>
+
+        <form id="new-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Cédula</label>
+                    <input type="text" id="new-cedula" name="cedula" placeholder="Ej: 0912345678" inputmode="numeric"
+                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Email <span class="text-red-500">*</span></label>
+                    <input type="email" id="new-email" name="email" required placeholder="correo@ejemplo.com"
+                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Nombres <span class="text-red-500">*</span></label>
+                    <input type="text" id="new-nombres" name="nombres" required placeholder="Tus nombres"
+                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Apellidos <span class="text-red-500">*</span></label>
+                    <input type="text" id="new-apellidos" name="apellidos" required placeholder="Tus apellidos"
+                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Celular</label>
+                <input type="tel" id="new-celular" name="celular" placeholder="Ej: 0997541322" inputmode="numeric" maxlength="10"
+                    class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+            </div>
+
+            <div id="new-form-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"></div>
+
+            <button type="submit" class="w-full bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3.5 rounded-xl transition-all text-lg">
+                <i class="fa-solid fa-check mr-1"></i> Registrarme
+            </button>
+        </form>
+
+        <button onclick="showSearch()" class="mt-3 w-full text-center text-sm text-gray-500 dark:text-gray-400 hover:text-[#F58830] transition-all">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Volver a buscar
+        </button>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="step-success" class="hidden">
+        <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-8 text-center">
+            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-5">
+                <i class="fa-solid fa-circle-check text-green-500 text-4xl"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-800 dark:text-white mb-2">¡Registro Exitoso!</h2>
+            <p class="text-gray-500 dark:text-gray-400 mb-6" id="success-message">Tu asistencia ha sido confirmada.</p>
+
+            <div id="success-details" class="bg-gray-50 dark:bg-[#0F163A]/50 rounded-xl p-5 text-left space-y-2 mb-6">
+                <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-check mr-2 text-[#F58830]"></i><span id="success-titulo"></span></p>
+                <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-day mr-2 text-[#F58830]"></i><span id="success-fecha"></span></p>
+                <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-clock mr-2 text-[#F58830]"></i><span id="success-horario"></span></p>
+                <p class="text-sm text-gray-600 dark:text-gray-300" id="success-lugar-row"><i class="fa-solid fa-location-dot mr-2 text-[#F58830]"></i><span id="success-lugar"></span></p>
+            </div>
+
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-blue-700 dark:text-blue-300 text-sm text-left">
+                <p class="font-bold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> Recuerda:</p>
+                <ul class="list-disc list-inside space-y-1 text-xs">
+                    <li>Asiste puntualmente a la sesión</li>
+                    <li>Al llegar, escanea el código QR para confirmar tu asistencia</li>
+                    <li>Si no asistes, tu cuenta podría quedar bloqueada para eventos futuros</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<script>
+const SESSION_ID = {{ sesion.id }};
+const CSRF = '{{ csrf_token }}';
+let searchTimeout = null;
+
+// ─── Search Logic ──────────────────────────────────────────
+const searchInput = document.getElementById('search-input');
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const q = this.value.trim();
+
+        document.getElementById('result-found').classList.add('hidden');
+        document.getElementById('result-not-found').classList.add('hidden');
+
+        if (q.length < 3) return;
+
+        document.getElementById('search-spinner').classList.remove('hidden');
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/sesion/${SESSION_ID}/registro/buscar/?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('search-spinner').classList.add('hidden');
+
+                    if (data.found) {
+                        const p = data.participante;
+                        document.getElementById('found-nombre').textContent = `${p.nombres} ${p.apellidos}`;
+                        document.getElementById('found-cedula').textContent = p.cedula || '—';
+                        document.getElementById('found-email').textContent = p.email || '—';
+                        document.getElementById('found-celular').value = p.celular || '';
+                        document.getElementById('found-participante-id').value = p.id;
+                        document.getElementById('found-cursos').textContent = p.cursos.length > 0 ? p.cursos.join(', ') : 'Ninguno aún';
+
+                        if (data.ya_confirmado) {
+                            document.getElementById('found-ya-confirmado').classList.remove('hidden');
+                            document.getElementById('btn-confirm-existing').classList.add('hidden');
+                        } else {
+                            document.getElementById('found-ya-confirmado').classList.add('hidden');
+                            document.getElementById('btn-confirm-existing').classList.remove('hidden');
+                        }
+
+                        document.getElementById('result-found').classList.remove('hidden');
+                    } else {
+                        document.getElementById('result-not-found').classList.remove('hidden');
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('search-spinner').classList.add('hidden');
+                });
+        }, 400);
+    });
+}
+
+// ─── Confirm Existing Participant ──────────────────────────
+function confirmExisting() {
+    const btn = document.getElementById('btn-confirm-existing');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Registrando...';
+
+    const participanteId = document.getElementById('found-participante-id').value;
+    const celular = document.getElementById('found-celular').value.trim();
+
+    const formData = new FormData();
+    formData.append('participante_id', participanteId);
+    formData.append('celular', celular);
+
+    fetch(`/sesion/${SESSION_ID}/registro/confirmar/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        body: formData,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok) {
+            if (data.already) {
+                Swal.fire({ icon: 'info', title: 'Ya registrado', text: data.message, confirmButtonColor: '#F58830' });
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme';
+            } else {
+                showSuccess(data);
+            }
+        } else {
+            Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#F58830' });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme';
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme';
+    });
+}
+
+// ─── New Registration Form ─────────────────────────────────
+function showNewForm() {
+    document.getElementById('step-search').classList.add('hidden');
+    document.getElementById('step-new-form').classList.remove('hidden');
+
+    // Pre-fill cedula/email from search if available
+    const searchVal = document.getElementById('search-input').value.trim();
+    if (searchVal.includes('@')) {
+        document.getElementById('new-email').value = searchVal;
+    } else if (/^\d+$/.test(searchVal)) {
+        document.getElementById('new-cedula').value = searchVal;
+    }
+}
+
+function showSearch() {
+    document.getElementById('step-new-form').classList.add('hidden');
+    document.getElementById('step-search').classList.remove('hidden');
+}
+
+const newForm = document.getElementById('new-form');
+if (newForm) {
+    newForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const errorDiv = document.getElementById('new-form-error');
+        errorDiv.classList.add('hidden');
+
+        const cedula = document.getElementById('new-cedula').value.trim();
+        const email = document.getElementById('new-email').value.trim();
+        const nombres = document.getElementById('new-nombres').value.trim();
+        const apellidos = document.getElementById('new-apellidos').value.trim();
+        const celular = document.getElementById('new-celular').value.trim();
+
+        if (!nombres || !apellidos) {
+            errorDiv.textContent = 'Nombres y apellidos son obligatorios.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        if (!cedula && !email) {
+            errorDiv.textContent = 'Debe proporcionar al menos cédula o correo electrónico.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+
+        const btn = this.querySelector('button[type=submit]');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Registrando...';
+
+        const formData = new FormData();
+        formData.append('cedula', cedula);
+        formData.append('nombres', nombres);
+        formData.append('apellidos', apellidos);
+        formData.append('email', email);
+        formData.append('celular', celular);
+
+        fetch(`/sesion/${SESSION_ID}/registro/nuevo/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                if (data.already) {
+                    Swal.fire({ icon: 'info', title: 'Ya registrado', text: data.message, confirmButtonColor: '#F58830' });
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Registrarme';
+                } else {
+                    showSuccess(data);
+                }
+            } else {
+                errorDiv.textContent = data.error;
+                errorDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Registrarme';
+            }
+        })
+        .catch(() => {
+            errorDiv.textContent = 'Error de conexión. Intenta de nuevo.';
+            errorDiv.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Registrarme';
+        });
+    });
+}
+
+// ─── Show Success ──────────────────────────────────────────
+function showSuccess(data) {
+    document.getElementById('step-search').classList.add('hidden');
+    document.getElementById('step-new-form').classList.add('hidden');
+    document.getElementById('step-success').classList.remove('hidden');
+
+    document.getElementById('success-message').textContent = data.message;
+
+    if (data.sesion) {
+        document.getElementById('success-titulo').textContent = data.sesion.titulo;
+        document.getElementById('success-fecha').textContent = data.sesion.fecha;
+        document.getElementById('success-horario').textContent = data.sesion.horario;
+        if (data.sesion.lugar) {
+            document.getElementById('success-lugar').textContent = data.sesion.lugar;
+        } else {
+            document.getElementById('success-lugar-row').classList.add('hidden');
+        }
+    }
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+{% endblock %}

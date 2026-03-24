@@ -105,13 +105,11 @@
             <script>
                 function confirmDeleteList(btn) {
                     const form = btn.closest('form');
-                    showConfirm(
-                        'Eliminar Lote',
-                        '¿Estás seguro de que deseas eliminar este lote? Todos los certificados asociados también serán borrados.',
-                        function() {
-                            form.submit();
-                        }
-                    );
+                    showConfirm({
+                        title: 'Eliminar Lote',
+                        message: '¿Estás seguro de que deseas eliminar este lote? Todos los certificados asociados también serán borrados.',
+                        callback: () => form.submit()
+                    });
                 }
             </script>
                 </tbody>

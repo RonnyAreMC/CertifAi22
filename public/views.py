@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
 from core.models import (
     Certificado, SesionAsistencia, RegistroAsistencia,
-    ConfirmacionAsistencia,
+    ConfirmacionAsistencia, Participante, LandingBloque,
 )
 from core.services.pdf_service import generate_certificate_pdf
 import zipfile
@@ -24,6 +24,45 @@ def _check_cert_search_enabled(request):
     return None
 
 
+def search_autocomplete(request):
+    """AJAX endpoint: return certificate-holder names for live search autocomplete."""
+    query = request.GET.get('q', '').strip()
+
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    tokens = [t.strip() for t in query.split() if t.strip()]
+    if not tokens:
+        return JsonResponse({'results': []})
+
+    q_filter = Q()
+    for token in tokens:
+        q_filter &= (
+            Q(cedula__icontains=token) |
+            Q(email__icontains=token) |
+            Q(nombres__icontains=token) |
+            Q(apellidos__icontains=token)
+        )
+
+    certificados = Certificado.objects.filter(q_filter).values('nombres', 'apellidos').distinct()[:20]
+    resultados = []
+    seen = set()
+
+    for cert in certificados:
+        full_name = f"{cert.get('nombres', '').strip()} {cert.get('apellidos', '').strip()}".strip()
+        if not full_name:
+            continue
+        key = full_name.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        resultados.append({'name': full_name})
+        if len(resultados) >= 12:
+            break
+
+    return JsonResponse({'results': resultados})
+
+
 def _get_client_ip(request):
     """Extract real IP from request (supports proxies)."""
     x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -35,7 +74,10 @@ def _get_client_ip(request):
 # ─── Landing & Home ──────────────────────────────────────────────
 
 def landing(request):
-    """Landing page with options."""
+    """Landing page — dynamic if blocks configured, static fallback."""
+    bloques = LandingBloque.objects.filter(activo=True).select_related('sesion')
+    if bloques.exists():
+        return render(request, 'public/landing_dynamic.html', {'bloques': bloques})
     return render(request, 'public/landing.html')
 
 
@@ -61,35 +103,29 @@ def attendance_verify(request):
     # Smart search: split query into tokens for flexible name matching
     tokens = query.split()
 
-    # Start with broad OR search across all relevant fields
+    # Search in Participante model directly
     q_filter = (
         Q(cedula__icontains=query) |
         Q(email__icontains=query)
     )
-
-    # Add name-based search: each token matches against nombres or apellidos
     for token in tokens:
         q_filter = q_filter | Q(nombres__icontains=token) | Q(apellidos__icontains=token)
 
-    resultados = Certificado.objects.filter(q_filter).select_related('lote')
+    participantes = Participante.objects.filter(q_filter)[:50]
 
-    # Group by unique person (cedula + email combo)
-    personas_dict = {}
-    for cert in resultados:
-        key = (cert.cedula.strip().lower(), cert.email.strip().lower())
-        if key not in personas_dict:
-            personas_dict[key] = {
-                'cedula': cert.cedula,
-                'nombres': cert.nombres,
-                'apellidos': cert.apellidos,
-                'email': cert.email,
-                'celular': cert.celular or '',
-                'cursos': [],
-                'cert_id': cert.id,  # Need first cert ID for confirmation
-            }
-        personas_dict[key]['cursos'].append(cert.curso)
-
-    personas = list(personas_dict.values())
+    personas = []
+    for p in participantes:
+        cursos = list(p.certificados.values_list('curso', flat=True).distinct())
+        personas.append({
+            'cedula': p.cedula,
+            'nombres': p.nombres,
+            'apellidos': p.apellidos,
+            'email': p.email,
+            'celular': p.celular or '',
+            'cursos': cursos,
+            'participante_id': p.id,
+            'cert_id': p.certificados.values_list('id', flat=True).first(),
+        })
 
     # If only one person found, auto-select
     persona_seleccionada = personas[0] if len(personas) == 1 else None
@@ -97,9 +133,8 @@ def attendance_verify(request):
     # Check if person already confirmed for a session
     confirmacion_existente = None
     if persona_seleccionada:
-        cert_ids = [c.id for c in resultados if c.cedula == persona_seleccionada['cedula']]
         conf = ConfirmacionAsistencia.objects.filter(
-            certificado_id__in=cert_ids, confirmado=True
+            participante_id=persona_seleccionada['participante_id'], confirmado=True
         ).select_related('sesion').first()
         if conf:
             confirmacion_existente = {
@@ -107,9 +142,6 @@ def attendance_verify(request):
                 'fecha': conf.sesion.fecha.strftime('%d/%m/%Y'),
                 'horario': conf.sesion.label,
             }
-
-    # Get the lote IDs this person belongs to
-    lote_ids = list(resultados.values_list('lote_id', flat=True).distinct())
 
     # Get ALL available sessions grouped by day
     sesiones_activas = SesionAsistencia.objects.filter(
@@ -120,11 +152,12 @@ def attendance_verify(request):
         dia_key = f"{s.dia_semana} - {s.fecha.strftime('%d/%m/%Y')}"
         if dia_key not in dias_disponibles:
             dias_disponibles[dia_key] = []
+        cupos = s.cupos_disponibles
         dias_disponibles[dia_key].append({
             'id': s.id,
             'label': s.label,
             'titulo': s.titulo,
-            'cupos': s.cupos_disponibles,
+            'cupos': cupos if cupos is not None else 9999,
             'llena': s.esta_llena,
         })
 
@@ -154,23 +187,18 @@ def attendance_autocomplete(request):
     for token in tokens:
         q_filter = q_filter | Q(nombres__icontains=token) | Q(apellidos__icontains=token)
 
-    resultados = Certificado.objects.filter(q_filter).select_related('lote')[:100]
+    participantes = Participante.objects.filter(q_filter)[:20]
 
-    personas_dict = {}
-    for cert in resultados:
-        key = (cert.cedula.strip().lower(), cert.email.strip().lower())
-        if key not in personas_dict:
-            personas_dict[key] = {
-                'id': cert.id,
-                'cedula': cert.cedula,
-                'nombres': cert.nombres,
-                'apellidos': cert.apellidos,
-                'email': cert.email,
-                'cursos_count': 0,
-            }
-        personas_dict[key]['cursos_count'] += 1
-
-    results = list(personas_dict.values())[:20]
+    results = []
+    for p in participantes:
+        results.append({
+            'id': p.id,
+            'cedula': p.cedula,
+            'nombres': p.nombres,
+            'apellidos': p.apellidos,
+            'email': p.email,
+            'cursos_count': p.certificados.count(),
+        })
 
     return JsonResponse({'results': results})
 
@@ -198,17 +226,36 @@ def attendance_sessions_api(request):
 @require_POST
 def attendance_confirm(request):
     """Confirm attendance for a session — creates ConfirmacionAsistencia."""
+    # Support both participante_id (new) and cert_id (legacy)
+    participante_id = request.POST.get('participante_id')
     cert_id = request.POST.get('cert_id')
     sesion_id = request.POST.get('sesion_id')
 
-    if not cert_id or not sesion_id:
+    if not sesion_id:
         return JsonResponse({'ok': False, 'error': 'Datos incompletos.'}, status=400)
 
     try:
-        certificado = Certificado.objects.get(id=cert_id)
         sesion = SesionAsistencia.objects.get(id=sesion_id, activa=True)
-    except (Certificado.DoesNotExist, SesionAsistencia.DoesNotExist):
-        return JsonResponse({'ok': False, 'error': 'Sesión o participante no encontrado.'}, status=404)
+    except SesionAsistencia.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Sesión no encontrada.'}, status=404)
+
+    # Resolve participante
+    participante = None
+    if participante_id:
+        try:
+            participante = Participante.objects.get(id=participante_id)
+        except Participante.DoesNotExist:
+            return JsonResponse({'ok': False, 'error': 'Participante no encontrado.'}, status=404)
+    elif cert_id:
+        try:
+            cert = Certificado.objects.get(id=cert_id)
+            participante = cert.participante
+            if not participante:
+                return JsonResponse({'ok': False, 'error': 'Participante no vinculado.'}, status=404)
+        except Certificado.DoesNotExist:
+            return JsonResponse({'ok': False, 'error': 'Certificado no encontrado.'}, status=404)
+    else:
+        return JsonResponse({'ok': False, 'error': 'Datos incompletos.'}, status=400)
 
     # Check if session is full
     if sesion.esta_llena:
@@ -219,7 +266,7 @@ def attendance_confirm(request):
 
     # Check if already confirmed
     conf, created = ConfirmacionAsistencia.objects.get_or_create(
-        certificado=certificado,
+        participante=participante,
         sesion=sesion,
         defaults={'confirmado': True}
     )
@@ -228,29 +275,43 @@ def attendance_confirm(request):
         return JsonResponse({'ok': True, 'already': True, 'message': 'Ya estás confirmado para esta sesión.'})
 
     cupos = sesion.cupos_disponibles
+    cupos_msg = f'Quedan {cupos} cupos.' if cupos is not None else ''
     return JsonResponse({
         'ok': True,
         'already': False,
-        'message': f'Asistencia confirmada para {sesion.dia_semana} {sesion.label}. Quedan {cupos} cupos. ¡Recuerda asistir!'
+        'message': f'Asistencia confirmada para {sesion.dia_semana} {sesion.label}. {cupos_msg} ¡Recuerda asistir!'
     })
 
 
 @require_POST
 def attendance_update_phone(request):
-    """AJAX: Update attendee's phone number on all their certificates."""
+    """AJAX: Update attendee's phone number."""
+    participante_id = request.POST.get('participante_id')
     cert_id = request.POST.get('cert_id')
     celular = request.POST.get('celular', '').strip()
 
-    if not cert_id:
-        return JsonResponse({'ok': False, 'error': 'Faltan datos.'}, status=400)
+    if participante_id:
+        try:
+            p = Participante.objects.get(id=participante_id)
+            p.celular = celular
+            p.save(update_fields=['celular'])
+            # Sync to certificates
+            Certificado.objects.filter(participante=p).update(celular=celular)
+            return JsonResponse({'ok': True, 'celular': celular})
+        except Participante.DoesNotExist:
+            return JsonResponse({'ok': False, 'error': 'Participante no encontrado.'}, status=404)
+    elif cert_id:
+        try:
+            certificado = Certificado.objects.get(id=cert_id)
+            Certificado.objects.filter(cedula=certificado.cedula).update(celular=celular)
+            if certificado.participante:
+                certificado.participante.celular = celular
+                certificado.participante.save(update_fields=['celular'])
+            return JsonResponse({'ok': True, 'celular': celular})
+        except Certificado.DoesNotExist:
+            return JsonResponse({'ok': False, 'error': 'Participante no encontrado.'}, status=404)
 
-    try:
-        certificado = Certificado.objects.get(id=cert_id)
-        # Keep data synchronized across all certificates assigned to this person (by cédula)
-        Certificado.objects.filter(cedula=certificado.cedula).update(celular=celular)
-        return JsonResponse({'ok': True, 'celular': celular})
-    except Certificado.DoesNotExist:
-        return JsonResponse({'ok': False, 'error': 'Participante no encontrado.'}, status=404)
+    return JsonResponse({'ok': False, 'error': 'Faltan datos.'}, status=400)
         
 
 # ─── QR Check-in (Public Scan) ──────────────────────────────────
@@ -265,7 +326,7 @@ def qr_checkin(request, codigo_qr):
 
 
 def qr_checkin_search(request, codigo_qr):
-    """AJAX: Search for a person during QR check-in (reuses autocomplete logic)."""
+    """AJAX: Search for a person during QR check-in."""
     sesion = get_object_or_404(SesionAsistencia, codigo_qr=codigo_qr, activa=True)
     query = request.GET.get('q', '').strip()
 
@@ -277,32 +338,28 @@ def qr_checkin_search(request, codigo_qr):
     for token in tokens:
         q_filter = q_filter | Q(nombres__icontains=token) | Q(apellidos__icontains=token)
 
-    resultados = Certificado.objects.filter(q_filter)[:50]
+    participantes = Participante.objects.filter(q_filter)[:15]
 
-    personas_dict = {}
-    for cert in resultados:
-        key = (cert.cedula.strip().lower(), cert.email.strip().lower())
-        if key not in personas_dict:
-            # Check if already registered in this session
-            already = RegistroAsistencia.objects.filter(
-                sesion=sesion, certificado=cert
-            ).exists()
-            # Check if confirmed/associated with this session
-            confirmed = ConfirmacionAsistencia.objects.filter(
-                sesion=sesion, certificado=cert, confirmado=True
-            ).exists()
+    results = []
+    for p in participantes:
+        already = RegistroAsistencia.objects.filter(
+            sesion=sesion, participante=p
+        ).exists()
+        confirmed = ConfirmacionAsistencia.objects.filter(
+            sesion=sesion, participante=p, confirmado=True
+        ).exists()
 
-            personas_dict[key] = {
-                'id': cert.id,
-                'cedula': cert.cedula,
-                'nombres': cert.nombres,
-                'apellidos': cert.apellidos,
-                'email': cert.email,
-                'already_registered': already,
-                'is_confirmed': confirmed,
-            }
+        results.append({
+            'id': p.id,
+            'cedula': p.cedula,
+            'nombres': p.nombres,
+            'apellidos': p.apellidos,
+            'email': p.email,
+            'already_registered': already,
+            'is_confirmed': confirmed,
+        })
 
-    return JsonResponse({'results': list(personas_dict.values())[:15]})
+    return JsonResponse({'results': results})
 
 
 @require_POST
@@ -312,21 +369,30 @@ def qr_checkin_register(request, codigo_qr):
 
     try:
         data = json.loads(request.body)
-        cert_id = data.get('cert_id')
+        participant_id = data.get('id') or data.get('cert_id')
     except (json.JSONDecodeError, AttributeError):
-        cert_id = request.POST.get('cert_id')
+        participant_id = request.POST.get('id') or request.POST.get('cert_id')
 
-    if not cert_id:
+    if not participant_id:
         return JsonResponse({'ok': False, 'error': 'Datos incompletos.'}, status=400)
 
+    # Try Participante first, fallback to Certificado for legacy
+    participante = None
     try:
-        certificado = Certificado.objects.get(id=cert_id)
-    except Certificado.DoesNotExist:
+        participante = Participante.objects.get(id=participant_id)
+    except Participante.DoesNotExist:
+        try:
+            cert = Certificado.objects.get(id=participant_id)
+            participante = cert.participante
+        except Certificado.DoesNotExist:
+            pass
+
+    if not participante:
         return JsonResponse({'ok': False, 'error': 'Participante no encontrado.'}, status=404)
 
     # 1. Check if blocked
     blocked = ConfirmacionAsistencia.objects.filter(
-        certificado=certificado, bloqueado=True
+        participante=participante, bloqueado=True
     ).exists()
     if blocked:
         return JsonResponse({
@@ -334,13 +400,13 @@ def qr_checkin_register(request, codigo_qr):
             'error': 'Tu cuenta está bloqueada por inasistencias previas. Contacta al administrador.'
         }, status=403)
 
-    # 2. Check if person is associated/confirmed for THIS specific session
+    # 2. Check if confirmed for THIS specific session
     is_confirmed = ConfirmacionAsistencia.objects.filter(
-        certificado=certificado,
+        participante=participante,
         sesion=sesion,
         confirmado=True
     ).exists()
-    
+
     if not is_confirmed:
         return JsonResponse({
             'ok': False,
@@ -350,7 +416,7 @@ def qr_checkin_register(request, codigo_qr):
     # 3. Create or get attendance record
     registro, created = RegistroAsistencia.objects.get_or_create(
         sesion=sesion,
-        certificado=certificado,
+        participante=participante,
         defaults={'ip_address': _get_client_ip(request)}
     )
 
@@ -359,14 +425,14 @@ def qr_checkin_register(request, codigo_qr):
             'ok': True,
             'already': True,
             'message': '¡Ya registraste tu asistencia anteriormente!',
-            'nombre': f'{certificado.nombres} {certificado.apellidos}',
+            'nombre': f'{participante.nombres} {participante.apellidos}',
         })
 
     return JsonResponse({
         'ok': True,
         'already': False,
         'message': '¡Gracias por estar aquí! Tu asistencia fue registrada exitosamente.',
-        'nombre': f'{certificado.nombres} {certificado.apellidos}',
+        'nombre': f'{participante.nombres} {participante.apellidos}',
         'hora': timezone.now().strftime('%H:%M'),
     })
 
@@ -382,7 +448,7 @@ def home(request):
 
 
 def search(request):
-    """Search certificates by ID, email, or name."""
+    """Search certificates by ID, email, or verification hash."""
     denied = _check_cert_search_enabled(request)
     if denied:
         return denied
@@ -392,11 +458,23 @@ def search(request):
 
     if query:
         query_lower = query.lower()
+
+        # Build token-aware name search (to support full name and partial matching)
+        tokens = [t.strip() for t in query.split() if t.strip()]
+        name_filter = Q()
+        if tokens:
+            for token in tokens:
+                name_filter &= (
+                    Q(nombres__icontains=token) |
+                    Q(apellidos__icontains=token)
+                )
+
         certificados = list(
             Certificado.objects.filter(
                 Q(cedula__iexact=query) |
                 Q(email__iexact=query_lower) |
-                Q(hash_verificacion__iexact=query)
+                Q(hash_verificacion__iexact=query) |
+                name_filter
             ).select_related('lote')
         )
 
@@ -476,5 +554,224 @@ def download_zip(request):
     response = HttpResponse(zip_buffer, content_type='application/zip')
     response['Content-Disposition'] = f'attachment; filename="Certificados_{query}.zip"'
     return response
+
+
+# ─── Smart Session Registration (Public) ─────────────────────────
+
+def _find_participante(query):
+    """Find a Participante by cedula or email."""
+    query = query.strip()
+    if not query:
+        return None
+    # Try cedula first
+    p = Participante.objects.filter(cedula__iexact=query).first()
+    if p:
+        return p
+    # Try email
+    p = Participante.objects.filter(email__iexact=query).first()
+    return p
+
+
+def session_register(request, id):
+    """Smart registration page for a session."""
+    sesion = get_object_or_404(SesionAsistencia, id=id, activa=True)
+
+    context = {
+        'sesion': sesion,
+        'cupos': sesion.cupos_disponibles,
+        'capacidad_ilimitada': sesion.capacidad_ilimitada,
+    }
+    return render(request, 'public/session_register.html', context)
+
+
+def session_register_search(request, id):
+    """AJAX: Search for existing participant by cedula or email."""
+    sesion = get_object_or_404(SesionAsistencia, id=id, activa=True)
+    query = request.GET.get('q', '').strip()
+
+    if len(query) < 3:
+        return JsonResponse({'found': False})
+
+    participante = _find_participante(query)
+    if not participante:
+        return JsonResponse({'found': False})
+
+    # Check if already confirmed for this session
+    ya_confirmado = ConfirmacionAsistencia.objects.filter(
+        participante=participante, sesion=sesion, confirmado=True
+    ).exists()
+
+    # Get courses from certificates
+    cursos = list(participante.certificados.values_list('curso', flat=True).distinct()[:10])
+
+    return JsonResponse({
+        'found': True,
+        'participante': {
+            'id': participante.id,
+            'cedula': participante.cedula,
+            'nombres': participante.nombres,
+            'apellidos': participante.apellidos,
+            'email': participante.email,
+            'celular': participante.celular,
+            'cursos': cursos,
+        },
+        'ya_confirmado': ya_confirmado,
+    })
+
+
+@require_POST
+def session_register_confirm(request, id):
+    """Confirm an existing participant for a session."""
+    sesion = get_object_or_404(SesionAsistencia, id=id, activa=True)
+
+    participante_id = request.POST.get('participante_id')
+    if not participante_id:
+        return JsonResponse({'ok': False, 'error': 'Datos incompletos.'}, status=400)
+
+    try:
+        participante = Participante.objects.get(id=participante_id)
+    except Participante.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'Participante no encontrado.'}, status=404)
+
+    # Check líder restriction
+    if sesion.solo_lideres and not participante.es_lider:
+        return JsonResponse({
+            'ok': False,
+            'error': 'Este evento es exclusivo para Líderes Académicos. Si crees que es un error, contacta al administrador.'
+        }, status=403)
+
+    # Update optional fields if provided
+    celular = request.POST.get('celular', '').strip()
+    email = request.POST.get('email', '').strip()
+    if celular and celular != participante.celular:
+        participante.celular = celular
+        participante.save(update_fields=['celular'])
+    if email and email != participante.email:
+        participante.email = email
+        participante.save(update_fields=['email'])
+
+    # Check capacity
+    if sesion.esta_llena:
+        return JsonResponse({
+            'ok': False,
+            'error': 'Esta sesión ya alcanzó el cupo máximo. Por favor, intenta otro horario.'
+        }, status=409)
+
+    # Create confirmation
+    conf, created = ConfirmacionAsistencia.objects.get_or_create(
+        participante=participante,
+        sesion=sesion,
+        defaults={'confirmado': True}
+    )
+
+    if not created:
+        return JsonResponse({'ok': True, 'already': True, 'message': 'Ya estás registrado en esta sesión.'})
+
+    return JsonResponse({
+        'ok': True,
+        'already': False,
+        'message': f'Registro exitoso para {participante.nombres}.',
+        'sesion': {
+            'titulo': sesion.titulo or sesion.dia_semana,
+            'fecha': sesion.fecha.strftime('%d/%m/%Y'),
+            'horario': sesion.label,
+            'lugar': sesion.lugar,
+        }
+    })
+
+
+@require_POST
+def session_register_new(request, id):
+    """Register a new participant for a session."""
+    sesion = get_object_or_404(SesionAsistencia, id=id, activa=True)
+
+    cedula = request.POST.get('cedula', '').strip().upper()
+    nombres = request.POST.get('nombres', '').strip().upper()
+    apellidos = request.POST.get('apellidos', '').strip().upper()
+    email = request.POST.get('email', '').strip().lower()
+    celular = request.POST.get('celular', '').strip()
+
+    if not nombres or not apellidos:
+        return JsonResponse({'ok': False, 'error': 'Nombres y apellidos son obligatorios.'}, status=400)
+    if not cedula and not email:
+        return JsonResponse({'ok': False, 'error': 'Debe proporcionar al menos cédula o correo.'}, status=400)
+
+    # Check for existing participant (deduplication)
+    participante = None
+    if cedula:
+        participante = Participante.objects.filter(cedula=cedula).first()
+    if not participante and email:
+        participante = Participante.objects.filter(email__iexact=email).first()
+
+    # Check líder restriction
+    if sesion.solo_lideres:
+        if participante and not participante.es_lider:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Este evento es exclusivo para Líderes Académicos. Si crees que es un error, contacta al administrador.'
+            }, status=403)
+        if not participante:
+            return JsonResponse({
+                'ok': False,
+                'error': 'Este evento es exclusivo para Líderes Académicos. No se encontró tu registro como líder.'
+            }, status=403)
+
+    if participante:
+        # Participant exists - update missing fields and confirm
+        updated_fields = []
+        if celular and not participante.celular:
+            participante.celular = celular
+            updated_fields.append('celular')
+        if cedula and not participante.cedula:
+            participante.cedula = cedula
+            updated_fields.append('cedula')
+        if email and not participante.email:
+            participante.email = email
+            updated_fields.append('email')
+        if updated_fields:
+            participante.save(update_fields=updated_fields)
+    else:
+        # Create new participant
+        participante = Participante.objects.create(
+            cedula=cedula,
+            nombres=nombres,
+            apellidos=apellidos,
+            email=email,
+            celular=celular,
+        )
+
+    # Check capacity
+    if sesion.esta_llena:
+        return JsonResponse({
+            'ok': False,
+            'error': 'Esta sesión ya alcanzó el cupo máximo.'
+        }, status=409)
+
+    # Create confirmation
+    conf, created = ConfirmacionAsistencia.objects.get_or_create(
+        participante=participante,
+        sesion=sesion,
+        defaults={'confirmado': True}
+    )
+
+    if not created:
+        return JsonResponse({'ok': True, 'already': True, 'message': 'Ya estás registrado en esta sesión.'})
+
+    return JsonResponse({
+        'ok': True,
+        'already': False,
+        'message': f'Registro exitoso para {participante.nombres} {participante.apellidos}.',
+        'participante': {
+            'id': participante.id,
+            'nombres': participante.nombres,
+            'apellidos': participante.apellidos,
+        },
+        'sesion': {
+            'titulo': sesion.titulo or sesion.dia_semana,
+            'fecha': sesion.fecha.strftime('%d/%m/%Y'),
+            'horario': sesion.label,
+            'lugar': sesion.lugar,
+        }
+    })
 
 

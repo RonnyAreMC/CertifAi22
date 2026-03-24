@@ -1,0 +1,45 @@
+<!-- Steps: 3 pasos con iconos y conectores -->
+<section class="py-10 md:py-16 px-4">
+    <div class="max-w-4xl mx-auto">
+        {% if bloque.titulo %}
+        <div class="text-center mb-10">
+            {% if bloque.subtitulo %}
+            <span class="inline-block text-xs font-bold uppercase tracking-widest mb-2" style="color: {{ bloque.color_acento }};">{{ bloque.subtitulo }}</span>
+            {% endif %}
+            <h2 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white">{{ bloque.titulo }}</h2>
+            {% if bloque.descripcion %}
+            <p class="text-gray-500 dark:text-gray-400 mt-2">{{ bloque.descripcion }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="flex flex-col md:flex-row items-start gap-4 md:gap-5">
+            {% for step in bloque.items_json %}
+            {% if not forloop.first %}
+            <div class="hidden md:flex items-center justify-center text-gray-300 dark:text-gray-600 pt-12 shrink-0">
+                <i class="fa-solid fa-chevron-right text-lg"></i>
+            </div>
+            {% endif %}
+            <div class="flex-1 w-full relative text-center p-6 rounded-2xl backdrop-blur-xl border transition-all hover:-translate-y-1 hover:shadow-xl group min-h-[220px]" style="background: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.5); box-shadow: 0 2px 16px rgba(0,0,0,0.04);">
+                <!-- Number badge -->
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-black shadow-lg
+                    {% if step.color == 'orange' %}bg-gradient-to-br from-[#F58830] to-[#ff6600]
+                    {% else %}bg-gradient-to-br from-[#162054] to-[#1e3a8a]{% endif %}">
+                    {{ step.numero }}
+                </div>
+                <!-- Icon -->
+                <div class="w-14 h-14 rounded-2xl inline-flex items-center justify-center text-xl mb-3 transition-all group-hover:scale-110
+                    {% if step.color == 'orange' %}bg-[#F58830]/10 text-[#F58830]
+                    {% else %}bg-[#162054]/8 text-[#162054] dark:bg-white/10 dark:text-blue-300{% endif %}">
+                    <i class="{{ step.icono }}"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 dark:text-white mb-1">{{ step.titulo }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{{ step.desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<style>
+    .dark section .backdrop-blur-xl { background: rgba(30,41,59,0.5) !important; border-color: rgba(255,255,255,0.1) !important; }
+</style>

@@ -7,13 +7,13 @@
         <div>
             <h1 class="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
                 <i class="fa-solid fa-qrcode text-[#F58830] mr-2"></i>
-                Sesiones de Asistencia
+                Eventos
             </h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">Gestiona las sesiones y genera códigos QR para tomar asistencia.</p>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Gestiona tus eventos, registro de participantes y códigos QR.</p>
         </div>
         <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="bg-[#F58830] hover:bg-[#D97520] text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
-            Nueva Sesión
+            Nuevo Evento
         </button>
     </div>
 
@@ -64,30 +64,38 @@
                         <i class="fa-solid {{ s.activa|yesno:'fa-circle-check,fa-circle-xmark' }} text-[10px]"></i>
                         {{ s.activa|yesno:'Activa,Inactiva' }}
                     </span>
+                    {% if s.solo_lideres %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
+                        <i class="fa-solid fa-user-tie text-[10px]"></i> Líderes
+                    </span>
+                    {% endif %}
                     <span class="text-xs text-gray-400 dark:text-gray-500 font-mono">ID #{{ s.id }}</span>
                 </div>
 
+                {% if s.titulo %}
+                <h3 class="font-black text-lg text-gray-800 dark:text-white mb-1">{{ s.titulo }}</h3>
+                {% else %}
                 <h3 class="font-black text-lg text-gray-800 dark:text-white mb-1">{{ s.dia_semana }}</h3>
+                {% endif %}
+
                 <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
                     <i class="fa-solid fa-calendar-day mr-1 text-[#F58830]"></i>
-                    {{ s.fecha|date:"d/m/Y" }}
+                    {{ s.dia_semana }} {{ s.fecha|date:"d/m/Y" }}
                 </p>
                 <p class="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
                     <i class="fa-solid fa-clock mr-1 text-[#F58830]"></i>
                     {{ s.hora_inicio|time:"H:i" }} – {{ s.hora_fin|time:"H:i" }}
                 </p>
-                {% if s.titulo %}
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 italic">{{ s.titulo }}</p>
+                {% if s.lugar %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i>
+                    {{ s.lugar }}
+                </p>
                 {% endif %}
                 {% if s.lote %}
                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     <i class="fa-solid fa-graduation-cap mr-1"></i>
                     {{ s.lote.nombre_lote|truncatechars:40 }}
-                </p>
-                {% else %}
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    <i class="fa-solid fa-globe mr-1"></i>
-                    Sesión Masiva (General)
                 </p>
                 {% endif %}
 
@@ -102,41 +110,72 @@
                         <p class="text-[0.6rem] uppercase tracking-wider text-gray-400 font-bold">Asistentes</p>
                     </div>
                     <div class="text-center flex-1">
+                        {% if s.capacidad == 0 %}
+                        <p class="text-2xl font-black text-blue-500">&infin;</p>
+                        {% else %}
                         <p class="text-2xl font-black text-blue-500">{{ s.capacidad }}</p>
+                        {% endif %}
                         <p class="text-[0.6rem] uppercase tracking-wider text-gray-400 font-bold">Cupos Max</p>
                     </div>
                 </div>
 
                 <!-- Capacity Bar -->
+                {% if s.capacidad > 0 %}
                 <div class="mt-3">
                     <div class="w-full bg-gray-100 dark:bg-[#0F163A]/50 rounded-full h-2 overflow-hidden">
-                        {% widthratio s.total_confirmados s.capacidad 100 as pct %}
                         <div class="h-full rounded-full transition-all {{ s.esta_llena|yesno:'bg-red-500,bg-[#F58830]' }}" style="width: {% widthratio s.total_confirmados s.capacidad 100 %}%"></div>
                     </div>
                     <p class="text-[0.55rem] text-gray-400 mt-1 text-right font-bold">
                         {{ s.cupos_disponibles }} cupos disponibles
-                        {% if s.esta_llena %}<span class="text-red-500 ml-1">• AGOTADO</span>{% endif %}
+                        {% if s.esta_llena %}<span class="text-red-500 ml-1">AGOTADO</span>{% endif %}
                     </p>
                 </div>
+                {% else %}
+                <div class="mt-3">
+                    <p class="text-[0.55rem] text-green-500 font-bold text-right">
+                        <i class="fa-solid fa-infinity mr-1"></i> Cupos ilimitados
+                    </p>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Actions -->
-            <div class="bg-gray-50 dark:bg-[#0F163A]/50 px-6 py-3 flex items-center gap-2">
-                <a href="{% url 'panel:session_qr_display' s.id %}" class="flex-1 text-center bg-[#162054] dark:bg-[#F58830] text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-qrcode"></i> QR
-                </a>
-                <a href="{% url 'panel:session_bulk_pdf' s.id %}" class="flex-1 text-center bg-green-600 text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5" title="Descargar todos los certificados">
-                    <i class="fa-solid fa-file-pdf"></i> PDF Masivo
-                </a>
-                <a href="{% url 'panel:session_toggle' s.id %}" class="px-3 py-2.5 rounded-lg text-xs font-bold {{ s.activa|yesno:'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100,bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100' }} transition-all">
-                    <i class="fa-solid {{ s.activa|yesno:'fa-pause,fa-play' }}"></i>
-                </a>
-                <form id="delete-form-{{ s.id }}" method="POST" action="{% url 'panel:session_delete' s.id %}" class="inline">
-                    {% csrf_token %}
-                    <button type="button" onclick="showConfirm('Eliminar Sesión', '¿Estás seguro de que deseas eliminar esta sesión? Esta acción no se puede deshacer.', () => document.getElementById('delete-form-{{ s.id }}').submit())" class="px-3 py-2.5 rounded-lg text-xs font-bold bg-gray-50 text-gray-400 dark:bg-gray-800/50 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 transition-all">
-                        <i class="fa-solid fa-trash"></i>
+            <div class="bg-gray-50 dark:bg-[#0F163A]/50 px-5 py-3 space-y-2">
+                <!-- Primary actions row -->
+                <div class="flex gap-2">
+                    <a href="{% url 'panel:session_qr_display' s.id %}" class="flex-1 text-center bg-[#162054] dark:bg-[#F58830] text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-qrcode"></i> QR
+                    </a>
+                    {% if s.total_confirmados > 0 and not s.lote %}
+                    <a href="{% url 'panel:session_generate_batch' s.id %}" class="flex-1 text-center bg-green-600 text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5" title="Generar certificados desde participantes">
+                        <i class="fa-solid fa-certificate"></i> Generar Certificados
+                    </a>
+                    {% elif s.lote %}
+                    <a href="{% url 'panel:batch_configure' s.lote.id %}" class="flex-1 text-center bg-purple-600 text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5" title="Configurar lote de certificados">
+                        <i class="fa-solid fa-palette"></i> Config. Lote
+                    </a>
+                    {% endif %}
+                </div>
+                <!-- Secondary actions row -->
+                <div class="flex gap-2">
+                    <a href="{% url 'panel:session_edit' s.id %}" class="flex-1 text-center py-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-1.5" title="Editar sesión">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </a>
+                    {% if s.activa %}
+                    <button onclick="copyRegistroLink({{ s.id }})" class="flex-1 text-center py-2 rounded-lg text-xs font-bold bg-[#F58830]/10 text-[#F58830] hover:bg-[#F58830]/20 transition-all flex items-center justify-center gap-1.5" title="Copiar link de registro público">
+                        <i class="fa-solid fa-link"></i> Link Registro
                     </button>
-                </form>
+                    {% endif %}
+                    <a href="{% url 'panel:session_toggle' s.id %}" class="px-3 py-2 rounded-lg text-xs font-bold {{ s.activa|yesno:'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100,bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100' }} transition-all" title="{{ s.activa|yesno:'Desactivar,Activar' }}">
+                        <i class="fa-solid {{ s.activa|yesno:'fa-pause,fa-play' }}"></i>
+                    </a>
+                    <form id="delete-form-{{ s.id }}" method="POST" action="{% url 'panel:session_delete' s.id %}" class="inline">
+                        {% csrf_token %}
+                        <button type="button" onclick="showConfirm('Eliminar Sesión', '¿Estás seguro de que deseas eliminar esta sesión?', () => document.getElementById('delete-form-{{ s.id }}').submit())" class="px-3 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-400 dark:bg-gray-800/50 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 transition-all" title="Eliminar">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -156,19 +195,27 @@
 <div id="createModal" class="fixed inset-0 z-[100] hidden">
     <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm" onclick="document.getElementById('createModal').classList.add('hidden')"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-blue-900/30 relative">
-            <div class="p-6 border-b border-gray-100 dark:border-blue-900/30">
+        <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 dark:border-blue-900/30 relative max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 dark:border-blue-900/30 sticky top-0 bg-white dark:bg-[#162054] z-10">
                 <h3 class="text-xl font-black text-gray-800 dark:text-white flex items-center gap-2">
                     <i class="fa-solid fa-calendar-plus text-[#F58830]"></i>
-                    Nueva Sesión
+                    Nuevo Evento
                 </h3>
             </div>
             <form method="POST" action="{% url 'panel:session_create' %}" class="p-6 space-y-4">
                 {% csrf_token %}
 
                 <div>
-                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Título (opcional)</label>
-                    <input type="text" name="titulo" placeholder="Ej: Sesión Mañana" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Título</label>
+                    <input type="text" name="titulo" placeholder="Ej: Seminario de Inteligencia Artificial" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Descripción (opcional)</label>
+                    <textarea name="descripcion" rows="2" placeholder="Descripción del evento..." class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Lugar</label>
+                    <input type="text" name="lugar" placeholder="Ej: Auditorio Principal" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -198,9 +245,31 @@
                         <input type="time" name="hora_fin" required class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
                     </div>
                 </div>
+
+                <!-- Capacity -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Capacidad</label>
+                    <div class="flex items-center gap-4">
+                        <input type="number" name="capacidad" id="capacidad_input" min="1" placeholder="Ej: 100" class="flex-1 p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]" disabled>
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="cap_ilimitada" name="capacidad_ilimitada" checked onchange="toggleCapacidad()" class="h-5 w-5 rounded text-[#F58830] focus:ring-[#F58830] border-gray-300">
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Ilimitada</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Solo Líderes -->
+                <div class="flex items-center gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30">
+                    <input type="checkbox" name="solo_lideres" id="solo_lideres_cb" class="h-5 w-5 rounded text-purple-600 focus:ring-purple-500 border-gray-300">
+                    <label for="solo_lideres_cb" class="flex-1 cursor-pointer">
+                        <span class="text-sm font-bold text-gray-700 dark:text-gray-200"><i class="fa-solid fa-user-tie mr-1 text-purple-600"></i> Solo Líderes Académicos</span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Solo personas registradas como líderes podrán inscribirse</p>
+                    </label>
+                </div>
+
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="flex-1 bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3 rounded-xl transition-all">
-                        <i class="fa-solid fa-check mr-1"></i> Crear Sesión
+                        <i class="fa-solid fa-check mr-1"></i> Crear Evento
                     </button>
                     <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')" class="px-6 py-3 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-[#0F163A]/50 transition-all">
                         Cancelar
@@ -216,6 +285,27 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
+    function toggleCapacidad() {
+        const cb = document.getElementById('cap_ilimitada');
+        const input = document.getElementById('capacidad_input');
+        if (cb.checked) {
+            input.disabled = true;
+            input.value = '';
+        } else {
+            input.disabled = false;
+            input.focus();
+        }
+    }
+
+    function copyRegistroLink(sessionId) {
+        const url = window.location.origin + '/sesion/' + sessionId + '/registro/';
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Link copiado al portapapeles');
+        }).catch(() => {
+            prompt('Link de registro:', url);
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         flatpickr("#fecha_sesion", {
             locale: "es",
@@ -226,18 +316,27 @@
                     const date = selectedDates[0];
                     const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
                     const dayName = days[date.getDay()];
-                    
+
                     const selectEl = document.getElementById('dia_semana');
                     for (let i = 0; i < selectEl.options.length; i++) {
-                        // Support for multiple formats of Sábado since replacing character issues
-                        if (selectEl.options[i].value === dayName || 
-                            parseFloat(selectEl.options[i].text) === parseFloat(dayName) ||
+                        if (selectEl.options[i].value === dayName ||
                             (dayName === 'Sábado' && selectEl.options[i].value.includes('do'))) {
                             selectEl.selectedIndex = i;
                             break;
                         }
                     }
                 }
+            }
+        });
+
+        // Handle form submission: inject capacidad=0 if ilimitada checked
+        const form = document.querySelector('#createModal form');
+        form.addEventListener('submit', function() {
+            const cb = document.getElementById('cap_ilimitada');
+            const input = document.getElementById('capacidad_input');
+            if (cb.checked) {
+                input.disabled = false;
+                input.value = '0';
             }
         });
     });

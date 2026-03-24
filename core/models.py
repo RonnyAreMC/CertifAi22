@@ -2,6 +2,15 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid
 from django.conf import settings
+from django.core.exceptions import ValidationError
+
+FACULTADES_CHOICES = [
+    ('FACI', 'FACI - Ingeniería'),
+    ('FACS', 'FACS - Salud'),
+    ('FACE', 'FACE - Educación'),
+    ('FACSECYD', 'FACSECYD - Ciencias Sociales'),
+    ('POSGRADO', 'Posgrado / Otra'),
+]
 
 class Usuario(AbstractUser):
     """Usuario del sistema (solo administradores)"""
@@ -11,7 +20,11 @@ class Usuario(AbstractUser):
     ]
     
     rol = models.CharField(max_length=20, choices=ROLES, default='admin')
-    facultad = models.CharField(max_length=100, blank=True)
+    facultad = models.CharField(
+        max_length=20, 
+        choices=FACULTADES_CHOICES, 
+        blank=True
+    )
     telefono = models.CharField(max_length=20, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     ultimo_acceso = models.DateTimeField(null=True, blank=True)
@@ -27,18 +40,11 @@ class Usuario(AbstractUser):
 class LoteCertificados(models.Model):
     nombre_lote = models.CharField(max_length=200)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    archivo_excel = models.FileField(upload_to='lotes_excel/')
+    archivo_excel = models.FileField(upload_to='lotes_excel/', null=True, blank=True)
     administrador = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
     activo = models.BooleanField(default=True)
     
-    FACULTADES = [
-        ('FACI', 'FACI - Ingeniería'),
-        ('FACS', 'FACS - Salud'),
-        ('FACE', 'FACE - Educación'),
-        ('FACSECYD', 'FACSECYD - Ciencias Sociales'),
-        ('POSGRADO', 'Posgrado / Otra'),
-    ]
-    facultad = models.CharField(max_length=20, choices=FACULTADES, default='FACI', db_index=True)
+    facultad = models.CharField(max_length=20, choices=FACULTADES_CHOICES, default='FACI', db_index=True)
     
     # Customization Fields
     PLANTILLAS = [
@@ -85,8 +91,46 @@ class LoteCertificados(models.Model):
     def __str__(self):
         return self.nombre_lote
 
+class Participante(models.Model):
+    """Registro único de un participante/estudiante en el sistema."""
+    cedula = models.CharField(max_length=20, blank=True, default='', db_index=True)
+    nombres = models.CharField(max_length=100)
+    apellidos = models.CharField(max_length=100)
+    email = models.EmailField(max_length=200, db_index=True)
+    celular = models.CharField(max_length=20, blank=True, default='')
+    es_lider = models.BooleanField(default=False, verbose_name='Líder Académico', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Participante'
+        verbose_name_plural = 'Participantes'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cedula'],
+                name='unique_cedula_when_not_empty',
+                condition=~models.Q(cedula=''),
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['cedula']),
+        ]
+
+    def clean(self):
+        if not self.cedula and not self.email:
+            raise ValidationError('Debe proporcionar al menos cédula o correo electrónico.')
+
+    def __str__(self):
+        return f"{self.nombres} {self.apellidos} ({self.cedula or self.email})"
+
+
 class Certificado(models.Model):
     lote = models.ForeignKey(LoteCertificados, on_delete=models.CASCADE, related_name='certificados')
+    participante = models.ForeignKey(
+        'Participante', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='certificados'
+    )
     cedula = models.CharField(max_length=20, db_index=True)
     nombres = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100)
@@ -149,6 +193,8 @@ class SesionAsistencia(models.Model):
         max_length=200, blank=True,
         help_text='Título descriptivo (ej: "Sesión Mañana - Lunes")'
     )
+    descripcion = models.TextField(blank=True, default='', verbose_name='Descripción')
+    lugar = models.CharField(max_length=300, blank=True, default='', verbose_name='Lugar')
     fecha = models.DateField(verbose_name='Fecha de la Sesión')
     dia_semana = models.CharField(
         max_length=12, choices=DIAS_SEMANA, verbose_name='Día'
@@ -160,8 +206,12 @@ class SesionAsistencia(models.Model):
         editable=False, db_index=True
     )
     capacidad = models.PositiveIntegerField(
-        default=250, verbose_name='Cupos Máximos',
-        help_text='Máximo de participantes (por defecto 250)'
+        default=0, verbose_name='Cupos Máximos',
+        help_text='0 = ilimitado'
+    )
+    solo_lideres = models.BooleanField(
+        default=False, verbose_name='Solo Líderes Académicos',
+        help_text='Solo participantes marcados como líderes pueden registrarse'
     )
     activa = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -186,15 +236,23 @@ class SesionAsistencia(models.Model):
         return f"{self.hora_inicio:%H:%M} – {self.hora_fin:%H:%M}"
 
     @property
+    def capacidad_ilimitada(self):
+        return self.capacidad == 0
+
+    @property
     def confirmados_count(self):
         return self.confirmaciones.count()
 
     @property
     def cupos_disponibles(self):
+        if self.capacidad_ilimitada:
+            return None  # None = ilimitado
         return max(0, self.capacidad - self.confirmados_count)
 
     @property
     def esta_llena(self):
+        if self.capacidad_ilimitada:
+            return False
         return self.confirmados_count >= self.capacidad
 
 
@@ -206,26 +264,39 @@ class RegistroAsistencia(models.Model):
     )
     certificado = models.ForeignKey(
         Certificado, on_delete=models.CASCADE,
-        related_name='asistencias'
+        related_name='asistencias',
+        null=True, blank=True
+    )
+    participante = models.ForeignKey(
+        Participante, on_delete=models.CASCADE,
+        related_name='asistencias',
+        null=True, blank=True
     )
     fecha_registro = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
 
     class Meta:
-        unique_together = [('sesion', 'certificado')]
+        unique_together = [('sesion', 'participante')]
         ordering = ['-fecha_registro']
         verbose_name = 'Registro de Asistencia'
         verbose_name_plural = 'Registros de Asistencia'
 
     def __str__(self):
-        return f"{self.certificado.nombres} → {self.sesion}"
+        nombre = self.participante.nombres if self.participante else (self.certificado.nombres if self.certificado else '?')
+        return f"{nombre} → {self.sesion}"
 
 
 class ConfirmacionAsistencia(models.Model):
     """Confirmación previa: el participante se compromete a asistir."""
     certificado = models.ForeignKey(
         Certificado, on_delete=models.CASCADE,
-        related_name='confirmaciones'
+        related_name='confirmaciones',
+        null=True, blank=True
+    )
+    participante = models.ForeignKey(
+        Participante, on_delete=models.CASCADE,
+        related_name='confirmaciones',
+        null=True, blank=True
     )
     sesion = models.ForeignKey(
         SesionAsistencia, on_delete=models.CASCADE,
@@ -239,11 +310,151 @@ class ConfirmacionAsistencia(models.Model):
     fecha_confirmacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [('certificado', 'sesion')]
+        unique_together = [('participante', 'sesion')]
         ordering = ['-fecha_confirmacion']
         verbose_name = 'Confirmación de Asistencia'
         verbose_name_plural = 'Confirmaciones de Asistencia'
 
     def __str__(self):
-        status = '🔒 Bloqueado' if self.bloqueado else '✅ Confirmado'
-        return f"{self.certificado.nombres} — {status}"
+        nombre = self.participante.nombres if self.participante else (self.certificado.nombres if self.certificado else '?')
+        status = 'Bloqueado' if self.bloqueado else 'Confirmado'
+        return f"{nombre} — {status}"
+
+
+class SolicitudAcceso(models.Model):
+    """Solicitud de acceso para nuevos administradores - requiere aprobación"""
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente de Aprobación'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+    ]
+    
+    nombres = models.CharField(max_length=100, verbose_name='Nombres')
+    apellidos = models.CharField(max_length=100, verbose_name='Apellidos')
+    email = models.EmailField(unique=True, verbose_name='Email')
+    telefono = models.CharField(max_length=20, blank=True, verbose_name='Teléfono')
+    facultad = models.CharField(
+        max_length=20, 
+        choices=FACULTADES_CHOICES, 
+        default='FACI',
+        verbose_name='Facultad / Departamento'
+    )
+    
+    estado = models.CharField(
+        max_length=20, 
+        choices=ESTADO_CHOICES, 
+        default='pendiente',
+        db_index=True
+    )
+    
+    usuario_creado = models.OneToOneField(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='solicitud_acceso',
+        verbose_name='Usuario Creado'
+    )
+    
+    # Auditoría
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+    aprobado_por = models.ForeignKey(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='solicitudes_aprobadas',
+        verbose_name='Aprobado por'
+    )
+    motivo_rechazo = models.TextField(blank=True, verbose_name='Motivo del Rechazo')
+    
+    class Meta:
+        ordering = ['-fecha_solicitud']
+        verbose_name = 'Solicitud de Acceso'
+        verbose_name_plural = 'Solicitudes de Acceso'
+        indexes = [
+            models.Index(fields=['estado', '-fecha_solicitud']),
+            models.Index(fields=['email']),
+        ]
+    
+    def __str__(self):
+        return f"{self.nombres} {self.apellidos} - {self.get_estado_display()}"
+
+
+class LandingBloque(models.Model):
+    """Bloque configurable del landing page público."""
+    TIPO_CHOICES = [
+        ('hero', 'Encabezado Principal'),
+        ('stats', 'Barra de Estadísticas'),
+        ('steps', 'Pasos / Proceso'),
+        ('features', 'Características / Cards'),
+        ('cta', 'Call to Action / Banner'),
+        ('evento', 'Evento Destacado'),
+        ('pasado', 'Evento Pasado / Noticia'),
+        ('custom', 'Bloque Personalizado'),
+    ]
+    ESTILO_CHOICES = [
+        ('hero_gradient', 'Hero - Gradiente con orbes animados'),
+        ('hero_imagen', 'Hero - Imagen de fondo completa'),
+        ('hero_split', 'Hero - Mitad imagen / mitad texto'),
+        ('stats_bar', 'Stats - Barra de estadísticas'),
+        ('steps_3', 'Steps - 3 pasos con iconos'),
+        ('features_grid', 'Features - Grid de características'),
+        ('cta_banner', 'CTA - Banner con botón'),
+        ('card_imagen_top', 'Card - Imagen arriba, texto abajo'),
+        ('card_horizontal', 'Card - Imagen lateral, texto al lado'),
+        ('card_solo_texto', 'Card - Solo texto con color de fondo'),
+    ]
+
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='hero')
+    estilo = models.CharField(max_length=30, choices=ESTILO_CHOICES, default='hero_gradient')
+    orden = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+
+    # Contenido
+    titulo = models.CharField(max_length=200, blank=True)
+    subtitulo = models.CharField(max_length=300, blank=True)
+    descripcion = models.TextField(blank=True)
+
+    # Items JSON (para stats, steps, features — lista de objetos)
+    # Ej stats: [{"icono":"fa-solid fa-certificate","valor":"5,000+","label":"Certificados","color":"blue"}]
+    # Ej steps: [{"icono":"fa-solid fa-search","titulo":"Busca","desc":"...","numero":"1"}]
+    # Ej features: [{"icono":"fa-solid fa-shield","titulo":"Seguro","desc":"...","color":"blue"}]
+    items_json = models.JSONField(default=list, blank=True)
+
+    # Imágenes
+    imagen_principal = models.ImageField(upload_to='landing/', null=True, blank=True)
+    imagen_2 = models.ImageField(upload_to='landing/', null=True, blank=True)
+    imagen_3 = models.ImageField(upload_to='landing/', null=True, blank=True)
+
+    # Colores
+    color_fondo = models.CharField(max_length=7, default='#162054')
+    color_texto = models.CharField(max_length=7, default='#FFFFFF')
+    color_acento = models.CharField(max_length=7, default='#F58830')
+
+    # Evento vinculado
+    sesion = models.ForeignKey(
+        SesionAsistencia, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='landing_bloques',
+        verbose_name='Evento vinculado'
+    )
+
+    # Botones configurables (hasta 2)
+    boton_1_texto = models.CharField(max_length=100, blank=True)
+    boton_1_url = models.CharField(max_length=500, blank=True)
+    boton_1_icono = models.CharField(max_length=50, blank=True, default='fa-solid fa-arrow-right')
+    boton_2_texto = models.CharField(max_length=100, blank=True)
+    boton_2_url = models.CharField(max_length=500, blank=True)
+    boton_2_icono = models.CharField(max_length=50, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['orden']
+        verbose_name = 'Bloque de Landing'
+        verbose_name_plural = 'Bloques de Landing'
+
+    def __str__(self):
+        return f"[{self.orden}] {self.get_tipo_display()} - {self.titulo or 'Sin título'}"

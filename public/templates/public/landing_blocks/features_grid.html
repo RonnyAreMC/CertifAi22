@@ -1,0 +1,36 @@
+<!-- Features Grid: Cards de características -->
+<section class="py-10 md:py-16 px-4">
+    <div class="max-w-5xl mx-auto">
+        {% if bloque.titulo %}
+        <div class="text-center mb-10">
+            {% if bloque.subtitulo %}
+            <span class="inline-block text-xs font-bold uppercase tracking-widest mb-2" style="color: {{ bloque.color_acento }};">{{ bloque.subtitulo }}</span>
+            {% endif %}
+            <h2 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white">{{ bloque.titulo }}</h2>
+            {% if bloque.descripcion %}
+            <p class="text-gray-500 dark:text-gray-400 mt-2">{{ bloque.descripcion }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-{{ bloque.items_json|length|default:'4' }} gap-4 md:gap-5">
+            {% for feat in bloque.items_json %}
+            <div class="p-6 rounded-2xl backdrop-blur-xl border transition-all hover:-translate-y-1 hover:shadow-xl group" style="background: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.5); box-shadow: 0 2px 16px rgba(0,0,0,0.04);">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg mb-4 shadow-lg transition-all group-hover:scale-110 group-hover:-rotate-3
+                    {% if feat.color == 'orange' %}bg-gradient-to-br from-[#F58830] to-[#ff6600]
+                    {% elif feat.color == 'green' %}bg-gradient-to-br from-emerald-500 to-emerald-600
+                    {% elif feat.color == 'purple' %}bg-gradient-to-br from-purple-500 to-purple-700
+                    {% elif feat.color == 'red' %}bg-gradient-to-br from-red-500 to-red-600
+                    {% else %}bg-gradient-to-br from-[#162054] to-[#1e3a8a]{% endif %}">
+                    <i class="{{ feat.icono }}"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 dark:text-white mb-1">{{ feat.titulo }}</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{{ feat.desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<style>
+    .dark section .backdrop-blur-xl { background: rgba(30,41,59,0.5) !important; border-color: rgba(255,255,255,0.1) !important; }
+</style>

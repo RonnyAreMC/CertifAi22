@@ -3,24 +3,71 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.contrib import messages
 from django.http import FileResponse, HttpResponse, JsonResponse
-from django.db.models import Sum, Count, F
+from django.db import models as db_models
+from django.db.models import Sum, Count, F, Max, Q as models_Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta, datetime, date, time
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth.views import LoginView as DjangoLoginView
 
 from core.models import (
     LoteCertificados, Certificado, Auditoria,
     SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia,
+    Usuario, SolicitudAcceso, Participante, LandingBloque,
 )
 from core.services.pdf_service import generate_certificate_pdf
-from core.services.excel_service import process_excel_batch, analyze_headers
-from .forms import BatchForm
+from core.services.excel_service import process_excel_batch, analyze_headers, analyze_excel_file
+from .forms import BatchForm, SolicitudAccesoForm, SesionForm
 
 import base64
 import uuid
 import random
 import json
 from io import BytesIO
+
+
+# ---------------------------------------------------------------------------
+# Custom Login View
+# ---------------------------------------------------------------------------
+
+class CustomLoginView(DjangoLoginView):
+    """Custom login view that checks for pending access requests"""
+    template_name = 'panel/auth/login.html'
+    redirect_authenticated_user = False  # We handle redirect manually
+    
+    def get(self, request, *args, **kwargs):
+        # If user is already authenticated, route them properly
+        if request.user.is_authenticated:
+            return self._route_authenticated_user(request.user)
+        return super().get(request, *args, **kwargs)
+    
+    def _route_authenticated_user(self, user):
+        """Route an authenticated user to the correct page based on their status."""
+        # Check if user has pending access request
+        try:
+            SolicitudAcceso.objects.get(usuario_creado=user, estado='pendiente')
+            return redirect('panel:mi_estado')
+        except SolicitudAcceso.DoesNotExist:
+            pass
+        
+        # Check if user is active admin
+        if user.activo and user.rol in ['admin', 'superadmin']:
+            return redirect('panel:dashboard')
+        
+        # Inactive user - send to mi_estado
+        return redirect('panel:mi_estado')
+    
+    def form_valid(self, form):
+        from django.contrib.auth import login
+        user = form.get_user()
+        
+        # Always log the user in first
+        login(self.request, user, backend='admin_panel.backends.EmailBackend')
+        
+        # Route them to the correct page
+        return self._route_authenticated_user(user)
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +81,8 @@ def _is_admin(user):
 
 def _log_audit(user, action, detail):
     """Create an audit log entry."""
-    Auditoria.objects.create(usuario=user, accion=action, detalle=detail)
+    if user:  # Solo crear log si el usuario no es None
+        Auditoria.objects.create(usuario=user, accion=action, detalle=detail)
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +145,7 @@ def dashboard(request):
         'labels_daily': labels_daily,
         'data_daily': data_daily,
     }
-    return render(request, 'panel/dashboard.html', context)
+    return render(request, 'panel/dashboard/index.html', context)
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +157,7 @@ def dashboard(request):
 def list_batches(request):
     """List all certificate batches."""
     lotes = LoteCertificados.objects.all().order_by('id')
-    return render(request, 'panel/batch_list.html', {'lotes': lotes})
+    return render(request, 'panel/batch/list.html', {'lotes': lotes})
 
 
 @login_required
@@ -129,7 +177,7 @@ def create_batch(request):
             return redirect('panel:batch_process_mapping', id=lote.id)
     else:
         form = BatchForm()
-    return render(request, 'panel/batch_form.html', {'form': form})
+    return render(request, 'panel/batch/form.html', {'form': form})
 
 
 @login_required
@@ -182,7 +230,7 @@ def process_batch_mapping(request, id):
         messages.error(request, f"Error leyendo el archivo Excel: {analysis.get('error')}")
         return redirect('panel:batch_list')
 
-    return render(request, 'panel/batch_mapping.html', {
+    return render(request, 'panel/batch/mapping.html', {
         'lotes': lote, # using 'lotes' to match template variable if any
         'columns': analysis['columns'],
         'suggestions': analysis['suggestions'],
@@ -196,7 +244,7 @@ def batch_detail(request, id):
     """View batch details and its certificates."""
     lote = get_object_or_404(LoteCertificados, id=id)
     certificados = lote.certificados.all()
-    return render(request, 'panel/batch_detail.html', {
+    return render(request, 'panel/batch/detail.html', {
         'lote': lote,
         'certificados': certificados,
     })
@@ -246,7 +294,7 @@ def configure_batch(request, id):
         messages.success(request, 'Diseño guardado correctamente.')
         return redirect('panel:batch_configure', id=lote.id)
 
-    return render(request, 'panel/batch_config.html', {'lote': lote})
+    return render(request, 'panel/batch/config.html', {'lote': lote})
 
 
 @login_required
@@ -368,7 +416,7 @@ def session_list(request):
     # Get distinct dates that have at least one session
     fechas_disponibles = SesionAsistencia.objects.dates('fecha', 'day', order='DESC')
 
-    return render(request, 'panel/session_list.html', {
+    return render(request, 'panel/sessions/list.html', {
         'sesiones': sesiones,
         'lotes': lotes,
         'fechas_disponibles': fechas_disponibles,
@@ -382,33 +430,91 @@ def session_list(request):
 def session_create(request):
     """Create a new attendance session."""
     if request.method == 'POST':
-        fecha_str = request.POST.get('fecha')
-        dia_semana = request.POST.get('dia_semana')
-        hora_inicio_str = request.POST.get('hora_inicio')
-        hora_fin_str = request.POST.get('hora_fin')
-        titulo = request.POST.get('titulo', '')
-
-        try:
-            fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-            hora_inicio = datetime.strptime(hora_inicio_str, '%H:%M').time()
-            hora_fin = datetime.strptime(hora_fin_str, '%H:%M').time()
-
-            SesionAsistencia.objects.create(
-                titulo=titulo,
-                fecha=fecha,
-                dia_semana=dia_semana,
-                hora_inicio=hora_inicio,
-                hora_fin=hora_fin,
-            )
+        form = SesionForm(request.POST)
+        if form.is_valid():
+            sesion = form.save()
             _log_audit(request.user, 'CREAR_SESION',
-                       f'Sesión creada: {dia_semana} {fecha} {hora_inicio_str}-{hora_fin_str}')
+                       f'Sesión creada: {sesion.titulo or sesion.dia_semana} {sesion.fecha}')
             messages.success(request, 'Sesión creada exitosamente.')
-        except Exception as e:
-            messages.error(request, f'Error al crear sesión: {str(e)}')
+        else:
+            for error in form.errors.values():
+                messages.error(request, error.as_text())
+        return redirect('panel:session_list')
+    return redirect('panel:session_list')
 
+
+@login_required
+@user_passes_test(_is_admin)
+def session_edit(request, id):
+    """Edit an existing attendance session."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    if request.method == 'POST':
+        form = SesionForm(request.POST, instance=sesion)
+        if form.is_valid():
+            form.save()
+            _log_audit(request.user, 'EDITAR_SESION', f'Sesión editada: {sesion.id}')
+            messages.success(request, 'Sesión actualizada correctamente.')
+            return redirect('panel:session_list')
+    else:
+        form = SesionForm(instance=sesion)
+    return render(request, 'panel/sessions/edit.html', {'form': form, 'sesion': sesion})
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_generate_batch(request, id):
+    """Generate a LoteCertificados from session's confirmed participants."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+
+    if sesion.lote:
+        messages.warning(request, 'Esta sesión ya tiene un lote de certificados asociado.')
+        return redirect('panel:batch_configure', id=sesion.lote.id)
+
+    confirmaciones = ConfirmacionAsistencia.objects.filter(
+        sesion=sesion, confirmado=True, participante__isnull=False
+    ).select_related('participante')
+
+    if not confirmaciones.exists():
+        messages.error(request, 'No hay participantes confirmados para generar certificados.')
         return redirect('panel:session_list')
 
-    return redirect('panel:session_list')
+    if request.method == 'POST':
+        # Create batch
+        lote = LoteCertificados.objects.create(
+            nombre_lote=sesion.titulo or f'Sesión {sesion.fecha} {sesion.label}',
+            administrador=request.user,
+            facultad=request.POST.get('facultad', 'FACI'),
+        )
+
+        # Create certificates from participants
+        certs = []
+        for conf in confirmaciones:
+            p = conf.participante
+            certs.append(Certificado(
+                lote=lote,
+                participante=p,
+                cedula=p.cedula or f'GEN-{uuid.uuid4().hex[:8].upper()}',
+                nombres=p.nombres,
+                apellidos=p.apellidos,
+                email=p.email,
+                celular=p.celular,
+                curso=lote.nombre_lote.upper(),
+            ))
+        Certificado.objects.bulk_create(certs)
+
+        # Link session to batch
+        sesion.lote = lote
+        sesion.save(update_fields=['lote'])
+
+        _log_audit(request.user, 'GENERAR_LOTE_SESION',
+                   f'Lote "{lote.nombre_lote}" generado desde sesión {sesion.id} con {len(certs)} certificados')
+        messages.success(request, f'Lote creado con {len(certs)} certificados. Ahora configura el diseño.')
+        return redirect('panel:batch_configure', id=lote.id)
+
+    return render(request, 'panel/sessions/generate_batch.html', {
+        'sesion': sesion,
+        'total_confirmados': confirmaciones.count(),
+    })
 
 
 @login_required
@@ -448,7 +554,7 @@ def session_qr_display(request, id):
     # Build full URL for QR
     checkin_url = request.build_absolute_uri(f'/checkin/{sesion.codigo_qr}/')
 
-    return render(request, 'panel/session_qr_display.html', {
+    return render(request, 'panel/sessions/qr.html', {
         'sesion': sesion,
         'checkin_url': checkin_url,
         'total_registros': total_registros,
@@ -464,26 +570,32 @@ def session_attendees_api(request, id):
     # Get 'since' parameter for incremental updates
     since_str = request.GET.get('since', '')
     
-    registros = RegistroAsistencia.objects.filter(sesion=sesion).select_related('certificado')
-    
+    registros = RegistroAsistencia.objects.filter(sesion=sesion).select_related('participante', 'certificado')
+
     if since_str:
         try:
             since_dt = datetime.fromisoformat(since_str)
             registros = registros.filter(fecha_registro__gt=since_dt)
         except (ValueError, TypeError):
             pass
-    
+
     registros = registros.order_by('-fecha_registro')[:50]
-    
+
     total = RegistroAsistencia.objects.filter(sesion=sesion).count()
-    
+
     attendees = []
     for r in registros:
+        # Prefer participante, fallback to certificado
+        p = r.participante
+        c = r.certificado
+        nombre = f'{p.nombres} {p.apellidos}' if p else (f'{c.nombres} {c.apellidos}' if c else '?')
+        cedula = p.cedula if p else (c.cedula if c else '')
+        email = p.email if p else (c.email if c else '')
         attendees.append({
             'id': r.id,
-            'nombre': f'{r.certificado.nombres} {r.certificado.apellidos}',
-            'cedula': r.certificado.cedula,
-            'email': r.certificado.email,
+            'nombre': nombre,
+            'cedula': cedula,
+            'email': email,
             'hora': r.fecha_registro.strftime('%H:%M:%S'),
             'timestamp': r.fecha_registro.isoformat(),
         })
@@ -542,4 +654,618 @@ def session_bulk_pdf(request, id):
     response = HttpResponse(output_buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ---------------------------------------------------------------------------
+# Register & Access Requests Management
+# ---------------------------------------------------------------------------
+
+@csrf_protect
+@require_http_methods(["GET", "POST"])
+def register(request):
+    """Página de registro - solicitud de acceso con creación de usuario inactivo"""
+    if request.user.is_authenticated:
+        if request.user.activo and request.user.rol in ['admin', 'superadmin']:
+            return redirect('panel:dashboard')
+        return redirect('panel:mi_estado')
+    
+    if request.method == 'POST':
+        form = SolicitudAccesoForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            
+            # Verificar si el email ya existe
+            if SolicitudAcceso.objects.filter(email=email).exists():
+                messages.error(request, 'Este email ya tiene una solicitud registrada. Inicia sesión para ver el estado.')
+            elif Usuario.objects.filter(email=email).exists():
+                messages.error(request, 'Este email ya está registrado en el sistema.')
+            else:
+                # Crear usuario inactivo con la contraseña proporcionada
+                nombre_usuario = email.split('@')[0]
+                base_username = nombre_usuario
+                counter = 1
+                while Usuario.objects.filter(username=nombre_usuario).exists():
+                    nombre_usuario = f"{base_username}{counter}"
+                    counter += 1
+                
+                usuario = Usuario.objects.create_user(
+                    username=nombre_usuario,
+                    email=email,
+                    password=password,
+                    first_name=form.cleaned_data['nombres'],
+                    last_name=form.cleaned_data['apellidos'],
+                    telefono=form.cleaned_data.get('telefono', ''),
+                    facultad=form.cleaned_data['facultad'],
+                    rol='admin',
+                    activo=False,  # Inactivo hasta que el admin apruebe
+                    is_staff=False,
+                    is_superuser=False,
+                )
+                
+                # Crear la solicitud y vincular usuario
+                solicitud = form.save(commit=False)
+                solicitud.usuario_creado = usuario
+                solicitud.save()
+                
+                _log_audit(None, 'SOLICITUD_ACCESO_CREADA', f'Nueva solicitud de acceso: {email}')
+                
+                # Iniciar sesión automáticamente y redirigir a mi_estado
+                from django.contrib.auth import login
+                login(request, usuario, backend='admin_panel.backends.EmailBackend')
+                return redirect('panel:mi_estado')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f'{error}')
+    else:
+        form = SolicitudAccesoForm()
+    
+    return render(request, 'panel/auth/register.html', {'form': form})
+
+
+def solicitud_pendiente(request, id):
+    """Página de solicitud pendiente - redirige a mi_estado si está autenticado"""
+    if request.user.is_authenticated:
+        return redirect('panel:mi_estado')
+    
+    solicitud = get_object_or_404(SolicitudAcceso, id=id)
+    
+    # Si está aprobada, redirigir a login
+    if solicitud.estado == 'aprobado':
+        messages.success(request, 'Tu solicitud fue aprobada. Inicia sesión con tu correo y contraseña.')
+        return redirect('panel:login')
+    
+    # Si está rechazada, mostrar motivo
+    if solicitud.estado == 'rechazado':
+        return render(request, 'panel/auth/solicitud_rechazada.html', {'solicitud': solicitud})
+    
+    # Si está pendiente, redirigir a login para que inicie sesión
+    messages.info(request, 'Inicia sesión con tu correo y contraseña para ver el estado de tu solicitud.')
+    return redirect('panel:login')
+
+
+@login_required
+def mi_estado(request):
+    """Página de estado para usuarios pendientes de aprobación"""
+    user = request.user
+    
+    # Si el usuario está activo y es admin, redirigir al dashboard
+    if user.activo and user.rol in ['admin', 'superadmin']:
+        return redirect('panel:dashboard')
+    
+    # Buscar la solicitud del usuario
+    solicitud = None
+    estado = 'pendiente'
+    try:
+        solicitud = SolicitudAcceso.objects.get(usuario_creado=user)
+        estado = solicitud.estado
+    except SolicitudAcceso.DoesNotExist:
+        # Si no tiene solicitud pero no está activo, mostrar mensaje genérico
+        if not user.activo:
+            estado = 'desactivado'
+    
+    # Si la solicitud fue aprobada, verificar si el usuario está activo
+    if estado == 'aprobado' and user.activo:
+        return redirect('panel:dashboard')
+    
+    context = {
+        'solicitud': solicitud,
+        'estado': estado,
+        'user': user,
+    }
+    return render(request, 'panel/auth/mi_estado.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.rol == 'superadmin')
+def solicitudes_pendientes(request):
+    """Admin view: lista de solicitudes de acceso pendientes"""
+    estado_filter = request.GET.get('estado', 'pendiente')
+    
+    solicitudes = SolicitudAcceso.objects.all().order_by('-fecha_solicitud')
+    
+    if estado_filter == 'pendiente':
+        solicitudes = solicitudes.filter(estado='pendiente')
+    elif estado_filter == 'aprobado':
+        solicitudes = solicitudes.filter(estado='aprobado')
+    elif estado_filter == 'rechazado':
+        solicitudes = solicitudes.filter(estado='rechazado')
+    
+    pendientes_count = SolicitudAcceso.objects.filter(estado='pendiente').count()
+    aprobadas_count = SolicitudAcceso.objects.filter(estado='aprobado').count()
+    rechazadas_count = SolicitudAcceso.objects.filter(estado='rechazado').count()
+    
+    context = {
+        'solicitudes': solicitudes,
+        'estado_filter': estado_filter,
+        'pendientes_count': pendientes_count,
+        'aprobadas_count': aprobadas_count,
+        'rechazadas_count': rechazadas_count,
+    }
+    return render(request, 'panel/solicitudes/pendientes.html', context)
+
+
+@login_required
+@user_passes_test(lambda user: user.rol == 'superadmin')
+@require_http_methods(["POST"])
+def aprobar_solicitud(request, id):
+    """Admin action: aprobar una solicitud de acceso - activa el usuario existente"""
+    solicitud = get_object_or_404(SolicitudAcceso, id=id)
+    
+    if solicitud.estado not in ['pendiente', 'rechazado']:
+        messages.error(request, 'Esta solicitud no puede ser procesada.')
+        return redirect('panel:solicitudes_pendientes')
+    
+    # Limpiar motivo de rechazo si existía
+    if solicitud.estado == 'rechazado':
+        solicitud.motivo_rechazo = ''
+    
+    try:
+        if solicitud.usuario_creado:
+            # Activar el usuario existente (creado durante el registro)
+            usuario = solicitud.usuario_creado
+            usuario.activo = True
+            usuario.save(update_fields=['activo'])
+            nombre_usuario = usuario.username
+        else:
+            # Solicitud legacy sin usuario vinculado - crear uno nuevo
+            nombre_usuario = solicitud.email.split('@')[0]
+            base_username = nombre_usuario
+            counter = 1
+            while Usuario.objects.filter(username=nombre_usuario).exists():
+                nombre_usuario = f"{base_username}{counter}"
+                counter += 1
+            
+            usuario = Usuario.objects.create_user(
+                username=nombre_usuario,
+                email=solicitud.email,
+                first_name=solicitud.nombres,
+                last_name=solicitud.apellidos,
+                telefono=solicitud.telefono,
+                facultad=solicitud.facultad,
+                rol='admin',
+                activo=True,
+                is_staff=False,
+                is_superuser=False,
+            )
+            solicitud.usuario_creado = usuario
+        
+        # Actualizar solicitud
+        solicitud.estado = 'aprobado'
+        solicitud.aprobado_por = request.user
+        solicitud.fecha_respuesta = timezone.now()
+        solicitud.save()
+        
+        # Log de auditoría
+        _log_audit(request.user, 'SOLICITUD_APROBADA', 
+                  f'Solicitud de {solicitud.email} aprobada. Usuario {nombre_usuario} activado.')
+        
+        messages.success(request, f'Solicitud aprobada. Usuario activado: {nombre_usuario}')
+    except Exception as e:
+        messages.error(request, f'Error al procesar la solicitud: {str(e)}')
+    
+    return redirect('panel:solicitudes_pendientes')
+
+
+@login_required
+@user_passes_test(lambda user: user.rol == 'superadmin')
+@require_http_methods(["GET", "POST"])
+def rechazar_solicitud(request, id):
+    """Admin action: rechazar una solicitud de acceso"""
+    solicitud = get_object_or_404(SolicitudAcceso, id=id)
+    
+    if solicitud.estado != 'pendiente':
+        messages.error(request, 'Esta solicitud ya ha sido procesada.')
+        return redirect('panel:solicitudes_pendientes')
+    
+    if request.method == 'POST':
+        motivo = request.POST.get('motivo', '')
+        
+        solicitud.estado = 'rechazado'
+        solicitud.motivo_rechazo = motivo
+        solicitud.aprobado_por = request.user
+        solicitud.fecha_respuesta = timezone.now()
+        solicitud.save()
+        
+        _log_audit(request.user, 'SOLICITUD_RECHAZADA', 
+                  f'Solicitud de {solicitud.email} rechazada. Motivo: {motivo}')
+        
+        messages.success(request, f'Solicitud rechazada: {solicitud.email}')
+        return redirect('panel:solicitudes_pendientes')
+    
+    return render(request, 'panel/solicitudes/rechazar.html', {'solicitud': solicitud})
+
+
+# ---------------------------------------------------------------------------
+# Landing Page Builder (Superadmin Only)
+# ---------------------------------------------------------------------------
+
+@login_required
+@user_passes_test(lambda u: u.rol == 'superadmin')
+def landing_builder(request):
+    """Landing page builder — manage blocks visually."""
+    bloques = LandingBloque.objects.all()
+    # Only future events for the event selector
+    eventos_futuros = SesionAsistencia.objects.filter(
+        fecha__gte=date.today(), activa=True
+    ).order_by('fecha', 'hora_inicio')
+
+    return render(request, 'panel/landing/builder.html', {
+        'bloques': bloques,
+        'eventos_futuros': eventos_futuros,
+        'tipo_choices': LandingBloque.TIPO_CHOICES,
+        'estilo_choices': LandingBloque.ESTILO_CHOICES,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.rol == 'superadmin')
+@require_http_methods(["POST"])
+def landing_add_block(request):
+    """AJAX: Add a new landing block."""
+    tipo = request.POST.get('tipo', 'hero')
+    estilo = request.POST.get('estilo', 'hero_gradient')
+
+    # Assign next order
+    max_orden = LandingBloque.objects.aggregate(m=Max('orden'))['m'] or 0
+
+    bloque = LandingBloque.objects.create(
+        tipo=tipo,
+        estilo=estilo,
+        orden=max_orden + 1,
+        titulo=request.POST.get('titulo', ''),
+    )
+
+    return JsonResponse({'ok': True, 'id': bloque.id, 'orden': bloque.orden})
+
+
+@login_required
+@user_passes_test(lambda u: u.rol == 'superadmin')
+@require_http_methods(["POST"])
+def landing_update_block(request, id):
+    """AJAX: Update a landing block."""
+    bloque = get_object_or_404(LandingBloque, id=id)
+
+    # Text fields
+    for field in ['titulo', 'subtitulo', 'descripcion', 'tipo', 'estilo',
+                  'color_fondo', 'color_texto', 'color_acento',
+                  'boton_1_texto', 'boton_1_url', 'boton_1_icono',
+                  'boton_2_texto', 'boton_2_url', 'boton_2_icono']:
+        if field in request.POST:
+            setattr(bloque, field, request.POST[field])
+
+    # Activo toggle
+    if 'activo' in request.POST:
+        bloque.activo = request.POST['activo'] == 'true'
+
+    # Evento vinculado
+    sesion_id = request.POST.get('sesion_id')
+    if sesion_id:
+        try:
+            bloque.sesion = SesionAsistencia.objects.get(id=sesion_id)
+        except SesionAsistencia.DoesNotExist:
+            bloque.sesion = None
+    elif 'sesion_id' in request.POST:
+        bloque.sesion = None
+
+    # Items JSON
+    items_raw = request.POST.get('items_json')
+    if items_raw:
+        try:
+            bloque.items_json = json.loads(items_raw)
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Images
+    for img_field in ['imagen_principal', 'imagen_2', 'imagen_3']:
+        if img_field in request.FILES:
+            setattr(bloque, img_field, request.FILES[img_field])
+
+    # Auto-configure button 1 when event is linked
+    if bloque.sesion and not bloque.boton_1_texto:
+        bloque.boton_1_texto = 'Regístrate Aquí'
+        bloque.boton_1_url = f'/sesion/{bloque.sesion.id}/registro/'
+        bloque.boton_1_icono = 'fa-solid fa-user-plus'
+
+    bloque.save()
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@user_passes_test(lambda u: u.rol == 'superadmin')
+@require_http_methods(["POST"])
+def landing_delete_block(request, id):
+    """AJAX: Delete a landing block."""
+    bloque = get_object_or_404(LandingBloque, id=id)
+    bloque.delete()
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@user_passes_test(lambda u: u.rol == 'superadmin')
+@require_http_methods(["POST"])
+def landing_reorder(request):
+    """AJAX: Reorder landing blocks."""
+    try:
+        order_data = json.loads(request.body)
+        for item in order_data:
+            LandingBloque.objects.filter(id=item['id']).update(orden=item['orden'])
+        return JsonResponse({'ok': True})
+    except (json.JSONDecodeError, KeyError):
+        return JsonResponse({'ok': False, 'error': 'Datos inválidos'}, status=400)
+
+
+# ---------------------------------------------------------------------------
+# Líderes Académicos
+# ---------------------------------------------------------------------------
+
+@login_required
+@user_passes_test(_is_admin)
+def lideres_list(request):
+    """Lista de líderes académicos con búsqueda."""
+    q = request.GET.get('q', '').strip()
+    lideres = Participante.objects.filter(es_lider=True).order_by('-created_at')
+    if q:
+        lideres = lideres.filter(
+            models_Q(cedula__icontains=q) |
+            models_Q(email__icontains=q) |
+            models_Q(nombres__icontains=q) |
+            models_Q(apellidos__icontains=q)
+        )
+    return render(request, 'panel/lideres/list.html', {
+        'lideres': lideres,
+        'total': Participante.objects.filter(es_lider=True).count(),
+        'q': q,
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+@require_http_methods(["POST"])
+def lideres_add_manual(request):
+    """Registrar un líder manualmente."""
+    cedula = request.POST.get('cedula', '').strip()
+    nombres = request.POST.get('nombres', '').strip().upper()
+    apellidos = request.POST.get('apellidos', '').strip().upper()
+    email = request.POST.get('email', '').strip().lower()
+    celular = request.POST.get('celular', '').strip()
+
+    if not nombres or not apellidos:
+        messages.error(request, 'Nombres y apellidos son obligatorios.')
+        return redirect('panel:lideres_list')
+    if not cedula and not email:
+        messages.error(request, 'Debe proporcionar al menos cédula o correo.')
+        return redirect('panel:lideres_list')
+
+    # Deduplication: find existing participante
+    participante = None
+    if cedula:
+        participante = Participante.objects.filter(cedula=cedula).first()
+    if not participante and email:
+        participante = Participante.objects.filter(email__iexact=email).first()
+
+    if participante:
+        if participante.es_lider:
+            messages.info(request, f'{participante.nombres} {participante.apellidos} ya es líder académico.')
+        else:
+            participante.es_lider = True
+            updated = ['es_lider']
+            if cedula and not participante.cedula:
+                participante.cedula = cedula
+                updated.append('cedula')
+            if celular and not participante.celular:
+                participante.celular = celular
+                updated.append('celular')
+            participante.save(update_fields=updated)
+            messages.success(request, f'{participante.nombres} {participante.apellidos} marcado como líder.')
+    else:
+        Participante.objects.create(
+            cedula=cedula, nombres=nombres, apellidos=apellidos,
+            email=email, celular=celular, es_lider=True,
+        )
+        messages.success(request, f'Líder {nombres} {apellidos} registrado exitosamente.')
+
+    _log_audit(request.user, 'AGREGAR_LIDER', f'Líder: {cedula or email}')
+    return redirect('panel:lideres_list')
+
+
+@login_required
+@user_passes_test(_is_admin)
+@require_http_methods(["POST"])
+def lideres_upload_excel(request):
+    """Step 1: Upload Excel → save temp file → redirect to mapping."""
+    import os
+    from django.core.files.storage import default_storage
+
+    archivo = request.FILES.get('archivo')
+    if not archivo:
+        messages.error(request, 'No se seleccionó ningún archivo.')
+        return redirect('panel:lideres_list')
+
+    # Save temp file
+    temp_path = default_storage.save(f'temp/lideres_{uuid.uuid4().hex[:8]}.xlsx', archivo)
+    full_path = default_storage.path(temp_path)
+
+    # Analyze headers
+    analysis = analyze_excel_file(full_path)
+    if not analysis['success']:
+        default_storage.delete(temp_path)
+        messages.error(request, f"Error leyendo Excel: {analysis.get('error')}")
+        return redirect('panel:lideres_list')
+
+    # Store temp path in session for step 2
+    request.session['lideres_temp_file'] = temp_path
+
+    return render(request, 'panel/lideres/mapping.html', {
+        'columns': analysis['columns'],
+        'suggestions': analysis['suggestions'],
+        'preview': analysis['preview'],
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+@require_http_methods(["POST"])
+def lideres_process_mapping(request):
+    """Step 2: Process Excel with user-selected mapping."""
+    import pandas as pd
+    from django.core.files.storage import default_storage
+    from core.validators import sanitize_text
+
+    temp_path = request.session.pop('lideres_temp_file', None)
+    if not temp_path:
+        messages.error(request, 'Sesión expirada. Sube el Excel de nuevo.')
+        return redirect('panel:lideres_list')
+
+    full_path = default_storage.path(temp_path)
+
+    # Get mapping from form
+    name_strategy = request.POST.get('name_strategy', 'single')
+    col_cedula = request.POST.get('col_cedula')
+    col_email = request.POST.get('col_email')
+    col_celular = request.POST.get('col_celular')
+
+    if name_strategy == 'split':
+        col_nombres = request.POST.get('col_nombres_split')
+        col_apellidos = request.POST.get('col_apellidos')
+    else:
+        col_nombres = request.POST.get('col_nombres')
+        col_apellidos = None
+
+    try:
+        df = pd.read_excel(full_path, dtype=str)
+        df.columns = [str(c).strip() for c in df.columns]
+
+        nuevos = 0
+        actualizados = 0
+
+        for _, row in df.iterrows():
+            # Extract with mapping
+            cedula = sanitize_text(str(row.get(col_cedula, '') or '')) if col_cedula and col_cedula in df.columns else ''
+            email = sanitize_text(str(row.get(col_email, '') or '')).lower() if col_email and col_email in df.columns else ''
+            nombre_raw = sanitize_text(str(row.get(col_nombres, '') or '')) if col_nombres and col_nombres in df.columns else ''
+            apellido_raw = sanitize_text(str(row.get(col_apellidos, '') or '')) if col_apellidos and col_apellidos in df.columns else ''
+            celular = sanitize_text(str(row.get(col_celular, '') or '')) if col_celular and col_celular in df.columns else ''
+
+            # Clean NaN
+            if cedula.lower() == 'nan': cedula = ''
+            if email.lower() == 'nan': email = ''
+            if nombre_raw.lower() == 'nan': nombre_raw = ''
+            if apellido_raw.lower() == 'nan': apellido_raw = ''
+            if celular.lower() == 'nan': celular = ''
+
+            # Cedula cleanup
+            if cedula.endswith('.0'): cedula = cedula[:-2]
+
+            if not cedula and not email:
+                continue
+
+            # Name parsing (same logic as batch import)
+            final_nombres = 'LÍDER'
+            final_apellidos = 'ACADÉMICO'
+            if apellido_raw:
+                final_nombres = nombre_raw.upper()
+                final_apellidos = apellido_raw.upper()
+            elif nombre_raw:
+                parts = nombre_raw.split()
+                if len(parts) >= 2:
+                    if len(parts) == 2:
+                        final_nombres = parts[0].upper()
+                        final_apellidos = parts[1].upper()
+                    elif len(parts) == 3:
+                        final_nombres = parts[0].upper()
+                        final_apellidos = f"{parts[1]} {parts[2]}".upper()
+                    else:
+                        mid = len(parts) // 2
+                        final_nombres = " ".join(parts[:mid]).upper()
+                        final_apellidos = " ".join(parts[mid:]).upper()
+                else:
+                    final_nombres = nombre_raw.upper()
+
+            # Find or create participante
+            participante = None
+            if cedula:
+                participante = Participante.objects.filter(cedula=cedula).first()
+            if not participante and email:
+                participante = Participante.objects.filter(email__iexact=email).first()
+
+            if participante:
+                changed = False
+                if not participante.es_lider:
+                    participante.es_lider = True
+                    changed = True
+                if cedula and not participante.cedula:
+                    participante.cedula = cedula
+                    changed = True
+                if email and not participante.email:
+                    participante.email = email
+                    changed = True
+                if final_nombres != 'LÍDER' and participante.nombres in ('', 'LÍDER', 'PARTICIPANTE'):
+                    participante.nombres = final_nombres
+                    changed = True
+                if final_apellidos != 'ACADÉMICO' and participante.apellidos in ('', 'ACADÉMICO', 'S/N'):
+                    participante.apellidos = final_apellidos
+                    changed = True
+                if celular and not participante.celular:
+                    participante.celular = celular
+                    changed = True
+                if changed:
+                    participante.save()
+                    actualizados += 1
+            else:
+                Participante.objects.create(
+                    cedula=cedula, nombres=final_nombres, apellidos=final_apellidos,
+                    email=email, celular=celular, es_lider=True,
+                )
+                nuevos += 1
+
+        _log_audit(request.user, 'SUBIR_LIDERES_EXCEL', f'{nuevos} nuevos, {actualizados} actualizados')
+        messages.success(request, f'Excel procesado: {nuevos} líderes nuevos, {actualizados} actualizados.')
+
+    except Exception as e:
+        messages.error(request, f'Error procesando: {str(e)}')
+    finally:
+        # Cleanup temp file
+        try:
+            default_storage.delete(temp_path)
+        except Exception:
+            pass
+
+    return redirect('panel:lideres_list')
+
+
+@login_required
+@user_passes_test(_is_admin)
+@require_http_methods(["POST"])
+def lideres_remove(request, id):
+    """Quitar marca de líder a un participante."""
+    p = get_object_or_404(Participante, id=id)
+    p.es_lider = False
+    p.save(update_fields=['es_lider'])
+    messages.success(request, f'{p.nombres} {p.apellidos} ya no es líder académico.')
+    return redirect('panel:lideres_list')
 

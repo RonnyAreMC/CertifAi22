@@ -1,6 +1,6 @@
 import pandas as pd
 from django.db import transaction
-from core.models import LoteCertificados, Certificado
+from core.models import LoteCertificados, Certificado, Participante
 import uuid
 from core.validators import validate_file_content, sanitize_text
 
@@ -188,12 +188,43 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
                     if val and val.lower() != 'nan':
                         final_curso = val.upper()
 
+                # Create or find Participante for deduplication
+                participante = None
+                is_generated_cedula = cedula.startswith('GEN-') or not cedula
+                real_cedula = '' if is_generated_cedula else cedula
+
+                if real_cedula:
+                    participante = Participante.objects.filter(cedula=real_cedula).first()
+                if not participante and email_raw:
+                    participante = Participante.objects.filter(email__iexact=email_raw).first()
+
+                if participante:
+                    # Update missing fields
+                    updated = []
+                    if real_cedula and not participante.cedula:
+                        participante.cedula = real_cedula
+                        updated.append('cedula')
+                    if celular_raw and not participante.celular:
+                        participante.celular = celular_raw
+                        updated.append('celular')
+                    if updated:
+                        participante.save(update_fields=updated)
+                else:
+                    participante = Participante.objects.create(
+                        cedula=real_cedula,
+                        nombres=final_nombres.upper(),
+                        apellidos=final_apellidos.upper(),
+                        email=email_raw,
+                        celular=celular_raw,
+                    )
+
                 certificates_to_create.append(Certificado(
                     lote=lote,
+                    participante=participante,
                     cedula=cedula,
                     nombres=final_nombres.upper(),
                     apellidos=final_apellidos.upper(),
-                    email=email_raw, # Already lowered
+                    email=email_raw,
                     celular=celular_raw,
                     curso=final_curso,
                     hash_verificacion=uuid.uuid4()
@@ -218,6 +249,42 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
 
         print(f"Error processing Excel in business layer: {e}")
         return False, str(e)
+
+
+def analyze_excel_file(file_path):
+    """Analyze any Excel file and return headers, preview, and suggested mapping."""
+    try:
+        df = pd.read_excel(file_path, dtype=str, nrows=5)
+        columns = [str(c).strip() for c in df.columns]
+
+        suggestions = {}
+        original_cols_lower = {c.lower(): c for c in columns}
+
+        def find_match(keywords, exclude=None):
+            for k in keywords:
+                for col_lower in original_cols_lower:
+                    if exclude and any(ex in col_lower for ex in exclude):
+                        continue
+                    if k in col_lower:
+                        return original_cols_lower[col_lower]
+            return None
+
+        suggestions['cedula'] = find_match(['cedula', 'dni', 'identidad', 'documento', 'identificación'], exclude=['nombre', 'apellido', 'participante'])
+        suggestions['nombres'] = find_match(['nombres', 'nombre', 'participante', 'estudiante'])
+        suggestions['apellidos'] = find_match(['apellidos', 'apellido'])
+        suggestions['email'] = find_match(['email', 'correo', 'e-mail', 'mail'])
+        suggestions['celular'] = find_match(['celular', 'telefono', 'movil', 'whatsapp', 'tlf'])
+
+        preview = df.fillna('').values.tolist()
+
+        return {
+            'success': True,
+            'columns': columns,
+            'suggestions': suggestions,
+            'preview': preview,
+        }
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
 
 
 # English alias for clean imports

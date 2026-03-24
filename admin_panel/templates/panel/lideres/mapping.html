@@ -1,0 +1,216 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-[#162054] to-[#1e2a69] rounded-2xl shadow-xl p-8 mb-8 text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4 opacity-10">
+            <i class="fa-solid fa-user-tie text-9xl"></i>
+        </div>
+        <div class="relative z-10 flex items-center gap-6">
+            <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-inner">
+                <i class="fa-solid fa-wand-magic-sparkles text-4xl text-unemi-orange"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight">Importar Líderes Académicos</h1>
+                <p class="text-blue-100 mt-1 text-lg">Confirma qué columna del Excel corresponde a cada dato.</p>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="{% url 'panel:lideres_process_mapping' %}" id="mappingForm" class="space-y-8" x-data="mappingLogic()">
+        {% csrf_token %}
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left Column: Configuration -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- Identification Section -->
+                <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border-l-8 border-unemi-orange overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <div class="p-6 border-b border-gray-100 dark:border-blue-900/30 bg-gray-50/50 dark:bg-white/5 flex justify-between items-center">
+                        <h3 class="font-bold text-xl text-gray-800 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-id-card text-unemi-blue dark:text-blue-300"></i>
+                            Identificación
+                            <span x-show="hasCedula" class="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]" title="Asignado"></span>
+                            <span x-show="!hasCedula" class="w-3 h-3 bg-red-500 rounded-full opacity-50" title="No asignado"></span>
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Columna de Cédula / DNI</label>
+                        <div class="relative">
+                            <select x-model="colCedula" name="col_cedula" class="w-full bg-gray-50 dark:bg-[#0F163A] border-2 border-gray-200 dark:border-blue-900/30 rounded-xl px-4 py-3 pl-10 text-gray-800 dark:text-white focus:ring-2 focus:ring-unemi-orange focus:border-unemi-orange transition-all appearance-none cursor-pointer">
+                                <option value="">-- Ignorar --</option>
+                                {% for col in columns %}
+                                <option value="{{ col }}" {% if suggestions.cedula == col %}selected{% endif %}>{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-hashtag"></i></div>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-chevron-down"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Names Section -->
+                <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border-l-8 border-unemi-blue overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                    <div class="p-6 border-b border-gray-100 dark:border-blue-900/30 bg-gray-50/50 dark:bg-white/5">
+                        <h3 class="font-bold text-xl text-gray-800 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-user-tag text-unemi-blue dark:text-blue-300"></i>
+                            Nombres y Apellidos
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Strategy Toggle -->
+                        <div class="flex p-1 bg-gray-100 dark:bg-black/20 rounded-xl">
+                            <button type="button" @click="setStrategy('single')"
+                                :class="strategy === 'single' ? 'bg-unemi-blue text-white shadow-md' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+                                class="flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex justify-center items-center gap-2">
+                                <i class="fa-solid fa-i-cursor"></i>Una Columna (Nombre Completo)
+                            </button>
+                            <button type="button" @click="setStrategy('split')"
+                                :class="strategy === 'split' ? 'bg-unemi-blue text-white shadow-md' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'"
+                                class="flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex justify-center items-center gap-2">
+                                <i class="fa-solid fa-columns"></i>Dos Columnas (Separados)
+                            </button>
+                        </div>
+
+                        <!-- Single Column -->
+                        <div x-show="strategy === 'single'">
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Columna de Nombre Completo</label>
+                            <div class="relative">
+                                <select name="col_nombres" id="input_nombres_single" class="w-full bg-gray-50 dark:bg-[#0F163A] border-2 border-gray-200 dark:border-blue-900/30 rounded-xl px-4 py-3 pl-10 text-gray-800 dark:text-white focus:ring-2 focus:ring-unemi-blue transition-all appearance-none cursor-pointer">
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for col in columns %}
+                                    <option value="{{ col }}" {% if suggestions.nombres == col %}selected{% endif %}>{{ col }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><i class="fa-solid fa-font"></i></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">El sistema separará nombres y apellidos automáticamente.</p>
+                        </div>
+
+                        <!-- Split Columns -->
+                        <div x-show="strategy === 'split'" class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Columna Nombres</label>
+                                <select name="col_nombres_split" id="input_nombres_split" class="w-full bg-gray-50 dark:bg-[#0F163A] border-2 border-gray-200 dark:border-blue-900/30 rounded-xl px-4 py-3 text-gray-800 dark:text-white focus:ring-2 focus:ring-unemi-blue transition-all">
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for col in columns %}
+                                    <option value="{{ col }}" {% if suggestions.nombres == col %}selected{% endif %}>{{ col }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2">Columna Apellidos</label>
+                                <select name="col_apellidos" id="input_apellidos" class="w-full bg-gray-50 dark:bg-[#0F163A] border-2 border-gray-200 dark:border-blue-900/30 rounded-xl px-4 py-3 text-gray-800 dark:text-white focus:ring-2 focus:ring-unemi-blue transition-all">
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for col in columns %}
+                                    <option value="{{ col }}" {% if suggestions.apellidos == col %}selected{% endif %}>{{ col }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="name_strategy" x-model="strategy">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Contact -->
+                <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 overflow-hidden">
+                    <div class="p-4 border-b border-gray-100 dark:border-blue-900/30 bg-gray-50/50 dark:bg-white/5 flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-gray-800 dark:text-white flex items-center">
+                            <i class="fa-solid fa-envelope text-green-500 mr-2"></i>Contacto
+                            <span x-show="hasEmail" class="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)] ml-2"></span>
+                            <span x-show="!hasEmail" class="w-3 h-3 bg-red-500 rounded-full opacity-50 ml-2"></span>
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Correo Electrónico</label>
+                            <select x-model="colEmail" name="col_email" class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-200 dark:border-blue-900/30 rounded-xl px-3 py-2 text-gray-800 dark:text-white text-sm">
+                                <option value="">-- Seleccionar --</option>
+                                {% for col in columns %}
+                                <option value="{{ col }}" {% if suggestions.email == col %}selected{% endif %}>{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1">Celular / WhatsApp</label>
+                            <select name="col_celular" class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-200 dark:border-blue-900/30 rounded-xl px-3 py-2 text-gray-800 dark:text-white text-sm">
+                                <option value="">-- Opcional --</option>
+                                {% for col in columns %}
+                                <option value="{{ col }}" {% if suggestions.celular == col %}selected{% endif %}>{{ col }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6">
+                    <div x-show="!isValid" class="mb-4 text-center p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-300 rounded-lg animate-pulse">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                        Debes seleccionar al menos <strong>Cédula</strong> o <strong>Correo</strong>.
+                    </div>
+                    <button type="submit" :disabled="!isValid" :class="{'opacity-50 cursor-not-allowed': !isValid}" class="w-full py-4 rounded-xl bg-unemi-orange hover:bg-orange-600 text-white font-bold text-lg shadow-lg hover:shadow-orange-500/30 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-user-tie"></i>
+                        Importar Líderes
+                    </button>
+                    <a href="{% url 'panel:lideres_list' %}" class="block text-center mt-4 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 font-medium">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Table -->
+        <div x-data="{ open: true }" class="mt-8">
+            <button type="button" @click="open = !open" class="flex justify-between items-center w-full bg-gray-100/50 dark:bg-white/5 p-4 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                <span class="font-bold"><i class="fa-solid fa-eye mr-2"></i>Vista Previa de Datos (5 filas)</span>
+                <i class="fa-solid" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </button>
+            <div x-show="open" class="mt-4 overflow-x-auto rounded-xl border border-gray-200 dark:border-blue-900/30 shadow-inner">
+                <table class="w-full text-xs text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-[#0F163A] dark:text-gray-400">
+                        <tr>
+                            {% for col in columns %}
+                            <th class="px-4 py-2 whitespace-nowrap border-b dark:border-gray-700">{{ col }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in preview %}
+                        <tr class="bg-white border-b dark:bg-[#162054] dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            {% for cell in row %}
+                            <td class="px-4 py-2 whitespace-nowrap">{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"></script>
+<script>
+function mappingLogic() {
+    return {
+        strategy: 'single',
+        colCedula: '{% if suggestions.cedula %}{{ suggestions.cedula }}{% endif %}',
+        colEmail: '{% if suggestions.email %}{{ suggestions.email }}{% endif %}',
+        get hasCedula() { return this.colCedula !== ''; },
+        get hasEmail() { return this.colEmail !== ''; },
+        get isValid() { return this.hasCedula || this.hasEmail; },
+        setStrategy(type) {
+            this.strategy = type;
+        }
+    }
+}
+</script>
+{% endblock %}

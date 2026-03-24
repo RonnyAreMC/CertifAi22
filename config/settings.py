@@ -77,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'admin_panel.context_processors.solicitudes_pendientes',
             ],
         },
     },
@@ -145,10 +146,15 @@ LOGIN_URL = 'panel:login'
 LOGIN_REDIRECT_URL = 'panel:dashboard'
 LOGOUT_REDIRECT_URL = 'public:home'
 
+# Authentication Backends (email + username)
+AUTHENTICATION_BACKENDS = [
+    'admin_panel.backends.EmailBackend',
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Certificate Search Module Toggle
 # Set to True to enable public certificate search/download
-CERT_SEARCH_ENABLED = False
+CERT_SEARCH_ENABLED = True

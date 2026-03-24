@@ -47,7 +47,15 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        .toast-enter { animation: slideInRight 0.3s ease-out forwards; }
+        .toast-item { transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .toast-progress { 
+            animation: toast-progress linear forwards;
+            transform-origin: left;
+        }
+        @keyframes toast-progress {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
     </style>
 </head>
 
@@ -55,28 +63,33 @@
     {% include 'components/background_decor.html' %}
     {% include 'components/loader.html' %}
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed top-24 right-5 z-[60] flex flex-col gap-4">
+    <!-- Toast Container (Enhanced) -->
+    <div id="toast-container" class="fixed top-24 right-5 z-[100] flex flex-col gap-4 pointer-events-none">
         {% if messages %}
             {% for message in messages %}
-                <div class="toast-enter max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border-l-4 {% if message.tags == 'error' %}border-red-500{% else %}border-green-500{% endif %} overflow-hidden transform transition-all hover:scale-105 duration-300">
+                <div class="toast-item pointer-events-auto max-w-sm w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl border-l-4 {% if message.tags == 'error' %}border-red-500{% elif message.tags == 'warning' %}border-yellow-500{% else %}border-green-500{% endif %} overflow-hidden transform transition-all duration-500 animate__animated animate__fadeInRight">
                     <div class="p-4 flex items-start gap-3">
-                        <div class="flex-shrink-0">
+                        <div class="flex-shrink-0 mt-1">
                             {% if message.tags == 'error' %}
                                 <i class="fa-solid fa-circle-exclamation text-red-500 text-xl"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fa-solid fa-triangle-exclamation text-yellow-500 text-xl"></i>
                             {% else %}
                                 <i class="fa-solid fa-circle-check text-green-500 text-xl"></i>
                             {% endif %}
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-medium {% if message.tags == 'error' %}text-red-600 dark:text-red-400{% else %}text-green-600 dark:text-green-400{% endif %}">
-                                {% if message.tags == 'error' %}¡Error!{% else %}¡Éxito!{% endif %}
+                            <p class="text-sm font-bold {% if message.tags == 'error' %}text-red-600 dark:text-red-400{% elif message.tags == 'warning' %}text-yellow-600 dark:text-yellow-400{% else %}text-green-600 dark:text-green-400{% endif %}">
+                                {% if message.tags == 'error' %}¡Error!{% elif message.tags == 'warning' %}¡Atención!{% else %}¡Éxito!{% endif %}
                             </p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ message }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 font-medium">{{ message }}</p>
                         </div>
-                        <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                        <button onclick="this.closest('.toast-item').remove()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
+                    </div>
+                    <div class="h-1 bg-gray-200 dark:bg-gray-700 w-full overflow-hidden">
+                        <div class="h-full {% if message.tags == 'error' %}bg-red-500{% elif message.tags == 'warning' %}bg-yellow-500{% else %}bg-green-500{% endif %} toast-progress"></div>
                     </div>
                 </div>
             {% endfor %}
@@ -88,31 +101,72 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20">
                 <div class="flex items-center gap-8">
-                    <div class="flex-shrink-0 flex items-center gap-3">
-                        <i class="fa-solid fa-shield-halved text-unemi-orange text-3xl animate-pulse"></i>
+                    <a href="{% url 'panel:dashboard' %}" class="flex-shrink-0 flex items-center gap-3 group hover:opacity-90 transition-all">
+                        <i class="fa-solid fa-shield-halved text-unemi-orange text-3xl animate-pulse group-hover:scale-110 transition-transform"></i>
                         <span class="text-2xl font-bold text-white tracking-wide">
                             MUC Academy <span class="text-sm font-light opacity-80 uppercase tracking-widest ml-1">Admin</span>
                         </span>
-                    </div>
+                    </a>
 
                     <!-- Desktop Menu -->
                     <div class="hidden md:flex items-center space-x-1">
-                        <a href="{% url 'panel:dashboard' %}" 
-                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if request.resolver_match.url_name == 'dashboard' %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
-                            <i class="fa-solid fa-chart-pie mr-2"></i>Dashboard
-                        </a>
-                        <a href="{% url 'panel:batch_list' %}" 
-                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'batch' in request.resolver_match.url_name and 'create' not in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
-                            <i class="fa-solid fa-folder-open mr-2"></i>Lotes
-                        </a>
-                        <a href="{% url 'panel:batch_create' %}" 
-                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'create' in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
-                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Subir
-                        </a>
-                        <a href="{% url 'panel:session_list' %}" 
-                           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {% if 'session' in request.resolver_match.url_name %}text-white bg-white/10 shadow-inner{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %}">
-                            <i class="fa-solid fa-qrcode mr-2"></i>Sesiones
-                        </a>
+                        <!-- Certificados Dropdown -->
+                        <div class="relative group">
+                            <button class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2 {% if 'batch' in request.resolver_match.url_name %}bg-white/10 text-white{% endif %}">
+                                <i class="fa-solid fa-certificate"></i>
+                                Certificados
+                                <i class="fa-solid fa-chevron-down text-[10px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-48 bg-[#1a2b4d] border border-white/10 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-[60]">
+                                <a href="{% url 'panel:batch_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                                    <i class="fa-solid fa-list-ul mr-2 text-xs opacity-70"></i> Ver Lotes
+                                </a>
+                                <a href="{% url 'panel:batch_create' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                                    <i class="fa-solid fa-plus mr-2 text-xs opacity-70"></i> Subir Nuevo
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Gestión Dropdown -->
+                        <div class="relative group">
+                            <button class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2 {% if 'session' in request.resolver_match.url_name or 'lideres' in request.resolver_match.url_name %}bg-white/10 text-white{% endif %}">
+                                <i class="fa-solid fa-users-gear"></i>
+                                Gestión
+                                <i class="fa-solid fa-chevron-down text-[10px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-48 bg-[#1a2b4d] border border-white/10 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-[60]">
+                                <a href="{% url 'panel:session_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                                    <i class="fa-solid fa-calendar-days mr-2 text-xs opacity-70"></i> Eventos
+                                </a>
+                                <a href="{% url 'panel:lideres_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                                    <i class="fa-solid fa-user-tie mr-2 text-xs opacity-70"></i> Líderes
+                                </a>
+                            </div>
+                        </div>
+
+                        {% if user.rol == 'superadmin' %}
+                        <!-- Admin Dropdown -->
+                        <div class="relative group">
+                            <button class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2 {% if 'landing' in request.resolver_match.url_name or 'solicitudes' in request.resolver_match.url_name %}bg-white/10 text-white{% endif %}">
+                                <i class="fa-solid fa-gears"></i>
+                                Admin
+                                <i class="fa-solid fa-chevron-down text-[10px] opacity-50 group-hover:rotate-180 transition-transform"></i>
+                            </button>
+                            <div class="absolute left-0 mt-1 w-52 bg-[#1a2b4d] border border-white/10 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-[60]">
+                                <a href="{% url 'panel:landing_builder' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-2 text-xs opacity-70"></i> Landing Page
+                                </a>
+                                <a href="{% url 'panel:solicitudes_pendientes' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors relative">
+                                    <i class="fa-solid fa-user-clock mr-2 text-xs opacity-70"></i> Solicitudes
+                                    {% if pendientes_count > 0 %}
+                                    <span class="absolute top-2.5 right-4 bg-red-500 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse">
+                                        {{ pendientes_count }}
+                                    </span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -156,10 +210,41 @@
         <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden bg-[#0F163A] border-t border-white/10">
             <div class="px-2 pt-2 pb-3 space-y-1">
-                 <a href="{% url 'panel:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Dashboard</a>
-                 <a href="{% url 'panel:batch_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Lotes</a>
-                 <a href="{% url 'panel:batch_create' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Subir Nuevo</a>
-                 <a href="{% url 'panel:session_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10">Sesiones QR</a>
+                 <a href="{% url 'panel:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 border-l-4 border-unemi-orange bg-white/5">
+                     <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
+                 </a>
+                 
+                 <!-- Certificados Section -->
+                 <div class="pt-2 pb-1 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Certificados</div>
+                 <a href="{% url 'panel:batch_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
+                     <i class="fa-solid fa-folder-open mr-2 text-sm opacity-70"></i> Lotes
+                 </a>
+                 <a href="{% url 'panel:batch_create' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
+                     <i class="fa-solid fa-plus mr-2 text-sm opacity-70"></i> Subir Nuevo
+                 </a>
+
+                 <!-- Gestión Section -->
+                 <div class="pt-3 pb-1 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Gestión</div>
+                 <a href="{% url 'panel:session_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
+                     <i class="fa-solid fa-calendar-days mr-2 text-sm opacity-70"></i> Eventos
+                 </a>
+                 <a href="{% url 'panel:lideres_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
+                     <i class="fa-solid fa-user-tie mr-2 text-sm opacity-70"></i> Líderes
+                 </a>
+
+                 {% if user.rol == 'superadmin' %}
+                 <!-- Admin Section -->
+                 <div class="pt-3 pb-1 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Administración</div>
+                 <a href="{% url 'panel:landing_builder' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
+                     <i class="fa-solid fa-wand-magic-sparkles mr-2 text-sm opacity-70"></i> Landing Page
+                 </a>
+                 <a href="{% url 'panel:solicitudes_pendientes' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6 relative">
+                     <i class="fa-solid fa-user-clock mr-2 text-sm opacity-70"></i> Solicitudes
+                     {% if pendientes_count > 0 %}
+                     <span class="ml-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 animate-pulse">{{ pendientes_count }}</span>
+                     {% endif %}
+                 </a>
+                 {% endif %}
                  <div class="border-t border-white/10 my-2"></div>
                  <form action="{% url 'panel:logout' %}" method="post" class="block w-full">
                      {% csrf_token %}
@@ -190,13 +275,58 @@
     </footer>
 
     <script>
-        // Icon update
+        // Custom Toast System
+        window.showToast = function(message, type = 'success', duration = 5000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const borderClass = type === 'error' ? 'border-red-500' : (type === 'warning' ? 'border-yellow-500' : 'border-green-500');
+            const textClass = type === 'error' ? 'text-red-600 dark:text-red-400' : (type === 'warning' ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400');
+            const bgProgress = type === 'error' ? 'bg-red-500' : (type === 'warning' ? 'bg-yellow-500' : 'bg-green-500');
+            const icon = type === 'error' ? 'fa-circle-exclamation' : (type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-check');
+            const title = type === 'error' ? '¡Error!' : (type === 'warning' ? '¡Atención!' : '¡Éxito!');
+
+            toast.className = `toast-item pointer-events-auto max-w-sm w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl border-l-4 ${borderClass} overflow-hidden transform transition-all duration-500 animate__animated animate__fadeInRight`;
+            
+            toast.innerHTML = `
+                <div class="p-4 flex items-start gap-3">
+                    <div class="flex-shrink-0 mt-1">
+                        <i class="fa-solid ${icon} ${type === 'error' ? 'text-red-500' : (type === 'warning' ? 'text-yellow-500' : 'text-green-500')} text-xl"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold ${textClass}">${title}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 font-medium">${message}</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="h-1 bg-gray-200 dark:bg-gray-700 w-full overflow-hidden">
+                    <div class="h-full ${bgProgress} toast-progress" style="animation-duration: ${duration}ms"></div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            
+            // Close button functionality
+            toast.querySelector('button').onclick = () => {
+                toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+                setTimeout(() => toast.remove(), 500);
+            };
+
+            // Auto-remove
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+                    setTimeout(() => toast.remove(), 500);
+                }
+            }, duration);
+        };
+
+        // Theme Icon Update
         if (document.documentElement.classList.contains('dark')) {
             const icon = document.getElementById('theme-icon');
             if(icon) icon.classList.replace('fa-sun', 'fa-moon');
-        } else {
-            const icon = document.getElementById('theme-icon');
-            if(icon) icon.classList.replace('fa-moon', 'fa-sun');
         }
 
         function toggleTheme() {
@@ -211,69 +341,100 @@
             }
         }
 
+        // Initialize autohide for server-rendered toasts
         document.addEventListener('DOMContentLoaded', () => {
-            const toasts = document.querySelectorAll('.toast-enter');
-            toasts.forEach(toast => {
+            document.querySelectorAll('.toast-item').forEach(toast => {
                 setTimeout(() => {
-                    toast.classList.add('opacity-0', 'translate-x-full');
-                    setTimeout(() => toast.remove(), 300);
+                    if (toast.parentElement) {
+                        toast.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
+                        setTimeout(() => toast.remove(), 500);
+                    }
                 }, 5000);
             });
         });
     </script>
 
-    <!-- Confirmation Modal -->
-    <div id="confirmationModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity opacity-0 duration-300" id="modalBackdrop"></div>
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#162054] text-left shadow-2xl transition-all duration-300 sm:my-8 sm:w-full sm:max-w-lg opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95 border border-indigo-100 dark:border-blue-900/50" id="modalPanel">
-                    <div class="bg-white dark:bg-[#162054] px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10">
-                                <i class="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400"></i>
-                            </div>
-                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                                <h3 class="text-xl font-semibold leading-6 text-gray-900 dark:text-white" id="modalTitle">Confirmar Acción</h3>
-                                <div class="mt-2">
-                                    <p class="text-sm text-gray-500 dark:text-gray-300" id="modalMessage">¿Estás seguro?</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 dark:bg-[#0F163A]/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
-                        <button type="button" id="confirmBtn" class="inline-flex w-full justify-center rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto transition-colors focus:ring-4 focus:ring-red-200">Confirmar</button>
-                        <button type="button" onclick="closeModal()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white dark:bg-transparent px-5 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 sm:mt-0 sm:w-auto transition-colors">Cancelar</button>
-                    </div>
+    <!-- Confirmation Modal (Enhanced) -->
+    <div id="confirmationModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-md transition-opacity duration-300" id="modalBackdrop"></div>
+        
+        <div class="relative w-full max-w-lg bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-white/20 dark:border-blue-900/50 overflow-hidden transform transition-all duration-300 scale-95 opacity-0" id="modalPanel">
+            <!-- Header with Icon -->
+            <div class="p-8 text-center">
+                <div id="modalIconContainer" class="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 bg-red-100 dark:bg-red-900/30">
+                    <i id="modalIcon" class="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400 text-3xl"></i>
                 </div>
+                
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-3" id="modalTitle">Confirmar Acción</h3>
+                <p class="text-gray-500 dark:text-gray-300" id="modalMessage">¿Estás seguro de realizar esta acción?</p>
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 p-6 bg-gray-50/50 dark:bg-[#0F163A]/50 border-t border-gray-100 dark:border-blue-900/30">
+                <button type="button" onclick="closeModal()" class="flex-1 px-6 py-3 rounded-xl font-bold text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/5 border border-gray-200 dark:border-gray-700 transition-all">
+                    Cancelar
+                </button>
+                <button type="button" id="confirmBtn" class="flex-1 px-6 py-3 rounded-xl font-bold text-white shadow-xl transform active:scale-95 transition-all">
+                    Confirmar
+                </button>
             </div>
         </div>
     </div>
 
     <script>
         let confirmCallback = null;
-        window.showConfirm = function(title, message, callback) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMessage').textContent = message;
+        
+        window.showConfirm = function(options) {
+            const { title, message, callback, type = 'danger' } = options;
+            
+            document.getElementById('modalTitle').textContent = title || 'Confirmar Acción';
+            document.getElementById('modalMessage').textContent = message || '¿Estás seguro?';
             confirmCallback = callback;
+
             const modal = document.getElementById('confirmationModal');
-            const backdrop = document.getElementById('modalBackdrop');
             const panel = document.getElementById('modalPanel');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const icon = document.getElementById('modalIcon');
+            const iconCont = document.getElementById('modalIconContainer');
+
+            // Apply theme based on type
+            if (type === 'danger') {
+                confirmBtn.className = 'flex-1 px-6 py-3 rounded-xl font-bold text-white shadow-xl bg-red-600 hover:bg-red-500 transform active:scale-95 transition-all';
+                iconCont.className = 'w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 bg-red-100 dark:bg-red-900/30';
+                icon.className = 'fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400 text-3xl';
+            } else if (type === 'success') {
+                confirmBtn.className = 'flex-1 px-6 py-3 rounded-xl font-bold text-white shadow-xl bg-green-600 hover:bg-green-500 transform active:scale-95 transition-all';
+                iconCont.className = 'w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 bg-green-100 dark:bg-green-900/30';
+                icon.className = 'fa-solid fa-circle-check text-green-600 dark:text-green-400 text-3xl';
+            } else {
+                confirmBtn.className = 'flex-1 px-6 py-3 rounded-xl font-bold text-white shadow-xl bg-unemi-blue hover:bg-blue-600 transform active:scale-95 transition-all';
+                iconCont.className = 'w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-6 bg-blue-100 dark:bg-blue-900/30';
+                icon.className = 'fa-solid fa-circle-info text-blue-600 dark:text-blue-400 text-3xl';
+            }
+
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
             void modal.offsetWidth;
-            backdrop.classList.remove('opacity-0');
-            panel.classList.remove('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-            panel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+            panel.classList.remove('scale-95', 'opacity-0');
+            panel.classList.add('scale-100', 'opacity-100');
         };
+
         window.closeModal = function() {
-            const backdrop = document.getElementById('modalBackdrop');
+            const modal = document.getElementById('confirmationModal');
             const panel = document.getElementById('modalPanel');
-            backdrop.classList.add('opacity-0');
-            panel.classList.add('opacity-0', 'translate-y-4', 'sm:translate-y-0', 'sm:scale-95');
-            panel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
-            setTimeout(() => { document.getElementById('confirmationModal').classList.add('hidden'); confirmCallback = null; }, 300);
+            panel.classList.add('scale-95', 'opacity-0');
+            panel.classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => { 
+                modal.classList.add('hidden'); 
+                modal.classList.remove('flex');
+                confirmCallback = null; 
+            }, 300);
         };
-        document.getElementById('confirmBtn').addEventListener('click', () => { if (confirmCallback) confirmCallback(); closeModal(); });
+
+        document.getElementById('confirmBtn').addEventListener('click', () => { 
+            if (confirmCallback) confirmCallback(); 
+            closeModal(); 
+        });
     </script>
 </body>
 </html>

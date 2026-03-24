@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Estado - MUC Academy Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        unemi: {
+                            blue: '#162054',
+                            orange: '#F58830',
+                            dark: '#0F163A'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 0.4; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+        .pulse-ring { animation: pulse-ring 2s infinite; }
+    </style>
+</head>
+<body class="bg-[#0f1d3d] text-gray-100 min-h-screen relative overflow-x-hidden">
+    
+    <!-- Background Decor (same as base.html) -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none opacity-50">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-unemi-orange/20 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]"></div>
+        <div class="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-purple-600/10 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="relative z-10 max-w-4xl mx-auto px-6 py-12">
+        <!-- Brand Header -->
+        <div class="flex items-center justify-center gap-3 mb-10">
+            <i class="fa-solid fa-shield-halved text-unemi-orange text-4xl"></i>
+            <span class="text-3xl font-bold text-white tracking-wide">
+                MUC Academy <span class="text-base font-light opacity-80 uppercase tracking-widest ml-1">Admin</span>
+            </span>
+        </div>
+
+        <div class="glass rounded-3xl p-8 md:p-12 mb-8">
+            <!-- User Profile Mini Header -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 pb-8 border-b border-white/10">
+                <div class="flex items-center gap-4">
+                    <div class="h-16 w-16 rounded-2xl bg-gradient-to-br from-unemi-orange to-orange-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg ring-4 ring-white/5">
+                        {{ user.first_name|first|upper }}
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white leading-tight">{{ user.get_full_name }}</h2>
+                        <p class="text-gray-400 font-medium">{{ user.email }}</p>
+                    </div>
+                </div>
+                
+                <form action="{% url 'panel:logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="group flex items-center gap-3 px-6 py-3 rounded-xl bg-white/5 hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-all border border-white/5 hover:border-red-500/30">
+                        <i class="fas fa-sign-out-alt group-hover:-translate-x-1 transition-transform"></i>
+                        <span class="font-bold">Cerrar Sesión</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="text-center">
+                {% if estado == 'pendiente' %}
+                <!-- PENDIENTE -->
+                <div class="relative w-28 h-28 mx-auto mb-8">
+                    <div class="absolute inset-0 bg-unemi-orange/30 rounded-full pulse-ring"></div>
+                    <div class="relative flex items-center justify-center w-28 h-28 rounded-full bg-unemi-orange/20 border border-unemi-orange/30">
+                        <i class="fas fa-clock text-unemi-orange text-5xl"></i>
+                    </div>
+                </div>
+
+                <h1 class="text-4xl font-black text-white mb-4 tracking-tight">
+                    Solicitud en Revisión
+                </h1>
+                <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+                    Tu acceso está siendo procesado por el equipo de administración. Te notificaremos vía email cuando sea aprobado.
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 text-left">
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+                        <p class="text-unemi-orange text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i class="fas fa-id-card"></i> Datos del Registro
+                        </p>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-gray-500 text-sm">Facultad / Unidad</p>
+                                <p class="text-white font-bold">{{ solicitud.facultad }}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Fecha de Solicitud</p>
+                                <p class="text-white font-bold">{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-colors">
+                        <p class="text-unemi-orange text-xs font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i class="fas fa-shield-check"></i> Estado Actual
+                        </p>
+                        <div class="h-full flex flex-col justify-center">
+                            <div class="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold mb-4">
+                                <span class="relative flex h-3 w-3">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                                </span>
+                                Pendiente de Aprobación
+                            </div>
+                            <p class="text-gray-500 text-xs italic">Actualizado en tiempo real</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 mb-10 flex items-start gap-4 text-left">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-lightbulb text-blue-400"></i>
+                    </div>
+                    <p class="text-blue-200 text-sm leading-relaxed">
+                        No hace falta que mantengas esta pestaña abierta. Una vez aprobado, tu correo y contraseña te permitirán entrar directamente al panel principal.
+                    </p>
+                </div>
+
+                {% elif estado == 'rechazado' %}
+                <!-- RECHAZADO -->
+                <div class="w-24 h-24 mx-auto mb-8 bg-red-500/20 rounded-full flex items-center justify-center border border-red-500/30">
+                    <i class="fas fa-times-circle text-red-500 text-6xl"></i>
+                </div>
+
+                <h1 class="text-4xl font-black text-white mb-4 tracking-tight">
+                    Acceso Denegado
+                </h1>
+                <p class="text-xl text-gray-400 mb-10">
+                    Tu solicitud para acceder al panel administrativo ha sido rechazada.
+                </p>
+
+                {% if solicitud and solicitud.motivo_rechazo %}
+                <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 mb-10 text-left relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                        <i class="fas fa-quote-right text-6xl text-red-500"></i>
+                    </div>
+                    <p class="text-red-400 text-sm font-black uppercase tracking-widest mb-4">
+                        <i class="fas fa-comment-dots mr-2"></i>Motivo de la Decisión:
+                    </p>
+                    <p class="text-white text-lg font-medium leading-relaxed italic">
+                        "{{ solicitud.motivo_rechazo }}"
+                    </p>
+                </div>
+                {% endif %}
+
+                <div class="bg-white/5 border border-white/10 rounded-2xl p-6 mb-10 text-left flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-headset text-gray-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-300 text-sm font-bold">¿Necesitas ayuda?</p>
+                        <p class="text-gray-500 text-xs">Si crees que esto es un error o deseas apelar la decisión, contacta a <span class="text-blue-400 underline lowercase">soporte@unemi.edu.ec</span></p>
+                    </div>
+                </div>
+
+                {% endif %}
+
+                <!-- General Actions -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="location.reload()" class="flex-1 bg-gradient-to-r from-unemi-orange to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-unemi-orange/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3">
+                        <i class="fas fa-sync-alt"></i>
+                        Verificar Estado Ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center">
+            <p class="text-gray-600 text-sm font-medium">
+                &copy; 2026 Universidad Estatal de Milagro &bull; Sistema de Gestión de Certificados
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh inteligente
+        setTimeout(() => location.reload(), 60000);
+        
+        // Refresh al recuperar el foco
+        let lastRefresh = Date.now();
+        window.onfocus = () => {
+            if (Date.now() - lastRefresh > 10000) {
+                location.reload();
+            }
+        };
+    </script>
+</body>
+</html>
+

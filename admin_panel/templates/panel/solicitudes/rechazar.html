@@ -1,0 +1,121 @@
+{% extends 'panel/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Page Header -->
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <i class="fas fa-user-times text-red-500 mr-3"></i>Rechazar Solicitud
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400">Indica el motivo por el cual se deniega el acceso a este usuario</p>
+        </div>
+        <a href="{% url 'panel:solicitudes_pendientes' %}" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-700 dark:text-gray-300 rounded-xl transition-all border border-gray-200 dark:border-white/10 flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            <span>Volver</span>
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left: Solicitud Info -->
+        <div class="lg:col-span-1">
+            <div class="bg-white/80 dark:bg-[#1a2b4d]/80 backdrop-blur-md rounded-2xl border border-gray-200 dark:border-blue-900/30 p-6 shadow-xl h-full">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-unemi-blue dark:text-blue-400"></i>
+                    Información
+                </h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Nombre Completo</label>
+                        <p class="text-gray-900 dark:text-white font-medium">{{ solicitud.nombres }} {{ solicitud.apellidos }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Correo Electrónico</label>
+                        <p class="text-gray-900 dark:text-white font-medium break-all">{{ solicitud.email }}</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Facultad / Unidad</label>
+                        <p class="text-gray-900 dark:text-white font-medium">{{ solicitud.facultad }}</p>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-100 dark:border-white/5">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1">Fecha de Solicitud</label>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">{{ solicitud.fecha_solicitud|date:"d M Y, H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white/80 dark:bg-[#1a2b4d]/80 backdrop-blur-md rounded-2xl border border-red-200 dark:border-red-900/30 p-8 shadow-2xl relative overflow-hidden">
+                <!-- Red decoration -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-edit text-red-600 dark:text-red-400"></i>
+                    </div>
+                    Detalle del Rechazo
+                </h2>
+
+                <form method="POST" class="space-y-6 relative z-10">
+                    {% csrf_token %}
+                    
+                    <div class="group">
+                        <label for="id_motivo" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 ml-1">
+                            Motivo del rechazo <span class="text-red-500">*</span>
+                        </label>
+                        <textarea 
+                            name="motivo" 
+                            id="id_motivo" 
+                            rows="6"
+                            class="w-full bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all resize-none placeholder-gray-400"
+                            placeholder="Ej: El usuario no pertenece a la facultad indicada o los datos son incorrectos..."
+                            required
+                        ></textarea>
+                        <div class="mt-3 flex items-start gap-2 text-gray-500 dark:text-gray-400 text-sm">
+                            <i class="fas fa-eye mt-1 text-unemi-orange"></i>
+                            <p>Este mensaje será enviado automáticamente por correo al usuario y será visible en su pantalla de estado.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-4 flex gap-4">
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                        </div>
+                        <p class="text-sm text-red-800 dark:text-red-300">
+                            <strong>Atención:</strong> Esta acción no se puede deshacer fácilmente. Una vez rechazada, la solicitud quedará marcada permanentemente con este motivo.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                        <button type="button" 
+                            class="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-red-500/20 hover:shadow-red-500/40 transform hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
+                            onclick="showConfirm({
+                                title: 'Confirmar Rechazo',
+                                message: '¿Estás seguro de que deseas rechazar esta solicitud? El usuario no podrá acceder al sistema.',
+                                type: 'danger',
+                                callback: () => this.form.submit()
+                            })">
+                            <i class="fas fa-user-times"></i>
+                            Rechazar Solicitud
+                        </button>
+                        
+                        <a href="{% url 'panel:solicitudes_pendientes' %}" 
+                            class="flex-1 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-bold py-4 rounded-xl transition-all text-center border border-gray-200 dark:border-white/10 flex items-center justify-center gap-2">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

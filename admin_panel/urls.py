@@ -6,11 +6,16 @@ app_name = 'panel'
 
 urlpatterns = [
     # Auth
-    path('login/', auth_views.LoginView.as_view(
-        template_name='panel/login.html',
-        redirect_authenticated_user=True,
-    ), name='login'),
+    path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    
+    # Register & Access Requests
+    path('register/', views.register, name='register'),
+    path('solicitud-pendiente/<int:id>/', views.solicitud_pendiente, name='solicitud_pendiente'),
+    path('mi-estado/', views.mi_estado, name='mi_estado'),
+    path('solicitudes-pendientes/', views.solicitudes_pendientes, name='solicitudes_pendientes'),
+    path('solicitudes/<int:id>/aprobar/', views.aprobar_solicitud, name='aprobar_solicitud'),
+    path('solicitudes/<int:id>/rechazar/', views.rechazar_solicitud, name='rechazar_solicitud'),
 
     # Dashboard
     path('', views.dashboard, name='dashboard'),
@@ -35,4 +40,20 @@ urlpatterns = [
     path('sessions/<int:id>/qr/', views.session_qr_display, name='session_qr_display'),
     path('sessions/<int:id>/attendees/', views.session_attendees_api, name='session_attendees_api'),
     path('sessions/<int:id>/bulk-pdf/', views.session_bulk_pdf, name='session_bulk_pdf'),
+    path('sessions/<int:id>/edit/', views.session_edit, name='session_edit'),
+    path('sessions/<int:id>/generate-batch/', views.session_generate_batch, name='session_generate_batch'),
+
+    # Landing Page Builder
+    path('landing/', views.landing_builder, name='landing_builder'),
+    path('landing/add/', views.landing_add_block, name='landing_add_block'),
+    path('landing/<int:id>/update/', views.landing_update_block, name='landing_update_block'),
+    path('landing/<int:id>/delete/', views.landing_delete_block, name='landing_delete_block'),
+    path('landing/reorder/', views.landing_reorder, name='landing_reorder'),
+
+    # Líderes Académicos
+    path('lideres/', views.lideres_list, name='lideres_list'),
+    path('lideres/add/', views.lideres_add_manual, name='lideres_add_manual'),
+    path('lideres/upload/', views.lideres_upload_excel, name='lideres_upload_excel'),
+    path('lideres/process-mapping/', views.lideres_process_mapping, name='lideres_process_mapping'),
+    path('lideres/<int:id>/remove/', views.lideres_remove, name='lideres_remove'),
 ]

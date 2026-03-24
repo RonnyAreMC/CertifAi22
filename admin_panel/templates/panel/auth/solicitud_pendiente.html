@@ -1,0 +1,148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud Pendiente - UNEMI Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        unemi: {
+                            blue: '#162054',
+                            orange: '#F58830',
+                            dark: '#0B1221'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#162054] to-black min-h-screen py-8">
+    
+    <!-- Abstract Background Elements -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-unemi-orange/20 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]"></div>
+    </div>
+
+    <!-- Pending Card -->
+    <div class="relative w-full max-w-3xl p-6 z-10 mx-auto">
+        <div class="glass rounded-2xl backdrop-blur-sm p-10 text-center">
+            <!-- Animated Icon -->
+            <div class="relative w-24 h-24 mx-auto mb-8">
+                <div class="absolute inset-0 bg-unemi-orange/30 rounded-full pulse-ring"></div>
+                <div class="relative flex items-center justify-center w-24 h-24 rounded-full bg-unemi-orange/20">
+                    <i class="fas fa-clock text-unemi-orange text-5xl"></i>
+                </div>
+            </div>
+
+            <!-- Title & Description -->
+            <h1 class="text-3xl font-bold text-white mb-2">
+                Solicitud Enviada
+            </h1>
+            <p class="text-gray-400 mb-6">
+                Estamos revisando tu solicitud. Te notificaremos cuando sea aprobada.
+            </p>
+
+            <!-- Details Card -->
+            <div class="bg-white/5 border border-white/10 rounded-xl p-6 mb-6 text-left">
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <i class="fas fa-envelope text-unemi-orange mt-1 mr-3 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-gray-400 text-sm">Email de contacto</p>
+                            <p class="text-white font-medium break-all">{{ solicitud.email }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-calendar text-unemi-orange mt-1 mr-3 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-gray-400 text-sm">Fecha de solicitud</p>
+                            <p class="text-white font-medium">{{ solicitud.fecha_solicitud|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-unemi-orange mt-1 mr-3 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-gray-400 text-sm">Estado</p>
+                            <p class="text-yellow-400 font-medium">{{ solicitud.get_estado_display }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+                <p class="text-blue-200 text-sm">
+                    <i class="fas fa-lightbulb mr-2"></i>
+                    Los administradores del sistema revisarán tu solicitud en las próximas horas.
+                </p>
+            </div>
+
+            <!-- Actions -->
+            <div class="space-y-3">
+                <button onclick="location.reload()" class="w-full bg-unemi-orange/20 hover:bg-unemi-orange/30 text-unemi-orange border border-unemi-orange/50 font-semibold py-2 rounded-lg transition-all duration-300">
+                    <i class="fas fa-sync-alt mr-2"></i>Actualizar Estado
+                </button>
+                
+                <a href="{% url 'panel:login' %}" class="block w-full bg-white/10 hover:bg-white/20 text-white font-semibold py-2 rounded-lg transition-all duration-300 text-decoration-none">
+                    <i class="fas fa-arrow-left mr-2"></i>Volver al Login
+                </a>
+            </div>
+
+            <!-- Auto-refresh note -->
+            <p class="text-gray-500 text-xs mt-6">
+                <i class="fas fa-refresh mr-1"></i>Esta página se actualiza automáticamente cada 30 segundos
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8">
+            <p class="text-gray-500 text-sm">
+                ¿Problemas? Contacta con el equipo de administración
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh cada 30 segundos
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+
+        // Refresh al hacer foco en la ventana (si vuelve del navegador)
+        window.addEventListener('focus', function() {
+            location.reload();
+        });
+    </script>
+</body>
+</html>

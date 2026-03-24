@@ -11,42 +11,30 @@
         <div class="ios-orb ios-orb-2"></div>
         <div class="ios-orb ios-orb-3"></div>
     </div>
-    
+
     <div class="ios-hero-content ios-animate" data-animation="fadeInUp">
         <div class="ios-hero-badge">
             <i class="fa-solid fa-sparkles"></i>
             <span>Plataforma de Certificación</span>
         </div>
-        
+
         <h1 class="ios-hero-title">
-            Bienvenido a<br>
-            <span class="ios-gradient-text">MUC Academy</span>
+            Busca y Verifica tus<br>
+            <span class="ios-gradient-text">Certificados</span>
         </h1>
-        
+
         <p class="ios-hero-subtitle">
-            Tu plataforma integral de formación continua y certificación profesional. 
-            Seminarios, capacitaciones y mucho más.
+            Valida la autenticidad de tus certificados de MUC Academy de forma rápida y segura.
+            Accede a tu historial de capacitaciones y seminarios en cualquier momento.
         </p>
 
         <!-- CTA Buttons -->
         <div class="ios-hero-actions">
-            <a href="{% url 'public:attendance_search' %}" class="ios-btn ios-btn-primary group">
-                <i class="fa-solid fa-user-check"></i>
-                <span>Registro de Asistencia</span>
+            <a href="{% url 'public:home' %}" class="ios-btn ios-btn-primary group">
+                <i class="fa-solid fa-search"></i>
+                <span>Buscar Certificados</span>
                 <i class="fa-solid fa-chevron-right text-xs opacity-60 transition-transform group-hover:translate-x-1"></i>
             </a>
-            
-            <div class="ios-btn-coming-wrapper">
-                <a href="{% url 'public:home' %}" class="ios-btn ios-btn-glass group">
-                    <i class="fa-solid fa-certificate"></i>
-                    <span>Buscar Certificados</span>
-                    <i class="fa-solid fa-chevron-right text-xs opacity-40 transition-transform group-hover:translate-x-1"></i>
-                </a>
-                <div class="ios-badge-coming">
-                    <span class="ios-badge-dot"></span>
-                    Próximamente
-                </div>
-            </div>
         </div>
     </div>
 </section>
@@ -56,11 +44,11 @@
     <div class="ios-stats-grid">
         <div class="ios-stat-item">
             <div class="ios-stat-icon">
-                <i class="fa-solid fa-graduation-cap"></i>
+                <i class="fa-solid fa-certificate"></i>
             </div>
             <div class="ios-stat-info">
-                <span class="ios-stat-number">50+</span>
-                <span class="ios-stat-label">Seminarios</span>
+                <span class="ios-stat-number">5,000+</span>
+                <span class="ios-stat-label">Certificados Emitidos</span>
             </div>
         </div>
         <div class="ios-stat-divider"></div>
@@ -70,17 +58,17 @@
             </div>
             <div class="ios-stat-info">
                 <span class="ios-stat-number">1,200+</span>
-                <span class="ios-stat-label">Participantes</span>
+                <span class="ios-stat-label">Profesionales Certificados</span>
             </div>
         </div>
         <div class="ios-stat-divider"></div>
         <div class="ios-stat-item">
             <div class="ios-stat-icon ios-stat-icon-green">
-                <i class="fa-solid fa-award"></i>
+                <i class="fa-solid fa-search"></i>
             </div>
             <div class="ios-stat-info">
-                <span class="ios-stat-number">800+</span>
-                <span class="ios-stat-label">Certificados</span>
+                <span class="ios-stat-number">24/7</span>
+                <span class="ios-stat-label">Búsqueda Disponible</span>
             </div>
         </div>
     </div>
@@ -90,18 +78,18 @@
 <section class="ios-section">
     <div class="ios-section-header ios-animate" data-animation="fadeInUp">
         <span class="ios-section-eyebrow">Proceso</span>
-        <h2 class="ios-section-title">¿Cómo funciona?</h2>
-        <p class="ios-section-subtitle">Sigue estos sencillos pasos para obtener tu certificado</p>
+        <h2 class="ios-section-title">¿Cómo buscar tu certificado?</h2>
+        <p class="ios-section-subtitle">Sigue estos sencillos pasos para encontrar y descargar tu certificado</p>
     </div>
 
     <div class="ios-steps-grid">
         <div class="ios-step-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.1s">
             <div class="ios-step-number">1</div>
             <div class="ios-step-icon-wrap">
-                <i class="fa-solid fa-chalkboard-user"></i>
+                <i class="fa-solid fa-search"></i>
             </div>
-            <h3 class="ios-step-title">Asiste al Seminario</h3>
-            <p class="ios-step-desc">Participa activamente en la ponencia o capacitación presencial o virtual.</p>
+            <h3 class="ios-step-title">Busca tu Información</h3>
+            <p class="ios-step-desc">Son más de 5000 certificados que se entregarán a estudiantes. Ingresa tu cédula de identidad o correo institucional en el buscador.</p>
         </div>
 
         <div class="ios-step-connector ios-animate" data-animation="fadeIn">
@@ -111,10 +99,10 @@
         <div class="ios-step-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.2s">
             <div class="ios-step-number ios-step-number-orange">2</div>
             <div class="ios-step-icon-wrap ios-step-icon-orange">
-                <i class="fa-solid fa-clipboard-check"></i>
+                <i class="fa-solid fa-list-check"></i>
             </div>
-            <h3 class="ios-step-title">Completa el Formulario</h3>
-            <p class="ios-step-desc">Llena el formulario compartido <strong>antes de que termine</strong> la ponencia.</p>
+            <h3 class="ios-step-title">Selecciona tu Certificado</h3>
+            <p class="ios-step-desc">Revisa la lista de certificados asociados a tu información y selecciona el que necesitas.</p>
         </div>
 
         <div class="ios-step-connector ios-animate" data-animation="fadeIn">
@@ -126,19 +114,19 @@
             <div class="ios-step-icon-wrap">
                 <i class="fa-solid fa-download"></i>
             </div>
-            <h3 class="ios-step-title">Descarga tu Certificado</h3>
-            <p class="ios-step-desc">Usa tu cédula o correo en el buscador para obtener tu PDF oficial firmado.</p>
+            <h3 class="ios-step-title">Descarga tu PDF</h3>
+            <p class="ios-step-desc">Obtén tu certificado oficial en formato PDF con firma digital para validar su autenticidad.</p>
         </div>
     </div>
 
     <!-- Important Notice -->
     <div class="ios-notice ios-animate" data-animation="fadeInUp">
         <div class="ios-notice-icon">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+            <i class="fa-solid fa-shield-halved"></i>
         </div>
         <div class="ios-notice-content">
-            <h4 class="ios-notice-title">Requisito Obligatorio</h4>
-            <p class="ios-notice-text">Solo recibirás tu certificado si completaste el formulario de asistencia <strong>antes del cierre de la ponencia</strong>. Sin este registro, no podrás obtener tu certificado.</p>
+            <h4 class="ios-notice-title">Certificados Oficiales</h4>
+            <p class="ios-notice-text">Todos los certificados emitidos por MUC Academy incluyen firma digital y código QR para <strong>verificación inmediata</strong> de su autenticidad.</p>
         </div>
     </div>
 </section>
@@ -147,8 +135,8 @@
 <section class="ios-section">
     <div class="ios-section-header ios-animate" data-animation="fadeInUp">
         <span class="ios-section-eyebrow">Ventajas</span>
-        <h2 class="ios-section-title">¿Por qué MUC Academy?</h2>
-        <p class="ios-section-subtitle">Una plataforma diseñada pensando en ti</p>
+        <h2 class="ios-section-title">¿Por qué buscar aquí?</h2>
+        <p class="ios-section-subtitle">Una plataforma segura y eficiente para tus certificados</p>
     </div>
 
     <div class="ios-features-grid">
@@ -156,16 +144,16 @@
             <div class="ios-feature-icon">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
-            <h3 class="ios-feature-title">Oficial y Seguro</h3>
-            <p class="ios-feature-desc">Certificados emitidos directamente por MUC Academy con validación institucional y firma digital.</p>
+            <h3 class="ios-feature-title">Certificados Auténticos</h3>
+            <p class="ios-feature-desc">Todos los certificados incluyen firma digital y código QR para verificación inmediata de su validez.</p>
         </div>
 
         <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.2s">
             <div class="ios-feature-icon ios-feature-icon-orange">
-                <i class="fa-solid fa-bolt"></i>
+                <i class="fa-solid fa-search"></i>
             </div>
-            <h3 class="ios-feature-title">Descarga Inmediata</h3>
-            <p class="ios-feature-desc">Obtén tu certificado en formato PDF firmado digitalmente en cuestión de segundos.</p>
+            <h3 class="ios-feature-title">Búsqueda Rápida</h3>
+            <p class="ios-feature-desc">Encuentra tus certificados en segundos usando tu cédula o correo institucional.</p>
         </div>
 
         <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.3s">
@@ -173,15 +161,15 @@
                 <i class="fa-solid fa-clock"></i>
             </div>
             <h3 class="ios-feature-title">Disponible 24/7</h3>
-            <p class="ios-feature-desc">Accede a tu historial de seminarios en cualquier momento, desde cualquier dispositivo.</p>
+            <p class="ios-feature-desc">Accede a tus certificados en cualquier momento, desde cualquier dispositivo.</p>
         </div>
 
         <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.4s">
             <div class="ios-feature-icon ios-feature-icon-purple">
-                <i class="fa-solid fa-mobile-screen"></i>
+                <i class="fa-solid fa-file-pdf"></i>
             </div>
-            <h3 class="ios-feature-title">Optimizado para Móvil</h3>
-            <p class="ios-feature-desc">Diseñado especialmente para una experiencia perfecta en tu smartphone.</p>
+            <h3 class="ios-feature-title">PDF Oficial</h3>
+            <p class="ios-feature-desc">Descarga tus certificados en formato PDF oficial con diseño profesional y firma digital.</p>
         </div>
     </div>
 </section>
@@ -190,11 +178,11 @@
 <section class="ios-bottom-cta ios-animate" data-animation="fadeInUp">
     <div class="ios-cta-card">
         <div class="ios-cta-glow"></div>
-        <h2 class="ios-cta-title">¿Listo para comenzar?</h2>
-        <p class="ios-cta-subtitle">Registra tu asistencia ahora y asegura tu certificado</p>
-        <a href="{% url 'public:attendance_search' %}" class="ios-btn ios-btn-cta group">
+        <h2 class="ios-cta-title">¿Listo para buscar tus certificados?</h2>
+        <p class="ios-cta-subtitle">Accede ahora a tu historial de capacitaciones y descargas tus PDFs oficiales</p>
+        <a href="{% url 'public:home' %}" class="ios-btn ios-btn-cta group">
             <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i>
-            <span>Ir al Registro de Asistencia</span>
+            <span>Buscar mis Certificados</span>
         </a>
     </div>
 </section>

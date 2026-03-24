@@ -1,0 +1,28 @@
+<!-- Stats Bar: Barra de estadísticas con iconos -->
+<section class="py-0 px-4 -mt-4 mb-8 relative z-20">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex items-center justify-center gap-4 md:gap-6 py-5 px-6 rounded-2xl backdrop-blur-xl border" style="background: rgba(255,255,255,0.65); border-color: rgba(255,255,255,0.5); box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+            {% for item in bloque.items_json %}
+            {% if not forloop.first %}
+            <div class="w-px h-8 bg-gray-200 dark:bg-white/10 shrink-0"></div>
+            {% endif %}
+            <div class="flex items-center gap-2.5 flex-1 justify-center">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm shrink-0 shadow-md
+                    {% if item.color == 'orange' %}bg-gradient-to-br from-[#F58830] to-[#ff6600]
+                    {% elif item.color == 'green' %}bg-gradient-to-br from-emerald-500 to-emerald-600
+                    {% elif item.color == 'purple' %}bg-gradient-to-br from-purple-500 to-purple-700
+                    {% else %}bg-gradient-to-br from-[#162054] to-[#1e3a8a]{% endif %}">
+                    <i class="{{ item.icono }}"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-lg font-black text-gray-800 dark:text-white leading-tight">{{ item.valor }}</span>
+                    <span class="text-[0.65rem] text-gray-500 font-medium">{{ item.label }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<style>
+    .dark section .backdrop-blur-xl { background: rgba(30,41,59,0.5) !important; border-color: rgba(255,255,255,0.1) !important; }
+</style>
