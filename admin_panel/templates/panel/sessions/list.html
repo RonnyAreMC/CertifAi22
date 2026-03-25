@@ -300,9 +300,16 @@
     function copyRegistroLink(sessionId) {
         const url = window.location.origin + '/sesion/' + sessionId + '/registro/';
         navigator.clipboard.writeText(url).then(() => {
-            alert('Link copiado al portapapeles');
+            showToast('Link de registro copiado al portapapeles', 'success');
         }).catch(() => {
-            prompt('Link de registro:', url);
+            // Fallback if clipboard fails
+            const input = document.createElement('input');
+            input.value = url;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showToast('Link de registro copiado', 'success');
         });
     }
 

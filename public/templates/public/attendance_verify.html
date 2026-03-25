@@ -437,12 +437,12 @@ async function submitConfirmation() {
         } else {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-lock"></i> <span>Confirmar Asistencia — Acepto el compromiso</span>';
-            alert(data.error || 'Error al confirmar.');
+            showToast(data.error || 'Error al confirmar.', 'error');
         }
     } catch (err) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-lock"></i> <span>Confirmar Asistencia — Acepto el compromiso</span>';
-        alert('Error de conexión. Inténtalo de nuevo.');
+        showToast('Error de conexión. Inténtalo de nuevo.', 'error');
     }
 }
 </script>

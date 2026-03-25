@@ -25,4 +25,10 @@ urlpatterns = [
     path('search/autocomplete/', views.search_autocomplete, name='search_autocomplete'),
     path('download/<str:hash>/', views.download_pdf, name='download_pdf'),
     path('download-all/', views.download_zip, name='download_zip'),
+
+    # Smart Session Registration (Public)
+    path('sesion/<int:id>/registro/', views.session_register, name='session_register'),
+    path('sesion/<int:id>/registro/buscar/', views.session_register_search, name='session_register_search'),
+    path('sesion/<int:id>/registro/confirmar/', views.session_register_confirm, name='session_register_confirm'),
+    path('sesion/<int:id>/registro/nuevo/', views.session_register_new, name='session_register_new'),
 ]

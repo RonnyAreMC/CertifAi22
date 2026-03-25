@@ -50,52 +50,86 @@ def get_current_date_text(fecha_curso=None):
     return f"Milagro, {fecha.day} de {meses_es.get(fecha.month, '')} del {fecha.year}"
 
 
-def draw_signatures(c, certificado, width, y_position, color='#000000'):
+def get_signatures_for_lote(lote):
     signatures = []
-    lote = certificado.lote
-    if lote.nombre_firma_1: signatures.append({'name': lote.nombre_firma_1, 'cargo': lote.cargo_firma_1, 'img': lote.imagen_firma_1})
-    if lote.nombre_firma_2: signatures.append({'name': lote.nombre_firma_2, 'cargo': lote.cargo_firma_2, 'img': lote.imagen_firma_2})
-    if lote.nombre_firma_3: signatures.append({'name': lote.nombre_firma_3, 'cargo': lote.cargo_firma_3, 'img': lote.imagen_firma_3})
-    if lote.nombre_firma_4: signatures.append({'name': lote.nombre_firma_4, 'cargo': lote.cargo_firma_4, 'img': lote.imagen_firma_4})
-    
-    count = len(signatures) or 1
-    # Distribute broadly
-    section_width = (width - 4*cm) / count 
-    margin_left = 2*cm
+    for i in range(1, 5):
+        firma_inst = getattr(lote, f'firma_inst_{i}')
+        if firma_inst:
+            signatures.append({
+                'name': firma_inst.nombre,
+                'cargo': firma_inst.cargo,
+                'img': firma_inst.imagen
+            })
+        else:
+            nombre = getattr(lote, f'nombre_firma_{i}')
+            if nombre:
+                signatures.append({
+                    'name': nombre,
+                    'cargo': getattr(lote, f'cargo_firma_{i}'),
+                    'img': getattr(lote, f'imagen_firma_{i}')
+                })
+    return signatures
+
+
+def draw_signatures_bottom(c, lote, width, line_color='#000000', name_color='#222222', cargo_color='#666666', margin_left=None, margin_right=None, sig_y=None):
+    """
+    Dibuja firmas en la zona inferior del certificado.
+    Soporta 1, 2, 3 o 4 firmas distribuidas uniformemente.
+    """
+    signatures = get_signatures_for_lote(lote)
+    num = len(signatures)
+    if num == 0:
+        return
+
+    SIG_LINE_Y = sig_y if sig_y is not None else 3.8 * cm
+    IMG_H = 1.8 * cm            # Alto de imagen de firma
+    IMG_W = 3.5 * cm            # Ancho de imagen de firma
+    LINE_HALF = 2.8 * cm        # Mitad de la línea de firma
+    default_margin = 2.5 * cm
+    left = margin_left if margin_left is not None else default_margin
+    right = margin_right if margin_right is not None else default_margin
+
+    usable = width - left - right
+    spacing = usable / num
 
     for i, sig in enumerate(signatures):
-        center_x = margin_left + (i * section_width) + (section_width / 2)
-        
-        # Line
-        c.setStrokeColor(hex2rgb(color))
-        c.setLineWidth(0.5)
-        c.line(center_x - 3*cm, y_position, center_x + 3*cm, y_position)
-        
-        # Signature Image (Base64)
-        if sig['img']:
+        cx = left + spacing * i + spacing / 2
+
+        # Imagen de firma (arriba de la línea)
+        if sig.get('img'):
             try:
-                img_base64 = sig['img']
-                # Fix padding if necessary
-                missing_padding = len(img_base64) % 4
-                if missing_padding:
-                    img_base64 += '=' * (4 - missing_padding)
-                    
-                image_data = base64.b64decode(img_base64)
-                image_stream = BytesIO(image_data)
-                img_reader = ImageReader(image_stream)
-                
-                # Draw above line
-                c.drawImage(img_reader, center_x - 2*cm, y_position + 0.2*cm, width=4*cm, height=2*cm, mask='auto', preserveAspectRatio=True)
-            except Exception as e:
-                print(f"Error drawing signature: {e}")
+                img_b64 = sig['img']
+                missing = len(img_b64) % 4
+                if missing:
+                    img_b64 += '=' * (4 - missing)
+                img_data = base64.b64decode(img_b64)
+                img_reader = ImageReader(BytesIO(img_data))
+                c.drawImage(img_reader, cx - IMG_W / 2, SIG_LINE_Y + 0.15 * cm,
+                            width=IMG_W, height=IMG_H, mask='auto', preserveAspectRatio=True)
+            except:
                 pass
 
-        # Name & Cargo
-        c.setFont("Helvetica", 10) # Name Normal
-        c.setFillColor(HexColor('#000000'))
-        c.drawCentredString(center_x, y_position - 0.5*cm, sig['name'].upper())
-        c.setFont("Helvetica-Bold", 8) # Cargo Bold
-        c.drawCentredString(center_x, y_position - 0.9*cm, sig['cargo'].upper())
+        # Línea
+        c.setStrokeColor(hex2rgb(line_color))
+        c.setLineWidth(0.8)
+        c.line(cx - LINE_HALF, SIG_LINE_Y, cx + LINE_HALF, SIG_LINE_Y)
+
+        # Nombre
+        name_size = 9 if num <= 3 else 7.5
+        c.setFont("Times-Bold", name_size)
+        c.setFillColor(hex2rgb(name_color))
+        c.drawCentredString(cx, SIG_LINE_Y - 0.45 * cm, sig['name'].upper())
+
+        # Cargo
+        cargo_size = 7.5 if num <= 3 else 6.5
+        c.setFont("Helvetica-Bold", cargo_size)
+        c.setFillColor(hex2rgb(cargo_color))
+        c.drawCentredString(cx, SIG_LINE_Y - 0.85 * cm, sig['cargo'].upper())
+
+
+def draw_signatures(c, certificado, width, y_position, color='#000000'):
+    """Legacy wrapper - redirige a draw_signatures_bottom."""
+    draw_signatures_bottom(c, certificado.lote, width)
 
 # --- STRATEGIES ---
 
@@ -120,44 +154,33 @@ def draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt):
     except: pass
 
     # --- SIDEBAR DECORATION (Geometric Shapes) ---
-    # The reference shows overlapping rotated rounded rectangles in shades of blue/teal
-    
+    # Clipped: no baja de 11cm para dejar firmas completamente libres
+
     c.saveState()
-    # Clipping to left side to avoid shapes spilling too far right
-    # But the reference implies they are the sidebar.
-    
-    # 1. Base Sidebar Color (Deepest)
+    clip_path = c.beginPath()
+    clip_path.rect(0, 11*cm, 8*cm, height)
+    c.clipPath(clip_path, stroke=0)
+
+    # 1. Base Sidebar Color
     c.setFillColor(pri)
     c.rect(0, 0, 3.5*cm, height, fill=1, stroke=0)
-    
-    # 2. Rotated Squares Pattern
-    # We'll use 2-3 large rotated rounded rects to create the "wave" look
-    
+
     # Shape 1 (Top Left - Dark)
-    c.setFillColor(pri) 
+    c.setFillColor(pri)
     c.saveState()
     c.translate(0, height)
     c.rotate(-45)
     c.roundRect(-2*cm, -5*cm, 10*cm, 10*cm, 1*cm, fill=1, stroke=0)
     c.restoreState()
-    
-    # Shape 2 (Middle - Lighter opacity/tint)
-    # We need a lighter version of Pri or just opacity
-    c.setFillColor(pri, alpha=0.7) 
+
+    # Shape 2 (Middle - Lighter)
+    c.setFillColor(pri, alpha=0.7)
     c.saveState()
     c.translate(0, height * 0.55)
     c.rotate(-45)
     c.roundRect(-4*cm, -5*cm, 11*cm, 11*cm, 1.5*cm, fill=1, stroke=0)
     c.restoreState()
-    
-    # Shape 3 (Bottom - Dark again)
-    c.setFillColor(pri)
-    c.saveState()
-    c.translate(0, 0)
-    c.rotate(-45)
-    c.roundRect(-2*cm, -3*cm, 12*cm, 12*cm, 1*cm, fill=1, stroke=0)
-    c.restoreState()
-    
+
     c.restoreState()
 
     # --- GOLD SEAL (Top Left Intersection) ---
@@ -278,78 +301,17 @@ def draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt):
         
     y_cursor -= 8*mm
     
-    # 6. Date (Gold)
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(sec)
+    # 6. Date
+    c.setFont("Times-Italic", 13)
+    c.setFillColor(HexColor('#777777'))
     c.drawCentredString(center_x, y_cursor, get_current_date_text(certificado.fecha_curso))
     
     y_cursor -= 2.5*cm
     
-    # 7. Signatures & Footer
-    # Reference shows signatures at bottom with central element
-    
-    # Draw Signatures
-    # We'll use custom positioning here
-    sig_y = y_cursor
-    
-    signatures = []
-    if lote.nombre_firma_1: signatures.append({'name': lote.nombre_firma_1, 'cargo': lote.cargo_firma_1, 'img': lote.imagen_firma_1})
-    if lote.nombre_firma_2: signatures.append({'name': lote.nombre_firma_2, 'cargo': lote.cargo_firma_2, 'img': lote.imagen_firma_2})
-    
-    # We can handle more, but reference implies 2 with central divider/icon
-    
-    if len(signatures) > 0:
-        # Calculate positions
-        # If 2, left and right. 
-        # Center decoration (Gold Wreath)
-        
-        # Draw Central Wreath/Icon
-        c.saveState()
-        c.translate(center_x, sig_y + 1*cm)
-        c.setFillColor(sec, alpha=0.2)
-        c.circle(0,0, 1.2*cm, fill=1, stroke=0)
-        c.setFont("Times-Bold", 24)
-        c.setFillColor(sec)
-        # Maybe a unicode laurel or just a circle
-        c.restoreState()
-        
-        # Left Sig
-        if len(signatures) >= 1:
-            sig = signatures[0]
-            sx = center_x - 5*cm
-            c.setStrokeColor(sec); c.setLineWidth(1)
-            c.line(sx - 2.5*cm, sig_y, sx + 2.5*cm, sig_y) # Gold Line
-            c.setFont("Helvetica", 9); c.setFillColor(HexColor('#333333'))
-            c.drawCentredString(sx, sig_y - 0.5*cm, sig['name'].upper())
-            c.setFont("Helvetica-Bold", 7); c.setFillColor(HexColor('#777777'))
-            c.drawCentredString(sx, sig_y - 0.9*cm, sig['cargo'].upper())
-            # Img
-            if sig['img']:
-                try:
-                    import base64; from io import BytesIO; from reportlab.lib.utils import ImageReader
-                    d = base64.b64decode(sig['img'] + "===")
-                    img = ImageReader(BytesIO(d))
-                    c.drawImage(img, sx - 2*cm, sig_y + 0.2*cm, width=4*cm, height=2*cm, mask='auto', preserveAspectRatio=True)
-                except: pass
+    # 7. Signatures (fixed at bottom, desplazadas a la derecha del sidebar)
+    draw_signatures_bottom(c, lote, width, name_color='#333333', cargo_color='#777777',
+                           margin_left=margin_left)
 
-        # Right Sig
-        if len(signatures) >= 2:
-            sig = signatures[1]
-            sx = center_x + 5*cm
-            c.setStrokeColor(sec); c.setLineWidth(1)
-            c.line(sx - 2.5*cm, sig_y, sx + 2.5*cm, sig_y) # Gold Line
-            c.setFont("Helvetica", 9); c.setFillColor(HexColor('#333333'))
-            c.drawCentredString(sx, sig_y - 0.5*cm, sig['name'].upper())
-            c.setFont("Helvetica-Bold", 7); c.setFillColor(HexColor('#777777'))
-            c.drawCentredString(sx, sig_y - 0.9*cm, sig['cargo'].upper())
-            # Img
-            if sig['img']:
-                try:
-                    import base64; from io import BytesIO; from reportlab.lib.utils import ImageReader
-                    d = base64.b64decode(sig['img'] + "===")
-                    img = ImageReader(BytesIO(d))
-                    c.drawImage(img, sx - 2*cm, sig_y + 0.2*cm, width=4*cm, height=2*cm, mask='auto', preserveAspectRatio=True)
-                except: pass
 
 def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     """
@@ -392,17 +354,15 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     draw_hexagon(3.5*cm, height - 2*cm, 1.5*cm, sec, alpha=0.8) # Gold accent
     draw_hexagon(1*cm, height - 4.5*cm, 0.8*cm, pri, alpha=0.4) # Small echo
     
-    # 2. Bottom Right Decoration
-    draw_hexagon(width, 0, 5*cm, pri, alpha=1.0)
-    draw_hexagon(width - 4*cm, 1.5*cm, 2*cm, sec, stroke=True) # Outline
-    
-    # 3. Bottom Bar (UNEMI Style)
-    # A thick bar at the very bottom
-    bar_h = 1.2*cm
+    # 2. Bottom Right Decoration (pequeño, no invade firmas)
+    draw_hexagon(width + 1*cm, -1*cm, 3*cm, pri, alpha=0.8)
+    draw_hexagon(width - 3*cm, 0.8*cm, 1.2*cm, sec, stroke=True) # Outline
+
+    # 3. Bottom Bar (delgada, debajo de las firmas)
     c.setFillColor(pri)
-    c.rect(0, 0, width * 0.4, bar_h/2, fill=1, stroke=0)
+    c.rect(0, 0, width * 0.4, 0.4*cm, fill=1, stroke=0)
     c.setFillColor(sec)
-    c.rect(width * 0.4, 0, width * 0.6, bar_h/2, fill=1, stroke=0)
+    c.rect(width * 0.4, 0, width * 0.6, 0.4*cm, fill=1, stroke=0)
     
     # --- HEADER ---
     # Top Left is busy with Hexagons, so let's push Header content slightly right or center.
@@ -496,45 +456,12 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     y_cursor -= 1.5*cm
     
     # 7. Date
-    c.setFont("Helvetica", 10)
-    c.setFillColor(HexColor('#555555'))
+    c.setFont("Times-Italic", 13)
+    c.setFillColor(HexColor('#777777'))
     c.drawCentredString(width/2, y_cursor, get_current_date_text(certificado.fecha_curso))
     
-    # --- SIGNATURES ---
-    # Bottom area, above the colored bar
-    sig_y = 4*cm
-    
-    signatures = []
-    if lote.nombre_firma_1: signatures.append({'name': lote.nombre_firma_1, 'cargo': lote.cargo_firma_1, 'img': lote.imagen_firma_1})
-    if lote.nombre_firma_2: signatures.append({'name': lote.nombre_firma_2, 'cargo': lote.cargo_firma_2, 'img': lote.imagen_firma_2})
-    if lote.nombre_firma_3: signatures.append({'name': lote.nombre_firma_3, 'cargo': lote.cargo_firma_3, 'img': lote.imagen_firma_3})
-    
-    num_sigs = len(signatures)
-    if num_sigs > 0:
-        spacing = width / (num_sigs + 1)
-        for i, sig in enumerate(signatures):
-            x_pos = spacing * (i + 1)
-            
-            # Img
-            if sig['img']:
-                try:
-                    import base64; from io import BytesIO; from reportlab.lib.utils import ImageReader
-                    d = base64.b64decode(sig['img'] + "===")
-                    img = ImageReader(BytesIO(d))
-                    c.drawImage(img, x_pos - 2*cm, sig_y + 0.5*cm, width=4*cm, height=2*cm, mask='auto', preserveAspectRatio=True)
-                except: pass
-                
-            # Line
-            c.setStrokeColor(HexColor('#444444'))
-            c.line(x_pos - 2.5*cm, sig_y, x_pos + 2.5*cm, sig_y)
-            
-            # Text
-            # Text
-            c.setFont("Helvetica", 8) 
-            c.setFillColor(HexColor('#000000'))
-            c.drawCentredString(x_pos, sig_y - 0.4*cm, sig['name'].upper())
-            c.setFont("Helvetica-Bold", 6)
-            c.drawCentredString(x_pos, sig_y - 0.7*cm, sig['cargo'].upper())
+    # --- SIGNATURES (fixed at bottom) ---
+    draw_signatures_bottom(c, lote, width)
 
     # QR Code (Hybrid: UNEMI has it bottom right)
     # We'll put a placeholder box if we don't have QR logic here yet, or use the hash
@@ -1007,49 +934,15 @@ def draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt):
     y_cursor -= 8*mm
     
     # 6. Date (bottom-right corner)
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(sec)
+    c.setFont("Times-Italic", 13)
+    c.setFillColor(HexColor('#777777'))
     c.drawRightString(width - 2.5*cm, 2.0*cm, get_current_date_text(certificado.fecha_curso))
 
     
-    # 7. Signatures
-    sig_y = y_cursor
-    signatures = []
-    if lote.nombre_firma_1: signatures.append({'name': lote.nombre_firma_1, 'cargo': lote.cargo_firma_1, 'img': lote.imagen_firma_1})
-    if lote.nombre_firma_2: signatures.append({'name': lote.nombre_firma_2, 'cargo': lote.cargo_firma_2, 'img': lote.imagen_firma_2})
-    
-    if len(signatures) > 0:
-        # Center signatures within content area
-        count = len(signatures)
-        content_area_width = width - margin_left
-        spacing = content_area_width / (count + 1)
-        
-        for i, sig in enumerate(signatures):
-            sx = margin_left + spacing * (i + 1)
-            
-            # Line
-            c.setStrokeColor(sec); c.setLineWidth(1)
-            c.line(sx - 2.5*cm, sig_y, sx + 2.5*cm, sig_y) 
-            
-            # Text (Fixed Fonts: Name Normal, Cargo Bold)
-            c.setFont("Helvetica", 9); c.setFillColor(HexColor('#333333'))
-            c.drawCentredString(sx, sig_y - 0.5*cm, sig['name'].upper())
-            
-            c.setFont("Helvetica-Bold", 7); c.setFillColor(HexColor('#777777'))
-            c.drawCentredString(sx, sig_y - 0.9*cm, sig['cargo'].upper())
-            
-            # Img
-            if sig['img']:
-                try:
-                    import base64; from io import BytesIO; from reportlab.lib.utils import ImageReader
-                    d = base64.b64decode(sig['img'] + "===")
-                    img = ImageReader(BytesIO(d))
-                    c.drawImage(img, sx - 2*cm, sig_y + 0.2*cm, width=4*cm, height=2*cm, mask='auto', preserveAspectRatio=True)
-                except: pass
-        
-        # OLD LOGIC REMOVED (Placeholder to consume the rest via next delete)
-        #
-        
+    # 7. Signatures (desplazadas a la derecha del sidebar)
+    draw_signatures_bottom(c, lote, width, name_color='#333333', cargo_color='#777777',
+                           margin_left=margin_left, margin_right=1.5*cm)
+
 
 
 
@@ -1237,56 +1130,9 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
         y_cursor -= line_spacing
     
     # D. Date (bottom-right corner)
-    c.setFont("Helvetica-Bold", 12) 
-    c.setFillColor(HexColor('#555555'))
-    date_text = get_current_date_text(certificado.fecha_curso).upper()
-    c.drawRightString(width - 2.5*cm, 2.0*cm, date_text)
+    c.setFont("Times-Italic", 13)
+    c.setFillColor(HexColor('#777777'))
+    c.drawRightString(width - 2.5*cm, 2.0*cm, get_current_date_text(certificado.fecha_curso))
     
-    # --- 5. SIGNATURES ---
-    signatures = []
-    if lote.nombre_firma_1: signatures.append({'name': lote.nombre_firma_1, 'cargo': lote.cargo_firma_1, 'img': lote.imagen_firma_1})
-    if lote.nombre_firma_2: signatures.append({'name': lote.nombre_firma_2, 'cargo': lote.cargo_firma_2, 'img': lote.imagen_firma_2})
-    if lote.nombre_firma_3: signatures.append({'name': lote.nombre_firma_3, 'cargo': lote.cargo_firma_3, 'img': lote.imagen_firma_3})
-    if lote.nombre_firma_4: signatures.append({'name': lote.nombre_firma_4, 'cargo': lote.cargo_firma_4, 'img': lote.imagen_firma_4})
-    
-    num = len(signatures)
-    
-    # Helper to draw single signature
-    def draw_single_sig(cx, cy, sig_data):
-        # Img
-        if sig_data['img']:
-            try:
-                import base64; from io import BytesIO; from reportlab.lib.utils import ImageReader
-                d = base64.b64decode(sig_data['img'] + "===")
-                img = ImageReader(BytesIO(d))
-                c.drawImage(img, cx - 2*cm, cy + 0.2*cm, width=4*cm, height=1.8*cm, mask='auto', preserveAspectRatio=True)
-            except: pass
-        
-        # Line
-        c.setStrokeColor(HexColor('#000000'))
-        c.setLineWidth(1)
-        c.line(cx - 2.5*cm, cy, cx + 2.5*cm, cy)
-        
-        # Text
-        c.setFont("Helvetica", 9) # Name Normal
-        c.setFillColor(HexColor('#000000'))
-        c.drawCentredString(cx, cy - 0.4*cm, sig_data['name'].upper())
-        c.setFont("Helvetica-Bold", 8) # Cargo Bold
-        c.drawCentredString(cx, cy - 0.8*cm, sig_data['cargo'].upper())
-
-    if num == 4:
-        # GRID LAYOUT (2x2)
-        y_top = 4.8*cm
-        draw_single_sig(width * 0.33, y_top, signatures[0])
-        draw_single_sig(width * 0.66, y_top, signatures[1])
-        y_bot = 2.0*cm
-        draw_single_sig(width * 0.33, y_bot, signatures[2])
-        draw_single_sig(width * 0.66, y_bot, signatures[3])
-        
-    elif num > 0:
-        # SINGLE ROW LAYOUT (1, 2, or 3) - centered
-        w_zone = width / (num + 1)
-        for i, sig in enumerate(signatures):
-            px = w_zone * (i + 1)
-            draw_single_sig(px, SIG_LINE_Y, sig)
-# FORCE RELOAD TRIGGER - Signature Fix Applied
+    # --- 5. SIGNATURES (más arriba para no chocar con decoración inferior) ---
+    draw_signatures_bottom(c, lote, width, sig_y=4.5*cm)

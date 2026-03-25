@@ -585,37 +585,66 @@ def session_register(request, id):
 
 
 def session_register_search(request, id):
-    """AJAX: Search for existing participant by cedula or email."""
+    """AJAX: Search for existing participant by cedula, email, or name."""
     sesion = get_object_or_404(SesionAsistencia, id=id, activa=True)
     query = request.GET.get('q', '').strip()
 
     if len(query) < 3:
-        return JsonResponse({'found': False})
+        return JsonResponse({'found': False, 'results': []})
 
-    participante = _find_participante(query)
-    if not participante:
-        return JsonResponse({'found': False})
+    # Smart search: tokens for flexible matching
+    tokens = query.split()
+    q_filter = Q(cedula__icontains=query) | Q(email__icontains=query)
+    for token in tokens:
+        q_filter |= Q(nombres__icontains=token) | Q(apellidos__icontains=token)
 
-    # Check if already confirmed for this session
-    ya_confirmado = ConfirmacionAsistencia.objects.filter(
-        participante=participante, sesion=sesion, confirmado=True
-    ).exists()
+    participantes = Participante.objects.filter(q_filter).distinct()[:15]
 
-    # Get courses from certificates
-    cursos = list(participante.certificados.values_list('curso', flat=True).distinct()[:10])
+    if not participantes.exists():
+        return JsonResponse({'found': False, 'results': []})
+
+    results = []
+    for p in participantes:
+        # Check if already confirmed for this session
+        ya_confirmado = ConfirmacionAsistencia.objects.filter(
+            participante=p, sesion=sesion, confirmado=True
+        ).exists()
+
+        # Get courses (including legacy ones not linked to Participante but matching ID/Email)
+        q_cursos = Q(participante=p)
+        if p.cedula: q_cursos |= Q(cedula=p.cedula)
+        if p.email: q_cursos |= Q(email=p.email)
+        
+        cursos = list(Certificado.objects.filter(q_cursos).values_list('curso', flat=True).distinct()[:5])
+
+        # Check for missing info
+        missing = []
+        if not p.cedula: missing.append('cedula')
+        if not p.email: missing.append('email')
+        if not p.nombres: missing.append('nombres')
+        if not p.apellidos: missing.append('apellidos')
+        if not p.celular: missing.append('celular')
+
+        results.append({
+            'id': p.id,
+            'cedula': p.cedula,
+            'nombres': p.nombres,
+            'apellidos': p.apellidos,
+            'email': p.email,
+            'celular': p.celular,
+            'cursos': cursos,
+            'ya_confirmado': ya_confirmado,
+            'missing_info': missing
+        })
 
     return JsonResponse({
         'found': True,
-        'participante': {
-            'id': participante.id,
-            'cedula': participante.cedula,
-            'nombres': participante.nombres,
-            'apellidos': participante.apellidos,
-            'email': participante.email,
-            'celular': participante.celular,
-            'cursos': cursos,
-        },
-        'ya_confirmado': ya_confirmado,
+        'count': len(results),
+        'results': results,
+        # Legacy support for single-result logic
+        'participante': results[0],
+        'ya_confirmado': results[0]['ya_confirmado'],
+        'missing_info': results[0]['missing_info']
     })
 
 
@@ -640,15 +669,32 @@ def session_register_confirm(request, id):
             'error': 'Este evento es exclusivo para Líderes Académicos. Si crees que es un error, contacta al administrador.'
         }, status=403)
 
-    # Update optional fields if provided
+    # Update fields if provided
     celular = request.POST.get('celular', '').strip()
     email = request.POST.get('email', '').strip()
+    cedula = request.POST.get('cedula', '').strip()
+    nombres = request.POST.get('nombres', '').strip()
+    apellidos = request.POST.get('apellidos', '').strip()
+
+    fields_to_update = []
     if celular and celular != participante.celular:
         participante.celular = celular
-        participante.save(update_fields=['celular'])
+        fields_to_update.append('celular')
     if email and email != participante.email:
         participante.email = email
-        participante.save(update_fields=['email'])
+        fields_to_update.append('email')
+    if cedula and not participante.cedula:
+        participante.cedula = cedula
+        fields_to_update.append('cedula')
+    if nombres and not participante.nombres:
+        participante.nombres = nombres
+        fields_to_update.append('nombres')
+    if apellidos and not participante.apellidos:
+        participante.apellidos = apellidos
+        fields_to_update.append('apellidos')
+
+    if fields_to_update:
+        participante.save(update_fields=fields_to_update)
 
     # Check capacity
     if sesion.esta_llena:

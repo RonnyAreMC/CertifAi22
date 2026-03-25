@@ -140,11 +140,17 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Custom User Model
 AUTH_USER_MODEL = 'core.Usuario'
 
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'admin_panel.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Login Redirects
 # Login Redirects
 LOGIN_URL = 'panel:login'
 LOGIN_REDIRECT_URL = 'panel:dashboard'
-LOGOUT_REDIRECT_URL = 'public:home'
+LOGOUT_REDIRECT_URL = 'panel:login'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field

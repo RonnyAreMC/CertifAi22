@@ -171,6 +171,27 @@
                 document.getElementById('theme-icon').classList.replace('fa-sun', 'fa-moon');
             }
         }
+
+        // Global Toast helper
+        window.showToast = function(message, icon = 'success') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+            Toast.fire({
+                icon: icon,
+                title: message,
+                background: document.documentElement.classList.contains('dark') ? '#1e2b4d' : '#fff',
+                color: document.documentElement.classList.contains('dark') ? '#fff' : '#1e2b4d',
+            });
+        }
     </script>
 </body>
 

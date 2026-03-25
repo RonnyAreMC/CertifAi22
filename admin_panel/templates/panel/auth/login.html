@@ -90,8 +90,11 @@
                             <i class="fa-solid fa-lock"></i>
                         </span>
                         <input type="password" name="password" id="password" required
-                            class="w-full bg-black/30 border border-gray-600 text-white rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange placeholder-gray-500 transition-all font-light"
+                            class="w-full bg-black/30 border border-gray-600 text-white rounded-lg pl-10 pr-12 py-3 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange placeholder-gray-500 transition-all font-light"
                             placeholder="••••••••">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-unemi-orange transition-colors focus:outline-none focus:ring-0">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -121,5 +124,26 @@
             <p class="text-gray-500 text-xs font-light tracking-wide">Universidad Estatal de Milagro &copy; 2026</p>
         </div>
     </div>
+
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const passwordInput = document.querySelector('#password');
+        const eyeIcon = document.querySelector('#eyeIcon');
+
+        togglePassword.addEventListener('click', function() {
+            // Toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the eye / eye-slash icon
+            if (type === 'text') {
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        });
+    </script>
 </body>
 </html>

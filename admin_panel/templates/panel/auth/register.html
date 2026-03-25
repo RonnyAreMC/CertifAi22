@@ -143,7 +143,12 @@
                         <label for="id_password" class="block text-sm font-medium text-gray-300 mb-2">
                             <i class="fas fa-lock mr-2"></i>Contraseña *
                         </label>
-                        {{ form.password }}
+                        <div class="relative">
+                            {{ form.password }}
+                            <button type="button" class="password-toggle absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-unemi-orange transition-colors focus:outline-none" data-target="password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         {% if form.password.errors %}
                             <p class="text-red-400 text-sm mt-1">{{ form.password.errors.0 }}</p>
                         {% endif %}
@@ -153,7 +158,12 @@
                         <label for="id_password_confirm" class="block text-sm font-medium text-gray-300 mb-2">
                             <i class="fas fa-lock mr-2"></i>Confirmar Contraseña *
                         </label>
-                        {{ form.password_confirm }}
+                        <div class="relative">
+                            {{ form.password_confirm }}
+                            <button type="button" class="password-toggle absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-unemi-orange transition-colors focus:outline-none" data-target="password_confirm">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         {% if form.password_confirm.errors %}
                             <p class="text-red-400 text-sm mt-1">{{ form.password_confirm.errors.0 }}</p>
                         {% endif %}
@@ -184,6 +194,25 @@
         </div>
     </div>
     <script>
+        // Password toggle logic
+        document.querySelectorAll('.password-toggle').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetName = this.getAttribute('data-target');
+                const pInput = document.querySelector(`input[name="${targetName}"]`);
+                const icon = this.querySelector('i');
+                
+                if (pInput.type === 'password') {
+                    pInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    pInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+
         // Optimizaciones de UX para el campo de teléfono
         const telefonoInput = document.querySelector('input[name="telefono"]');
         if (telefonoInput) {

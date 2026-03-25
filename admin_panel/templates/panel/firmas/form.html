@@ -1,0 +1,65 @@
+{% extends "panel/base.html" %}
+
+{% block title %}{{ title }} - UNEMI{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white dark:bg-[#0F163A]/50 rounded-2xl shadow-sm border border-gray-100 dark:border-blue-900/30 p-8 backdrop-blur-sm">
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm">
+                {{ form.errors }}
+            </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre de Autoridad <span class="text-red-500">*</span></label>
+                {{ form.nombre }}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cargo <span class="text-red-500">*</span></label>
+                {{ form.cargo }}
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Orden de aparición</label>
+                {{ form.orden }}
+                <p class="mt-1 text-xs text-gray-500">Determina el orden por defecto al asignar firmas a un lote (1 = primero).</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Firma (Imagen PNG, fondo transparente)</label>
+                {% if firma and firma.imagen %}
+                <div class="mb-3">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Firma actual:</p>
+                    <img src="data:image/png;base64,{{ firma.imagen }}" alt="Firma Actual" class="h-16 object-contain bg-gray-50 dark:bg-gray-800 rounded p-2">
+                </div>
+                {% endif %}
+                <input type="file" name="imagen" accept="image/png, image/jpeg" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="mt-2 text-xs text-gray-500">Sube una nueva firma para reemplazar la actual. Se recomienda formato PNG sin fondo.</p>
+            </div>
+
+            <div class="flex items-center">
+                {{ form.activa }}
+                <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    Firma activa y disponible para usar
+                </label>
+            </div>
+
+            <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-blue-900/30">
+                <a href="{% url 'panel:firma_list' %}" class="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-medium">
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-[#F58830] hover:bg-[#d9772a] text-white px-6 py-2.5 rounded-xl transition-colors font-medium">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

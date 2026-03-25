@@ -1,0 +1,134 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Participantes - Admin{% endblock %}
+{% block page_title %}Gestión de Participantes{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header with Stats -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3 tracking-tight">
+                <span class="p-2.5 bg-unemi-orange/10 rounded-xl">
+                    <i class="fas fa-user-graduate text-unemi-orange"></i>
+                </span>
+                Base de Participantes
+            </h1>
+            <p class="text-xs text-gray-500 mt-1 font-medium">Visualiza y gestiona todos los estudiantes registrados en el sistema</p>
+        </div>
+        <div class="flex gap-3">
+            <div class="px-5 py-2.5 bg-white dark:bg-[#1a2b4d] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm flex items-center gap-3">
+                <span class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Total Registrados</span>
+                <span class="text-xl font-black text-unemi-blue dark:text-white">{{ total }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="mb-6">
+        <form method="get" class="relative group">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-unemi-orange transition-colors"></i>
+            </div>
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre, cédula o correo..."
+                class="w-full pl-12 pr-5 py-4 bg-white dark:bg-[#1a2b4d] border border-gray-100 dark:border-white/10 rounded-2xl text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:ring-4 focus:ring-unemi-orange/10 focus:border-unemi-orange transition-all shadow-sm font-medium">
+            
+            {% if q %}
+            <a href="{% url 'panel:participantes_list' %}" class="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-400 hover:text-red-500 transition-colors">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-white dark:bg-[#1a2b4d] rounded-3xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50 dark:bg-black/20 border-b border-gray-100 dark:border-white/10">
+                        <th class="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Participante</th>
+                        <th class="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Identificación</th>
+                        <th class="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Contacto</th>
+                        <th class="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Estado</th>
+                        <th class="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50 dark:divide-white/5">
+                    {% for p in participantes %}
+                    <tr class="hover:bg-gray-50/30 dark:hover:bg-white/5 transition-all group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-unemi-blue to-blue-900 text-white flex items-center justify-center font-black text-xs flex-shrink-0 shadow-sm transition-transform group-hover:scale-105">
+                                    {{ p.nombres|first|upper }}{{ p.apellidos|first|upper }}
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-sm font-black text-gray-900 dark:text-white truncate tracking-tight">{{ p.nombres }} {{ p.apellidos }}</p>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5">ID: #{{ p.id }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 font-mono">
+                                {{ p.cedula|default:"—" }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="space-y-1">
+                                <p class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-envelope text-[10px] text-gray-400"></i>
+                                    {{ p.email }}
+                                </p>
+                                {% if p.celular %}
+                                <p class="text-xs text-gray-500 flex items-center gap-2">
+                                    <i class="fa-solid fa-phone text-[10px] text-gray-400"></i>
+                                    {{ p.celular }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if p.es_lider %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 uppercase tracking-widest">
+                                <i class="fa-solid fa-star text-[8px]"></i> LÍDER
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 uppercase tracking-widest">
+                                NORMAL
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <button onclick="showConfirm({
+                                    title: 'Eliminar Participante',
+                                    message: '¿Estás seguro de eliminar a {{ p.nombres|escapejs }} {{ p.apellidos|escapejs }}? Se eliminará su historial del sistema.',
+                                    type: 'error',
+                                    confirmText: 'Sí, eliminar',
+                                    callback: () => document.getElementById('delete-form-{{ p.id }}').submit()
+                                })" class="p-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 text-red-500 rounded-xl transition-all" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                                <form id="delete-form-{{ p.id }}" method="post" action="{% url 'panel:participante_delete' p.id %}" class="hidden">
+                                    {% csrf_token %}
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-20 text-center">
+                            <div class="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <i class="fa-solid fa-user-slash text-3xl text-gray-300"></i>
+                            </div>
+                            <h3 class="text-lg font-black text-gray-800 dark:text-white">Sin resultados</h3>
+                            <p class="text-gray-500 text-sm mt-1">No se encontraron participantes con el criterio de búsqueda.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django import forms
-from core.models import LoteCertificados, SolicitudAcceso, SesionAsistencia, Participante
+from core.models import LoteCertificados, SolicitudAcceso, SesionAsistencia, Participante, FirmaInstitucional
 
 
 class BatchForm(forms.ModelForm):
@@ -183,3 +183,26 @@ class ParticipanteRegistroForm(forms.ModelForm):
         if not cedula and not email:
             raise forms.ValidationError('Debe proporcionar al menos cédula o correo electrónico.')
         return cleaned_data
+
+class FirmaInstitucionalForm(forms.ModelForm):
+    class Meta:
+        model = FirmaInstitucional
+        fields = ['nombre', 'cargo', 'orden', 'activa']
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': INPUT_CLASS,
+                'placeholder': 'Ej: Ph.D. Fabricio Guevara Viejó',
+            }),
+            'cargo': forms.TextInput(attrs={
+                'class': INPUT_CLASS,
+                'placeholder': 'Ej: RECTOR UNEMI',
+            }),
+            'orden': forms.NumberInput(attrs={
+                'class': INPUT_CLASS,
+                'min': 0,
+                'placeholder': 'Orden de aparición (1, 2, 3...)',
+            }),
+            'activa': forms.CheckboxInput(attrs={
+                'class': 'h-5 w-5 rounded text-[#F58830] focus:ring-[#F58830] border-gray-300',
+            }),
+        }

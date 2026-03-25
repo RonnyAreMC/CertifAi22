@@ -37,6 +37,22 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f"{self.get_full_name()} ({self.rol})"
 
+class FirmaInstitucional(models.Model):
+    nombre = models.CharField(max_length=100, verbose_name="Nombre Autoridad", blank=True)
+    cargo = models.CharField(max_length=100, verbose_name="Cargo")
+    imagen = models.TextField(verbose_name="Firma (Base64)", blank=True, default='')
+    activa = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0, verbose_name="Orden por defecto")
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['orden', 'nombre']
+        verbose_name = 'Firma Institucional'
+        verbose_name_plural = 'Firmas Institucionales'
+        
+    def __str__(self):
+        return f"{self.nombre} ({self.cargo})"
+
 class LoteCertificados(models.Model):
     nombre_lote = models.CharField(max_length=200)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -59,26 +75,30 @@ class LoteCertificados(models.Model):
     color_texto = models.CharField(max_length=7, default='#333333', help_text="Color del Texto (Hex)")
 
     cuerpo_certificado = models.TextField(
-        default="Por haber asistido al seminario {curso}, demostrando compromiso y excelencia en la adquisición de nuevos conocimientos.",
+        default="Por haber completado satisfactoriamente el curso de capacitación continua, demostrando compromiso y excelencia académica. Por su participación en el seminario '{curso}', contribuyendo de manera activa y profesional al desarrollo de nuevas competencias.",
         help_text="Texto principal del certificado"
     )
     
     # Firma 1 (Principal - e.g., Rector)
-    nombre_firma_1 = models.CharField(max_length=100, default="Ph.D. Fabricio Guevara Viejó", verbose_name="Nombre Autoridad 1")
-    cargo_firma_1 = models.CharField(max_length=100, default="RECTOR UNEMI", verbose_name="Cargo Autoridad 1")
+    firma_inst_1 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='lotes_firma1', verbose_name="Firma Institucional 1")
+    nombre_firma_1 = models.CharField(max_length=100, blank=True, default="", verbose_name="Nombre Autoridad 1")
+    cargo_firma_1 = models.CharField(max_length=100, blank=True, default="", verbose_name="Cargo Autoridad 1")
     imagen_firma_1 = models.TextField(null=True, blank=True, verbose_name="Firma Autoridad 1 (Base64)")
-    
+
     # Firma 2 (Secundaria - e.g., Decano/Vicerrectora)
-    nombre_firma_2 = models.CharField(max_length=100, default="Ph.D. Jesennia Cárdenas Cobo", verbose_name="Nombre Autoridad 2", blank=True)
-    cargo_firma_2 = models.CharField(max_length=100, default="VICERRECTORA ACADÉMICA", verbose_name="Cargo Autoridad 2", blank=True)
+    firma_inst_2 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='lotes_firma2', verbose_name="Firma Institucional 2")
+    nombre_firma_2 = models.CharField(max_length=100, blank=True, default="", verbose_name="Nombre Autoridad 2")
+    cargo_firma_2 = models.CharField(max_length=100, blank=True, default="", verbose_name="Cargo Autoridad 2")
     imagen_firma_2 = models.TextField(null=True, blank=True, verbose_name="Firma Autoridad 2 (Base64)")
 
     # Firma 3 (Opcional)
+    firma_inst_3 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='lotes_firma3', verbose_name="Firma Institucional 3")
     nombre_firma_3 = models.CharField(max_length=100, blank=True, verbose_name="Nombre Autoridad 3")
     cargo_firma_3 = models.CharField(max_length=100, blank=True, verbose_name="Cargo Autoridad 3")
     imagen_firma_3 = models.TextField(null=True, blank=True, verbose_name="Firma Autoridad 3 (Base64)")
 
     # Firma 4 (Opcional)
+    firma_inst_4 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='lotes_firma4', verbose_name="Firma Institucional 4")
     nombre_firma_4 = models.CharField(max_length=100, blank=True, verbose_name="Nombre Autoridad 4")
     cargo_firma_4 = models.CharField(max_length=100, blank=True, verbose_name="Cargo Autoridad 4")
     imagen_firma_4 = models.TextField(null=True, blank=True, verbose_name="Firma Autoridad 4 (Base64)")

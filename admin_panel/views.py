@@ -15,7 +15,7 @@ from django.contrib.auth.views import LoginView as DjangoLoginView
 from core.models import (
     LoteCertificados, Certificado, Auditoria,
     SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia,
-    Usuario, SolicitudAcceso, Participante, LandingBloque,
+    Usuario, SolicitudAcceso, Participante, LandingBloque, FirmaInstitucional
 )
 from core.services.pdf_service import generate_certificate_pdf
 from core.services.excel_service import process_excel_batch, analyze_headers, analyze_excel_file
@@ -258,31 +258,38 @@ def configure_batch(request, id):
 
     if request.method == 'POST':
         lote.cuerpo_certificado = request.POST.get('cuerpo_certificado')
-        lote.nombre_firma_1 = request.POST.get('nombre_firma_1')
-        lote.cargo_firma_1 = request.POST.get('cargo_firma_1')
-        lote.nombre_firma_2 = request.POST.get('nombre_firma_2')
-        lote.cargo_firma_2 = request.POST.get('cargo_firma_2')
-        lote.nombre_firma_3 = request.POST.get('nombre_firma_3')
-        lote.cargo_firma_3 = request.POST.get('cargo_firma_3')
-        lote.nombre_firma_4 = request.POST.get('nombre_firma_4')
-        lote.cargo_firma_4 = request.POST.get('cargo_firma_4')
 
         # Template & Colors
-        lote.plantilla = request.POST.get('plantilla', 'clasico')
-        lote.color_primario = request.POST.get('color_primario', '#162054')
-        lote.color_secundario = request.POST.get('color_secundario', '#D4AF37')
-        lote.color_terciario = request.POST.get('color_terciario', '#F3F4F6')
-        lote.color_texto = request.POST.get('color_texto', '#333333')
+        plantilla = request.POST.get('plantilla')
+        if plantilla:
+            lote.plantilla = plantilla
+        for color_field in ('color_primario', 'color_secundario', 'color_terciario', 'color_texto'):
+            val = request.POST.get(color_field)
+            if val:
+                setattr(lote, color_field, val)
 
-        # Handle Base64 signature images
-        for i in range(1, 5):
-            field_name = f'imagen_firma_{i}'
-            if field_name in request.FILES:
-                file_obj = request.FILES[field_name]
-                encoded = base64.b64encode(file_obj.read()).decode('utf-8')
-                setattr(lote, field_name, encoded)
+        # Firmas institucionales (1, 2 y 3)
+        for i in range(1, 4):
+            firma_id = request.POST.get(f'firma_inst_{i}')
+            if firma_id:
+                setattr(lote, f'firma_inst_{i}_id', int(firma_id))
+            else:
+                setattr(lote, f'firma_inst_{i}', None)
 
-        # Handle logos
+        # Firma personalizada opcional (4)
+        lote.firma_inst_4 = None
+        nombre = request.POST.get('nombre_firma_4')
+        cargo = request.POST.get('cargo_firma_4')
+        if nombre is not None:
+            lote.nombre_firma_4 = nombre
+        if cargo is not None:
+            lote.cargo_firma_4 = cargo
+        if 'imagen_firma_4' in request.FILES:
+            file_obj = request.FILES['imagen_firma_4']
+            encoded = base64.b64encode(file_obj.read()).decode('utf-8')
+            lote.imagen_firma_4 = encoded
+
+        # Template & Colors
         if 'logo_header_1' in request.FILES:
             lote.logo_header_1 = request.FILES['logo_header_1']
         if 'logo_header_2' in request.FILES:
@@ -294,7 +301,8 @@ def configure_batch(request, id):
         messages.success(request, 'Diseño guardado correctamente.')
         return redirect('panel:batch_configure', id=lote.id)
 
-    return render(request, 'panel/batch/config.html', {'lote': lote})
+    firmas_institucionales = FirmaInstitucional.objects.filter(activa=True).order_by('nombre')
+    return render(request, 'panel/batch/config.html', {'lote': lote, 'firmas_institucionales': firmas_institucionales})
 
 
 @login_required
@@ -485,6 +493,31 @@ def session_generate_batch(request, id):
             administrador=request.user,
             facultad=request.POST.get('facultad', 'FACI'),
         )
+        # Auto-asignar firmas institucionales por defecto
+        firmas_default = list(FirmaInstitucional.objects.filter(activa=True).order_by('orden')[:3])
+        if len(firmas_default) >= 1:
+            lote.firma_inst_1 = firmas_default[0]
+        if len(firmas_default) >= 2:
+            lote.firma_inst_2 = firmas_default[1]
+        if len(firmas_default) >= 3:
+            lote.firma_inst_3 = firmas_default[2]
+
+        # Precargar logos de cabecera por defecto
+        import os
+        from django.conf import settings as django_settings
+        from django.core.files import File
+        default_logos = [
+            ('logo_header_1', 'muc.png'),
+            ('logo_header_2', 'logo-unemi-removebg-preview.png'),
+            ('logo_header_3', 'feue.png'),
+        ]
+        for field_name, filename in default_logos:
+            img_path = os.path.join(django_settings.BASE_DIR, 'static', 'img', filename)
+            if os.path.exists(img_path):
+                with open(img_path, 'rb') as f:
+                    getattr(lote, field_name).save(filename, File(f), save=False)
+
+        lote.save()
 
         # Create certificates from participants
         certs = []
@@ -1268,4 +1301,76 @@ def lideres_remove(request, id):
     p.save(update_fields=['es_lider'])
     messages.success(request, f'{p.nombres} {p.apellidos} ya no es líder académico.')
     return redirect('panel:lideres_list')
+
+
+# ---------------------------------------------------------------------------
+# Gestión de Usuarios (solo superadmin)
+# ---------------------------------------------------------------------------
+
+def _is_superadmin(user):
+    return user.is_authenticated and user.rol == 'superadmin'
+
+
+@login_required
+@user_passes_test(_is_superadmin)
+def usuarios_list(request):
+    """Lista de usuarios administradores con opción de resetear clave."""
+    q = request.GET.get('q', '').strip()
+    usuarios = Usuario.objects.filter(rol__in=['admin', 'superadmin']).order_by('first_name', 'last_name')
+    if q:
+        usuarios = usuarios.filter(
+            db_models.Q(first_name__icontains=q) |
+            db_models.Q(last_name__icontains=q) |
+            db_models.Q(email__icontains=q) |
+            db_models.Q(username__icontains=q)
+        )
+    return render(request, 'panel/usuarios/list.html', {'usuarios': usuarios, 'q': q})
+
+
+@login_required
+@user_passes_test(_is_superadmin)
+@require_http_methods(["POST"])
+def usuario_reset_password(request, id):
+    """Resetea la clave de un usuario a mucunemi25."""
+    usuario = get_object_or_404(Usuario, id=id)
+    usuario.set_password('mucunemi25')
+    usuario.save()
+    _log_audit(request.user, 'RESET_CLAVE', f'Clave reseteada para: {usuario.email}')
+    messages.success(request, f'Clave de {usuario.get_full_name() or usuario.email} reseteada a la clave por defecto.')
+
+
+
+@login_required
+@user_passes_test(_is_admin)
+def participantes_list(request):
+    """Lista global de participantes con búsqueda y filtros."""
+    q = request.GET.get('q', '').strip()
+    participantes = Participante.objects.all().order_by('-created_at')
+
+    if q:
+        participantes = participantes.filter(
+            db_models.Q(cedula__icontains=q) |
+            db_models.Q(email__icontains=q) |
+            db_models.Q(nombres__icontains=q) |
+            db_models.Q(apellidos__icontains=q)
+        )
+
+    return render(request, 'panel/participantes/list.html', {
+        'participantes': participantes,
+        'q': q,
+        'total': Participante.objects.count()
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+@require_http_methods(["POST"])
+def participante_delete(request, id):
+    """Eliminar un participante."""
+    participante = get_object_or_404(Participante, id=id)
+    nombre = f"{participante.nombres} {participante.apellidos}"
+    participante.delete()
+    _log_audit(request.user, 'ELIMINAR_PARTICIPANTE', f'Eliminado: {nombre}')
+    messages.success(request, f'Participante {nombre} eliminado correctamente.')
+    return redirect('panel:participantes_list')
 

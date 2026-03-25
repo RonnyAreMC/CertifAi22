@@ -1,0 +1,92 @@
+{% extends "panel/base.html" %}
+
+{% block title %}Usuarios - Admin{% endblock %}
+{% block page_title %}Usuarios Administradores{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header with Stats -->
+    <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <span class="p-2 bg-unemi-blue/10 rounded-lg">
+                    <i class="fas fa-users-cog text-unemi-blue"></i>
+                </span>
+                Usuarios Administradores
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">Gestiona los accesos administrativos y recupera claves</p>
+        </div>
+        <div class="px-4 py-2 bg-gray-100 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+            <span class="text-xs text-gray-500 uppercase font-bold tracking-wider mr-2">Total</span>
+            <span class="text-lg font-bold text-unemi-blue">{{ usuarios|length }}</span>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="mb-6">
+        <form method="get" class="relative group">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-unemi-orange transition-colors"></i>
+            </div>
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o correo..."
+                class="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#1a2b4d] border border-gray-200 dark:border-white/10 rounded-2xl text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all shadow-sm">
+        </form>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-white dark:bg-[#1a2b4d] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 dark:bg-black/20 border-b border-gray-200 dark:border-white/10">
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest">Nombre</th>
+                        <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                    {% for u in usuarios %}
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="h-10 w-10 rounded-full bg-unemi-blue/10 dark:bg-unemi-blue/20 flex items-center justify-center text-unemi-blue font-bold text-sm flex-shrink-0">
+                                    {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white">{{ u.get_full_name|default:u.username }}</p>
+                                    <p class="text-xs text-gray-500 mb-1">{{ u.email }}</p>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter {% if u.rol == 'superadmin' %}bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300{% endif %}">
+                                        {{ u.get_rol_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="showConfirm({
+                                title: 'Recuperar Clave',
+                                message: 'Se reseteará la clave de {{ u.get_full_name|default:u.username|escapejs }} a la clave por defecto.',
+                                type: 'info',
+                                callback: () => document.getElementById('reset-form-{{ u.id }}').submit()
+                            })" class="p-2.5 bg-unemi-orange/10 hover:bg-unemi-orange/20 text-unemi-orange rounded-xl transition-all" title="Resetear Clave">
+                                <i class="fa-solid fa-key"></i>
+                            </button>
+                            <form id="reset-form-{{ u.id }}" method="post" action="{% url 'panel:usuario_reset_password' u.id %}" class="hidden">
+                                {% csrf_token %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="px-6 py-12 text-center">
+                            <div class="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-users-slash text-2xl text-gray-300"></i>
+                            </div>
+                            <p class="text-gray-500 font-medium">No se encontraron usuarios</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
