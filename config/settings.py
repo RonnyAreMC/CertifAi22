@@ -146,11 +146,6 @@ LOGIN_URL = 'panel:login'
 LOGIN_REDIRECT_URL = 'panel:dashboard'
 LOGOUT_REDIRECT_URL = 'public:home'
 
-# Authentication Backends (email + username)
-AUTHENTICATION_BACKENDS = [
-    'admin_panel.backends.EmailBackend',
-]
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

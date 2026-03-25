@@ -20,12 +20,6 @@ urlpatterns = [
     path('checkin/<str:codigo_qr>/search/', views.qr_checkin_search, name='qr_checkin_search'),
     path('checkin/<str:codigo_qr>/register/', views.qr_checkin_register, name='qr_checkin_register'),
 
-    # Smart Session Registration
-    path('sesion/<int:id>/registro/', views.session_register, name='session_register'),
-    path('sesion/<int:id>/registro/buscar/', views.session_register_search, name='session_register_search'),
-    path('sesion/<int:id>/registro/confirmar/', views.session_register_confirm, name='session_register_confirm'),
-    path('sesion/<int:id>/registro/nuevo/', views.session_register_new, name='session_register_new'),
-
     # Certificate search & download
     path('search/', views.search, name='search'),
     path('search/autocomplete/', views.search_autocomplete, name='search_autocomplete'),

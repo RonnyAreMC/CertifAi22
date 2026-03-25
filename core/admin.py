@@ -1,5 +1,5 @@
 from django.contrib import admin
-from core.models import Usuario, SolicitudAcceso, SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia, Participante, LandingBloque
+from core.models import Usuario, SolicitudAcceso, SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia
 
 
 @admin.register(Usuario)
@@ -39,52 +39,36 @@ class SolicitudAccesoAdmin(admin.ModelAdmin):
         return self.readonly_fields
 
 
-@admin.register(Participante)
-class ParticipanteAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'cedula', 'email', 'celular', 'created_at')
-    list_filter = ('created_at',)
-    search_fields = ('cedula', 'email', 'nombres', 'apellidos')
-    readonly_fields = ('created_at', 'updated_at')
-
-
 @admin.register(SesionAsistencia)
 class SesionAsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'lugar', 'fecha', 'capacidad', 'confirmados_count', 'activa')
+    list_display = ('__str__', 'fecha', 'capacidad', 'confirmados_count', 'activa')
     list_filter = ('fecha', 'activa', 'lote')
-    search_fields = ('titulo', 'lugar', 'lote__nombre_lote')
+    search_fields = ('titulo', 'lote__nombre_lote')
     readonly_fields = ('codigo_qr', 'confirmados_count', 'created_at')
 
 
 @admin.register(RegistroAsistencia)
 class RegistroAsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('get_participante_info', 'sesion', 'fecha_registro')
+    list_display = ('get_certificado_info', 'sesion', 'fecha_registro')
     list_filter = ('sesion__fecha', 'fecha_registro')
-    search_fields = ('participante__cedula', 'participante__email', 'participante__nombres')
+    search_fields = ('certificado__cedula', 'certificado__email')
     readonly_fields = ('fecha_registro',)
-
-    def get_participante_info(self, obj):
-        if obj.participante:
-            return f"{obj.participante.nombres} {obj.participante.apellidos} ({obj.participante.cedula})"
-        if obj.certificado:
-            return f"{obj.certificado.nombres} {obj.certificado.apellidos} ({obj.certificado.cedula})"
-        return "?"
-    get_participante_info.short_description = "Participante"
+    
+    def get_certificado_info(self, obj):
+        return f"{obj.certificado.nombres} {obj.certificado.apellidos} ({obj.certificado.cedula})"
+    get_certificado_info.short_description = "Participante"
 
 
 @admin.register(ConfirmacionAsistencia)
 class ConfirmacionAsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('get_participante_info', 'sesion', 'confirmado', 'bloqueado')
+    list_display = ('get_certificado_info', 'sesion', 'confirmado', 'bloqueado')
     list_filter = ('confirmado', 'bloqueado', 'sesion__fecha')
-    search_fields = ('participante__cedula', 'participante__email', 'participante__nombres')
+    search_fields = ('certificado__cedula', 'certificado__email')
     actions = ['marcar_bloqueado', 'desmarcar_bloqueado']
-
-    def get_participante_info(self, obj):
-        if obj.participante:
-            return f"{obj.participante.nombres} {obj.participante.apellidos}"
-        if obj.certificado:
-            return f"{obj.certificado.nombres} {obj.certificado.apellidos}"
-        return "?"
-    get_participante_info.short_description = "Participante"
+    
+    def get_certificado_info(self, obj):
+        return f"{obj.certificado.nombres} {obj.certificado.apellidos}"
+    get_certificado_info.short_description = "Participante"
     
     def marcar_bloqueado(self, request, queryset):
         queryset.update(bloqueado=True)
@@ -93,11 +77,3 @@ class ConfirmacionAsistenciaAdmin(admin.ModelAdmin):
     def desmarcar_bloqueado(self, request, queryset):
         queryset.update(bloqueado=False)
     desmarcar_bloqueado.short_description = "Desmarcar como bloqueado"
-
-
-@admin.register(LandingBloque)
-class LandingBloqueAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'tipo', 'estilo', 'orden', 'activo')
-    list_filter = ('tipo', 'activo')
-    list_editable = ('orden', 'activo')
-    ordering = ('orden',)

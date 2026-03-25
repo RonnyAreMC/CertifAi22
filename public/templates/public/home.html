@@ -33,13 +33,15 @@
                         Busca por cédula o correo institucional
                     </label>
                     
-                    <div class="neu-input-unemi group">
+                    <div class="neu-input-unemi group" style="position: relative;">
                         <i class="fa-solid fa-id-card text-gray-400 dark:text-gray-500"></i>
-                        <input type="search" 
+                        <input id="cert-search-input" type="search" 
                                name="q"
+                               autocomplete="off"
                                class="flex-1 bg-transparent border-0 outline-none ring-0 focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                placeholder="Ej: 0999999999 o estudiante@unemi.edu.ec" 
                                required>
+                        <div id="cert-autocomplete-list" class="autocomplete-list hidden"></div>
                     </div>
                 </div>
 
@@ -102,32 +104,6 @@
         </div>
     </div>
 
-    <!-- Features Grid -->
-    <div class="grid md:grid-cols-3 gap-6">
-        <div class="feature-card-unemi group">
-            <div class="feature-icon-unemi bg-[#162054]">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2">Oficial y Seguro</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Certificados emitidos directamente por MUC Academy con validación institucional</p>
-        </div>
-
-        <div class="feature-card-unemi group">
-            <div class="feature-icon-unemi bg-[#F58830]">
-                <i class="fa-solid fa-download"></i>
-            </div>
-            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2">Descarga Inmediata</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Obtén tu certificado en formato PDF firmado digitalmente en segundos</p>
-        </div>
-
-        <div class="feature-card-unemi group">
-            <div class="feature-icon-unemi bg-[#162054]">
-                <i class="fa-solid fa-clock"></i>
-            </div>
-            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2">Disponible 24/7</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Accede a tu historial de seminarios en cualquier momento y desde cualquier dispositivo</p>
-        </div>
-    </div>
 </div>
 
 <style>
@@ -237,5 +213,133 @@
     font-size: 1.5rem; color: white; margin-bottom: 1rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+/* Autocomplete list */
+.autocomplete-list {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    max-height: 250px;
+    overflow-y: auto;
+}
+.autocomplete-list.hidden { display: none; }
+.autocomplete-item {
+    padding: 0.65rem 0.9rem;
+    cursor: pointer;
+    color: #152341;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.autocomplete-item:hover { background: #f8f9fb; }
+
 </style>
+
+<script>
+(function() {
+    const input = document.getElementById('cert-search-input');
+    const list = document.getElementById('cert-autocomplete-list');
+    let timeout = null;
+
+    function clearSuggestions() {
+        list.innerHTML = '';
+        list.classList.add('hidden');
+    }
+
+    function htmlEscape(text) {
+        return text.replace(/[&<>"]/g, function(character) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;'
+            }[character];
+        });
+    }
+
+    function highlightMatches(value, query) {
+        if (!query) {
+            return htmlEscape(value);
+        }
+
+        const tokens = query.trim().split(/\s+/).filter(Boolean);
+        if (!tokens.length) {
+            return htmlEscape(value);
+        }
+
+        // Construir regex con tokens ordenados por longitud para evitar superposiciones cortas primero
+        const sortedTokens = tokens
+            .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+            .sort((a, b) => b.length - a.length);
+
+        const regex = new RegExp('(' + sortedTokens.join('|') + ')', 'gi');
+        const escapedValue = htmlEscape(value);
+
+        return escapedValue.replace(regex, function(match) {
+            return '<mark>' + match + '</mark>';
+        });
+    }
+
+    function render(suggestions, query) {
+        if (!suggestions || !suggestions.length) {
+            clearSuggestions();
+            return;
+        }
+        list.classList.remove('hidden');
+
+        list.innerHTML = suggestions.map(function(item){
+            const display = highlightMatches(item.name, query);
+            return '<div class="autocomplete-item" data-value="'+htmlEscape(item.name)+'">'
+                + '<i class="fa-solid fa-user mr-2 text-unemi-blue"></i>'
+                + display + '</div>';
+        }).join('');
+
+        Array.from(list.children).forEach(function(el){
+            el.addEventListener('click', function(){
+                input.value = el.dataset.value;
+                clearSuggestions();
+            });
+        });
+    }
+
+    input.addEventListener('input', function() {
+        const q = input.value.trim();
+
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        if (q.length < 2) {
+            clearSuggestions();
+            return;
+        }
+
+        timeout = setTimeout(function() {
+            fetch('{% url "public:search_autocomplete" %}?q=' + encodeURIComponent(q), {
+                method: 'GET', headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(function(resp){ return resp.json(); })
+            .then(function(data){
+                const results = (data.results || []).map(function(item){
+                    return {
+                        name: item.name,
+                    };
+                });
+                render(results, q);
+            })
+            .catch(function(){ clearSuggestions(); });
+        }, 225);
+    });
+
+    document.addEventListener('click', function(event){
+        if (!input.contains(event.target) && !list.contains(event.target)) {
+            clearSuggestions();
+        }
+    });
+})();
+</script>
 {% endblock %}
