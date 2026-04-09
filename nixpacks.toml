@@ -1,3 +1,0 @@
-[phases.setup]
-nixPkgs = ["python312", "file"]
-aptPkgs = ["libmagic1", "libmagic-dev"]

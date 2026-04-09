@@ -4,7 +4,7 @@ openpyxl
 python-dotenv
 pillow
 reportlab
-python-magic
+filetype
 gunicorn
 whitenoise
 dj-database-url

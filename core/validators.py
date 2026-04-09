@@ -1,5 +1,5 @@
 import os
-import magic  # Requires python-magic and libmagic
+import filetype  # Pure-Python, sin dependencias del sistema
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
@@ -13,38 +13,49 @@ def validate_file_extension(value, allowed_extensions=None):
 
 def validate_file_content(file_obj, unexpected_mime_types=None):
     """
-    Validates the file content using python-magic to detect the real MIME type.
+    Valida el contenido del archivo usando filetype (pure-Python) para detectar
+    el MIME real a partir de los magic bytes.
     """
-    # Read first 2KB for magic number detection
+    # Leer los primeros bytes para detección por magic number
     initial_pos = file_obj.tell()
     file_obj.seek(0)
-    mime_type = magic.from_buffer(file_obj.read(2048), mime=True)
+    header = file_obj.read(2048)
     file_obj.seek(initial_pos)
-    
-    # Block executables and scripts explicitly
+
+    kind = filetype.guess(header)
+    mime_type = kind.mime if kind else 'application/octet-stream'
+
+    # Bloquear ejecutables conocidos
     blocked_mimes = [
-        'application/x-dosexec', 
-        'application/x-executable', 
+        'application/x-msdownload',     # .exe / .dll
+        'application/x-dosexec',
+        'application/x-executable',
+        'application/x-mach-binary',
+        'application/x-elf',
         'text/x-shellscript',
-        'application/x-sh'
+        'application/x-sh',
     ]
-    
+
     if mime_type in blocked_mimes:
         raise ValidationError(_('Archivo sospechoso detectado (Posible ejecutable).'))
-        
-    # Optional: Verify expected type vs extension
+
+    # Bloqueo extra por magic bytes crudos (filetype no detecta scripts de texto)
+    if header.startswith(b'MZ') or header.startswith(b'\x7fELF') or header.startswith(b'#!'):
+        raise ValidationError(_('Archivo sospechoso detectado (Posible ejecutable).'))
+
+    # Verificación opcional según extensión
     ext = os.path.splitext(file_obj.name)[1].lower()
-    
-    # Excel Check
+
+    # Excel: los .xlsx son zips internamente
     if ext in ['.xlsx', '.xls']:
         valid_excel_mimes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-excel',
-            'application/octet-stream' # Sometimes happens
+            'application/zip',
+            'application/octet-stream',
         ]
-        if mime_type not in valid_excel_mimes and 'zip' not in mime_type: # xlsx is a zip
-             # Log warning but allow if structure is valid later
-             pass 
+        if mime_type not in valid_excel_mimes and 'zip' not in mime_type:
+            pass  # se valida más adelante por estructura
 
     return mime_type
 
