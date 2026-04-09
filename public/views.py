@@ -7,7 +7,8 @@ from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
 from core.models import (
     Certificado, SesionAsistencia, RegistroAsistencia,
-    ConfirmacionAsistencia, Participante, LandingBloque,
+    ConfirmacionAsistencia, Participante,
+    LoteCertificados,
 )
 from core.services.pdf_service import generate_certificate_pdf
 import zipfile
@@ -74,11 +75,18 @@ def _get_client_ip(request):
 # ─── Landing & Home ──────────────────────────────────────────────
 
 def landing(request):
-    """Landing page — dynamic if blocks configured, static fallback."""
-    bloques = LandingBloque.objects.filter(activo=True).select_related('sesion')
-    if bloques.exists():
-        return render(request, 'public/landing_dynamic.html', {'bloques': bloques})
-    return render(request, 'public/landing.html')
+    """Landing page — siempre static con stats reales calculadas en vivo."""
+    total_certificados = Certificado.objects.count()
+    total_seminarios = LoteCertificados.objects.count()
+    total_participantes = Participante.objects.count()
+    total_sesiones = SesionAsistencia.objects.filter(activa=True).count()
+
+    return render(request, 'public/landing.html', {
+        'total_certificados': total_certificados,
+        'total_seminarios': total_seminarios,
+        'total_participantes': total_participantes,
+        'total_sesiones': total_sesiones,
+    })
 
 
 # ─── Attendance Search & Verify ──────────────────────────────────

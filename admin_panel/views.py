@@ -62,12 +62,22 @@ class CustomLoginView(DjangoLoginView):
     def form_valid(self, form):
         from django.contrib.auth import login
         user = form.get_user()
-        
+
         # Always log the user in first
         login(self.request, user, backend='admin_panel.backends.EmailBackend')
-        
+
         # Route them to the correct page
         return self._route_authenticated_user(user)
+
+    def form_invalid(self, form):
+        # Limpiamos los errores genéricos del form y mostramos un mensaje custom
+        form.errors.clear()
+        if not any(m.level_tag == 'error' for m in messages.get_messages(self.request)):
+            messages.error(
+                self.request,
+                "Has ingresado mal tu usuario o contraseña. Inténtalo de nuevo."
+            )
+        return super().form_invalid(form)
 
 
 # ---------------------------------------------------------------------------

@@ -2,100 +2,117 @@
 {% load static %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 md:py-12">
-    
-    <!-- iOS Style Back Button -->
-    <div class="mb-6 flex justify-start">
-        <a href="{% url 'public:landing' %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
-            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
-        </a>
+<div class="relative min-h-[80vh] py-10 md:py-16">
+
+    <!-- Orbes flotantes de fondo (sutiles) -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        <div class="absolute top-[5%] left-[5%] w-[400px] h-[400px] rounded-full bg-[#162054]/5 dark:bg-[#162054]/40 blur-[120px]"></div>
+        <div class="absolute bottom-[10%] right-[5%] w-[450px] h-[450px] rounded-full bg-[#F58830]/10 dark:bg-[#F58830]/15 blur-[140px]"></div>
+        <div class="absolute top-[40%] left-[40%] w-[280px] h-[280px] rounded-full bg-purple-400/10 dark:bg-purple-500/10 blur-[100px]"></div>
     </div>
 
-    <!-- Hero Section with 2 Columns -->
-    <div class="grid lg:grid-cols-2 gap-12 items-center mb-16">
-        
-        <!-- Left Column: Main Content -->
-        <div class="space-y-6">
-            <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.9] tracking-tighter">
-                <span class="text-[#162054] dark:text-white">Consulta tus</span><br>
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#F58830] to-[#FF9100]">Certificados</span>
-            </h1>
-            
-            <p class="text-xl text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-lg">
-                Valida la autenticidad de tus seminarios y capacitaciones realizadas en MUC Academy.
-            </p>
+    <div class="container mx-auto px-4">
 
-            <!-- Search Form -->
-            <form action="{% url 'public:search' %}" method="get" class="space-y-4">
-                <div class="neu-card-unemi">
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                        <i class="fa-solid fa-search mr-2 text-[#F58830]"></i>
-                        Busca por cédula o correo institucional
-                    </label>
-                    
-                    <div class="neu-input-unemi group" style="position: relative;">
-                        <i class="fa-solid fa-id-card text-gray-400 dark:text-gray-500"></i>
-                        <input id="cert-search-input" type="search" 
-                               name="q"
-                               autocomplete="off"
-                               class="flex-1 bg-transparent border-0 outline-none ring-0 focus:ring-0 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                               placeholder="Ej: 0999999999 o estudiante@unemi.edu.ec" 
-                               required>
-                        <div id="cert-autocomplete-list" class="autocomplete-list hidden"></div>
+        <!-- Back Button -->
+        <div class="mb-8 flex justify-start">
+            <a href="{% url 'public:landing' %}" class="w-11 h-11 rounded-full bg-white dark:bg-[#162054] flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-110 hover:border-[#F58830] transition-all group">
+                <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+            </a>
+        </div>
+
+        <!-- Hero -->
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            <!-- LEFT: Texto + buscador -->
+            <div>
+                <!-- Línea decorativa -->
+                <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-5">
+                    <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                    Sistema MUC Academy
+                </div>
+
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.95] tracking-tight text-[#162054] dark:text-white mb-5">
+                    Consulta tus<br>
+                    <span class="text-[#F58830]">Certificados</span>
+                </h1>
+
+                <p class="text-lg text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mb-8 font-light">
+                    Valida la autenticidad de tus seminarios y capacitaciones realizadas en <strong class="font-semibold text-[#162054] dark:text-white">MUC Academy</strong>.
+                </p>
+
+                <!-- Search Form -->
+                <form action="{% url 'public:search' %}" method="get" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
+                            Cédula o correo institucional
+                        </label>
+                        <div class="relative" style="position: relative;">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 z-10">
+                                <i class="fa-solid fa-id-card text-base"></i>
+                            </span>
+                            <input id="cert-search-input" type="search"
+                                   name="q"
+                                   autocomplete="off"
+                                   class="w-full pl-12 pr-4 py-4 text-base bg-white dark:bg-[#162054] border-2 border-gray-200 dark:border-white/10 rounded-2xl focus:outline-none focus:border-[#F58830] focus:ring-4 focus:ring-[#F58830]/15 transition-all text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 shadow-sm"
+                                   placeholder="Ej: 0999999999 o estudiante@unemi.edu.ec"
+                                   required>
+                            <div id="cert-autocomplete-list" class="autocomplete-list hidden"></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-[#F58830] hover:bg-[#e07820] text-white font-bold text-sm py-4 rounded-2xl transition-colors shadow-lg shadow-[#F58830]/30 flex items-center justify-center gap-2 uppercase tracking-wider group">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Buscar Certificado
+                        <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                    </button>
+
+                    <p class="text-xs text-gray-500 dark:text-gray-500 text-center flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-shield-halved text-[#162054] dark:text-blue-400"></i>
+                        Búsqueda en tiempo real sobre la base oficial
+                    </p>
+                </form>
+            </div>
+
+            <!-- RIGHT: Pasos -->
+            <div class="space-y-4">
+                <h3 class="text-2xl font-extrabold text-[#162054] dark:text-white mb-6 flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-[#F58830]/10 dark:bg-[#F58830]/20 flex items-center justify-center text-[#F58830]">
+                        <i class="fa-solid fa-list-check"></i>
+                    </span>
+                    ¿Cómo obtener tu certificado?
+                </h3>
+
+                <div class="step-card group">
+                    <div class="step-num bg-[#162054]">1</div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-900 dark:text-white mb-1">Asiste al seminario</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Participa activamente en la ponencia o capacitación.</p>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-unemi w-full group">
-                    <span>Buscar Certificado</span>
-                    <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i>
-                </button>
-
-                <p class="text-xs text-gray-500 dark:text-gray-500 text-center">
-                    <i class="fa-solid fa-shield-check mr-1 text-[#162054] dark:text-blue-400"></i>
-                    Búsqueda en tiempo real sobre la base de datos oficial
-                </p>
-            </form>
-        </div>
-
-        <!-- Right Column: Steps -->
-        <div class="space-y-4">
-            <h3 class="text-2xl font-bold text-[#162054] dark:text-white mb-6">
-                <i class="fa-solid fa-list-check mr-2 text-[#F58830]"></i>
-                ¿Cómo obtener tu certificado?
-            </h3>
-
-            <div class="step-card-unemi group">
-                <div class="step-number-unemi bg-[#162054]">1</div>
-                <div>
-                    <h4 class="font-bold text-gray-800 dark:text-white mb-1">Asiste al seminario</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Participa activamente en la ponencia o capacitación</p>
+                <div class="step-card group">
+                    <div class="step-num bg-[#F58830]">2</div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-900 dark:text-white mb-1">Completa el formulario</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            <strong class="text-[#F58830]">Importante:</strong> Llena el formulario compartido <strong>antes de que termine</strong> la ponencia.
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="step-card-unemi group">
-                <div class="step-number-unemi bg-[#F58830]">2</div>
-                <div>
-                    <h4 class="font-bold text-gray-800 dark:text-white mb-1">Completa el formulario</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                        <strong class="text-[#F58830]">Importante:</strong> Llena el formulario compartido <strong>antes de que termine</strong> la ponencia
-                    </p>
+                <div class="step-card group">
+                    <div class="step-num bg-[#162054]">3</div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-900 dark:text-white mb-1">Busca tu certificado</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Usa tu cédula o correo en el buscador para descargar tu PDF oficial.</p>
+                    </div>
                 </div>
-            </div>
 
-            <div class="step-card-unemi group">
-                <div class="step-number-unemi bg-[#162054]">3</div>
-                <div>
-                    <h4 class="font-bold text-gray-800 dark:text-white mb-1">Busca tu certificado</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Usa tu cédula o correo en el buscador para obtener tu PDF oficial</p>
-                </div>
-            </div>
-
-            <div class="neu-card-unemi bg-orange-50 dark:bg-orange-900/10 border-l-4 border-[#F58830]">
-                <div class="flex gap-3">
-                    <i class="fa-solid fa-info-circle text-[#F58830] text-xl flex-shrink-0 mt-0.5"></i>
+                <div class="rounded-2xl border-l-4 border-[#F58830] bg-orange-50 dark:bg-[#F58830]/10 p-5 flex gap-3">
+                    <i class="fa-solid fa-circle-info text-[#F58830] text-xl flex-shrink-0 mt-0.5"></i>
                     <div>
-                        <p class="text-sm font-semibold text-gray-800 dark:text-white mb-1">Requisito Obligatorio</p>
-                        <p class="text-xs text-gray-600 dark:text-gray-400">
+                        <p class="text-sm font-bold text-gray-900 dark:text-white mb-1">Requisito obligatorio</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                             Solo recibirás tu certificado si completaste el formulario de asistencia <strong class="text-[#F58830]">antes del cierre de la ponencia</strong>. Sin este registro, no podrás obtener tu certificado.
                         </p>
                     </div>
@@ -103,141 +120,80 @@
             </div>
         </div>
     </div>
-
 </div>
 
 <style>
-:root {
-    --unemi-blue: #162054;
-    --unemi-orange: #F58830;
+.step-card {
+    display: flex; gap: 1rem;
+    background: white;
+    border: 1px solid rgb(229 231 235);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    transition: all 0.25s ease;
 }
-
-.neu-card-unemi {
-    background: linear-gradient(145deg, #ffffff, #f0f4f8);
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 8px 8px 16px rgba(22, 32, 84, 0.08), -8px -8px 16px rgba(255, 255, 255, 0.8), inset 1px 1px 2px rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-    border: 1px solid rgba(22, 32, 84, 0.1);
+.step-card:hover {
+    border-color: #F58830;
+    transform: translateX(4px);
+    box-shadow: 0 8px 24px rgba(245, 136, 48, 0.12);
 }
-.dark .neu-card-unemi {
-    background: linear-gradient(145deg, #1a2b4d, #152341);
-    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.03), inset 1px 1px 2px rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.dark .step-card {
+    background: #162054;
+    border-color: rgba(255, 255, 255, 0.08);
 }
-
-.neu-input-unemi {
-    display: flex; align-items: center; gap: 1rem;
-    background: linear-gradient(145deg, #f8fafc, #e8ecf1);
-    padding: 1rem 1.25rem; border-radius: 12px;
-    box-shadow: inset 3px 3px 6px rgba(22, 32, 84, 0.1), inset -3px -3px 6px rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease; border: 1px solid rgba(22, 32, 84, 0.1);
+.dark .step-card:hover {
+    border-color: #F58830;
+    box-shadow: 0 8px 24px rgba(245, 136, 48, 0.2);
 }
-.neu-input-unemi:focus-within {
-    border-color: var(--unemi-orange);
-    box-shadow: inset 3px 3px 6px rgba(22, 32, 84, 0.15), inset -3px -3px 6px rgba(255, 255, 255, 0.8), 0 0 0 3px rgba(245, 136, 48, 0.2);
-}
-.dark .neu-input-unemi {
-    background: linear-gradient(145deg, #152341, #1a2b4d);
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.4), inset -3px -3px 6px rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.dark .neu-input-unemi:focus-within {
-    border-color: var(--unemi-orange);
-    box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.5), inset -3px -3px 6px rgba(255, 255, 255, 0.05), 0 0 0 3px rgba(245, 136, 48, 0.25);
-}
-
-.btn-unemi {
-    background: linear-gradient(135deg, var(--unemi-orange), #ff6600);
-    color: white; font-weight: bold; padding: 1rem 2rem; border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(245, 136, 48, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
-    border: none; cursor: pointer;
-}
-.btn-unemi:hover {
-    background: linear-gradient(135deg, #ff6600, var(--unemi-orange));
-    box-shadow: 0 6px 16px rgba(245, 136, 48, 0.4), 0 4px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-}
-.btn-unemi:active { transform: translateY(0); }
-
-.step-card-unemi {
-    background: linear-gradient(145deg, #ffffff, #f8fafc);
-    border-radius: 16px; padding: 1.25rem; display: flex; gap: 1rem;
-    box-shadow: 4px 4px 12px rgba(22, 32, 84, 0.08), -4px -4px 12px rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease; border: 1px solid rgba(22, 32, 84, 0.1);
-}
-.step-card-unemi:hover {
-    box-shadow: 6px 6px 16px rgba(22, 32, 84, 0.12), -6px -6px 16px rgba(255, 255, 255, 0.9);
-    transform: translateX(4px); border-color: var(--unemi-orange);
-}
-.dark .step-card-unemi {
-    background: linear-gradient(145deg, #1a2b4d, #152341);
-    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.25), -4px -4px 12px rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.dark .step-card-unemi:hover {
-    box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.35), -6px -6px 16px rgba(255, 255, 255, 0.05);
-    border-color: var(--unemi-orange);
-}
-.step-number-unemi {
-    color: white; width: 48px; height: 48px; border-radius: 12px;
+.step-num {
+    color: white; width: 44px; height: 44px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-weight: bold; font-size: 1.25rem; flex-shrink: 0;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.feature-card-unemi {
-    background: linear-gradient(145deg, #ffffff, #f8fafc);
-    border-radius: 20px; padding: 2rem;
-    box-shadow: 6px 6px 16px rgba(22, 32, 84, 0.08), -6px -6px 16px rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease; border: 1px solid rgba(22, 32, 84, 0.1);
-}
-.feature-card-unemi:hover {
-    box-shadow: 8px 8px 20px rgba(22, 32, 84, 0.12), -8px -8px 20px rgba(255, 255, 255, 0.9);
-    transform: translateY(-4px); border-color: var(--unemi-orange);
-}
-.dark .feature-card-unemi {
-    background: linear-gradient(145deg, #1a2b4d, #152341);
-    box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.25), -6px -6px 16px rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.dark .feature-card-unemi:hover {
-    box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.35), -8px -8px 20px rgba(255, 255, 255, 0.05);
-    border-color: var(--unemi-orange);
-}
-.feature-icon-unemi {
-    width: 56px; height: 56px; border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; color: white; margin-bottom: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-weight: 800; font-size: 1.1rem; flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Autocomplete list */
 .autocomplete-list {
     position: absolute;
-    top: calc(100% + 0.6rem);
+    top: calc(100% + 0.5rem);
     left: 0;
     right: 0;
-    z-index: 20;
-    background: #ffffff;
-    border: 1px solid #ced4da;
-    border-radius: 0.75rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    max-height: 250px;
+    z-index: 50;
+    background: white;
+    border: 1px solid rgb(229 231 235);
+    border-radius: 1rem;
+    box-shadow: 0 12px 32px rgba(22, 32, 84, 0.15);
+    max-height: 280px;
     overflow-y: auto;
+    padding: 0.5rem;
+}
+.dark .autocomplete-list {
+    background: #162054;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 .autocomplete-list.hidden { display: none; }
 .autocomplete-item {
-    padding: 0.65rem 0.9rem;
+    padding: 0.75rem 0.9rem;
     cursor: pointer;
-    color: #152341;
+    color: #162054;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.875rem;
+    border-radius: 0.625rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: background 0.15s ease;
 }
-.autocomplete-item:hover { background: #f8f9fb; }
-
+.dark .autocomplete-item { color: #fff; }
+.autocomplete-item:hover { background: rgba(245, 136, 48, 0.1); }
+.dark .autocomplete-item:hover { background: rgba(245, 136, 48, 0.15); }
+.autocomplete-item mark {
+    background: rgba(245, 136, 48, 0.25);
+    color: #F58830;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 800;
+}
 </style>
 
 <script>
@@ -252,37 +208,20 @@
     }
 
     function htmlEscape(text) {
-        return text.replace(/[&<>"]/g, function(character) {
-            return {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;'
-            }[character];
+        return text.replace(/[&<>"]/g, function(c) {
+            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
         });
     }
 
     function highlightMatches(value, query) {
-        if (!query) {
-            return htmlEscape(value);
-        }
-
+        if (!query) return htmlEscape(value);
         const tokens = query.trim().split(/\s+/).filter(Boolean);
-        if (!tokens.length) {
-            return htmlEscape(value);
-        }
-
-        // Construir regex con tokens ordenados por longitud para evitar superposiciones cortas primero
+        if (!tokens.length) return htmlEscape(value);
         const sortedTokens = tokens
             .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
             .sort((a, b) => b.length - a.length);
-
         const regex = new RegExp('(' + sortedTokens.join('|') + ')', 'gi');
-        const escapedValue = htmlEscape(value);
-
-        return escapedValue.replace(regex, function(match) {
-            return '<mark>' + match + '</mark>';
-        });
+        return htmlEscape(value).replace(regex, '<mark>$1</mark>');
     }
 
     function render(suggestions, query) {
@@ -291,12 +230,11 @@
             return;
         }
         list.classList.remove('hidden');
-
         list.innerHTML = suggestions.map(function(item){
             const display = highlightMatches(item.name, query);
             return '<div class="autocomplete-item" data-value="'+htmlEscape(item.name)+'">'
-                + '<i class="fa-solid fa-user mr-2 text-unemi-blue"></i>'
-                + display + '</div>';
+                + '<i class="fa-solid fa-user text-[#F58830] text-xs"></i>'
+                + '<span>' + display + '</span></div>';
         }).join('');
 
         Array.from(list.children).forEach(function(el){
@@ -309,34 +247,24 @@
 
     input.addEventListener('input', function() {
         const q = input.value.trim();
-
-        if (timeout) {
-            clearTimeout(timeout);
-        }
-        if (q.length < 2) {
-            clearSuggestions();
-            return;
-        }
+        if (timeout) clearTimeout(timeout);
+        if (q.length < 2) { clearSuggestions(); return; }
 
         timeout = setTimeout(function() {
             fetch('{% url "public:search_autocomplete" %}?q=' + encodeURIComponent(q), {
                 method: 'GET', headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
-            .then(function(resp){ return resp.json(); })
-            .then(function(data){
-                const results = (data.results || []).map(function(item){
-                    return {
-                        name: item.name,
-                    };
-                });
+            .then(r => r.json())
+            .then(data => {
+                const results = (data.results || []).map(item => ({ name: item.name }));
                 render(results, q);
             })
-            .catch(function(){ clearSuggestions(); });
+            .catch(clearSuggestions);
         }, 225);
     });
 
-    document.addEventListener('click', function(event){
-        if (!input.contains(event.target) && !list.contains(event.target)) {
+    document.addEventListener('click', function(e){
+        if (!input.contains(e.target) && !list.contains(e.target)) {
             clearSuggestions();
         }
     });

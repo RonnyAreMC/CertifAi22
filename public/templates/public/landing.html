@@ -2,895 +2,467 @@
 {% load static %}
 
 {% block content %}
-<!-- ==================== iOS LANDING PAGE ==================== -->
 
-<!-- Hero Section -->
-<section class="ios-hero">
-    <div class="ios-hero-bg-orbs">
-        <div class="ios-orb ios-orb-1"></div>
-        <div class="ios-orb ios-orb-2"></div>
-        <div class="ios-orb ios-orb-3"></div>
+<!-- ============================================================
+     HERO
+============================================================ -->
+<section class="relative overflow-hidden">
+    <!-- Orbes flotantes -->
+    <div class="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div class="absolute top-[5%] left-[5%] w-[450px] h-[450px] rounded-full bg-[#162054]/10 dark:bg-[#162054]/40 blur-[130px]"></div>
+        <div class="absolute bottom-[5%] right-[10%] w-[500px] h-[500px] rounded-full bg-[#F58830]/15 dark:bg-[#F58830]/20 blur-[140px]"></div>
+        <div class="absolute top-[40%] left-[45%] w-[300px] h-[300px] rounded-full bg-purple-400/10 dark:bg-purple-500/15 blur-[100px]"></div>
     </div>
 
-    <div class="ios-hero-content ios-animate" data-animation="fadeInUp">
-        <div class="ios-hero-badge">
-            <i class="fa-solid fa-sparkles"></i>
-            <span>Plataforma de Certificación</span>
+    <div class="container mx-auto px-4 py-16 md:py-24 lg:py-28">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            <!-- LEFT: Texto + CTAs -->
+            <div>
+                <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-5">
+                    <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                    Plataforma oficial UNEMI
+                </div>
+
+                <h1 class="text-5xl md:text-6xl lg:text-7xl font-black leading-[0.92] tracking-tight text-[#162054] dark:text-white mb-6">
+                    Tu camino<br>
+                    académico,<br>
+                    <span class="text-[#F58830]">certificado.</span>
+                </h1>
+
+                <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-xl mb-9 font-light">
+                    En <strong class="font-bold text-[#162054] dark:text-white">MUC Academy</strong> estamos comprometidos con la mejora continua y con generar nuevas oportunidades para nuestros estudiantes. Valida, descarga y comparte tus certificados de seminarios y capacitaciones en segundos.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="{% url 'public:home' %}"
+                       class="inline-flex items-center justify-center gap-2 bg-[#F58830] hover:bg-[#e07820] text-white font-bold text-sm px-7 py-4 rounded-2xl shadow-lg shadow-[#F58830]/30 transition-all uppercase tracking-wider hover:-translate-y-0.5">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Buscar certificados
+                        <i class="fa-solid fa-arrow-right ml-1 text-xs opacity-80"></i>
+                    </a>
+                </div>
+
+                <!-- Mini stats inline -->
+                <div class="mt-12 grid grid-cols-3 gap-4 max-w-md">
+                    <div>
+                        <h3 class="text-3xl font-black text-[#162054] dark:text-white stat-counter" data-count="{{ total_certificados }}">0</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mt-1">Emitidos</p>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-black text-[#162054] dark:text-white stat-counter" data-count="{{ total_seminarios }}">0</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mt-1">Seminarios</p>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-black text-[#162054] dark:text-white stat-counter" data-count="{{ total_participantes }}">0</h3>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mt-1">Participantes</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Visual / mockup card -->
+            <div class="relative">
+                <!-- Card principal con efecto de "certificado flotante" -->
+                <div class="relative bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-gray-100 dark:border-white/10 p-8 overflow-hidden">
+                    <!-- Top accent -->
+                    <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#162054] via-[#F58830] to-[#162054]"></div>
+
+                    <!-- Decorative orb inside -->
+                    <div class="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-[#F58830]/10 blur-3xl"></div>
+                    <div class="absolute -bottom-20 -left-20 w-56 h-56 rounded-full bg-[#162054]/10 dark:bg-[#162054]/30 blur-3xl"></div>
+
+                    <div class="relative">
+                        <!-- Header de la tarjeta -->
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-2xl bg-[#162054] flex items-center justify-center">
+                                    <img src="{% static 'tiger_chase_loader.png' %}" alt="MUC" class="w-9 h-9 object-contain">
+                                </div>
+                                <div>
+                                    <h4 class="font-extrabold text-[#162054] dark:text-white text-sm">MUC Academy</h4>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">Certificado oficial</p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] font-bold text-[#F58830] bg-[#F58830]/10 px-2.5 py-1 rounded-md uppercase tracking-wider">Verificado</span>
+                        </div>
+
+                        <!-- Cuerpo -->
+                        <div class="text-center py-6 border-y border-gray-100 dark:border-white/10 mb-6">
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold mb-3">Otorgado a</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#162054] dark:text-white mb-2 font-serif">Estudiante UNEMI</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Por su participación en el</p>
+                            <p class="text-sm font-bold text-[#F58830] mt-1">Seminario de Innovación Académica 2026</p>
+                        </div>
+
+                        <!-- Footer firmas -->
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <div class="border-t border-gray-300 dark:border-white/20 pt-2">
+                                    <p class="text-[10px] font-bold text-[#162054] dark:text-white uppercase">Rector</p>
+                                    <p class="text-[9px] text-gray-500 dark:text-gray-400">UNEMI</p>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="border-t border-gray-300 dark:border-white/20 pt-2">
+                                    <p class="text-[10px] font-bold text-[#162054] dark:text-white uppercase">Coordinador</p>
+                                    <p class="text-[9px] text-gray-500 dark:text-gray-400">MUC Academy</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating badges -->
+                <div class="hidden md:flex absolute -top-4 -left-6 bg-white dark:bg-[#0F163A] shadow-xl border border-gray-100 dark:border-white/10 rounded-2xl px-4 py-3 items-center gap-3 animate-bounce-slow">
+                    <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Verificado</p>
+                        <p class="text-xs font-extrabold text-[#162054] dark:text-white">Hash único</p>
+                    </div>
+                </div>
+
+                <div class="hidden md:flex absolute -bottom-4 -right-4 bg-white dark:bg-[#0F163A] shadow-xl border border-gray-100 dark:border-white/10 rounded-2xl px-4 py-3 items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-[#F58830]/10 flex items-center justify-center text-[#F58830]">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Descarga</p>
+                        <p class="text-xs font-extrabold text-[#162054] dark:text-white">Instantánea</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     STATS BAR
+============================================================ -->
+<section class="relative bg-[#162054] dark:bg-[#0a0f2e] text-white py-14 md:py-20 overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none">
+        <div class="absolute top-0 left-[10%] w-96 h-96 rounded-full bg-[#F58830]/10 blur-3xl"></div>
+        <div class="absolute bottom-0 right-[10%] w-96 h-96 rounded-full bg-blue-500/15 blur-3xl"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative">
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-3 text-xs text-blue-200 uppercase tracking-[0.3em] font-bold mb-4">
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                Nuestra trayectoria
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black tracking-tight">
+                Resultados que <span class="text-[#F58830]">hablan por sí solos</span>
+            </h2>
         </div>
 
-        <h1 class="ios-hero-title">
-            Busca y Verifica tus<br>
-            <span class="ios-gradient-text">Certificados</span>
-        </h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div class="text-center p-8 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#F58830]/50 hover:bg-white/10 transition-all">
+                <div class="w-16 h-16 rounded-2xl bg-[#F58830]/15 flex items-center justify-center text-[#F58830] mx-auto mb-5">
+                    <i class="fa-solid fa-certificate text-3xl"></i>
+                </div>
+                <h3 class="text-5xl md:text-6xl font-black text-white mb-2 stat-counter" data-count="{{ total_certificados }}">0</h3>
+                <p class="text-xs text-blue-200 uppercase tracking-wider font-bold">Certificados emitidos</p>
+            </div>
 
-        <p class="ios-hero-subtitle">
-            Valida la autenticidad de tus certificados de MUC Academy de forma rápida y segura.
-            Accede a tu historial de capacitaciones y seminarios en cualquier momento.
-        </p>
+            <div class="text-center p-8 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#F58830]/50 hover:bg-white/10 transition-all">
+                <div class="w-16 h-16 rounded-2xl bg-[#F58830]/15 flex items-center justify-center text-[#F58830] mx-auto mb-5">
+                    <i class="fa-solid fa-graduation-cap text-3xl"></i>
+                </div>
+                <h3 class="text-5xl md:text-6xl font-black text-white mb-2 stat-counter" data-count="{{ total_seminarios }}">0</h3>
+                <p class="text-xs text-blue-200 uppercase tracking-wider font-bold">Seminarios realizados</p>
+            </div>
 
-        <!-- CTA Buttons -->
-        <div class="ios-hero-actions">
-            <a href="{% url 'public:home' %}" class="ios-btn ios-btn-primary group">
-                <i class="fa-solid fa-search"></i>
-                <span>Buscar Certificados</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-60 transition-transform group-hover:translate-x-1"></i>
+            <div class="text-center p-8 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 hover:border-[#F58830]/50 hover:bg-white/10 transition-all">
+                <div class="w-16 h-16 rounded-2xl bg-[#F58830]/15 flex items-center justify-center text-[#F58830] mx-auto mb-5">
+                    <i class="fa-solid fa-users text-3xl"></i>
+                </div>
+                <h3 class="text-5xl md:text-6xl font-black text-white mb-2 stat-counter" data-count="{{ total_participantes }}">0</h3>
+                <p class="text-xs text-blue-200 uppercase tracking-wider font-bold">Participantes únicos</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     MOVIMIENTO UNIVERSITARIO
+============================================================ -->
+<section class="py-20 md:py-28 relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none -z-10 overflow-hidden">
+        <div class="absolute top-[10%] left-[5%] w-[400px] h-[400px] rounded-full bg-[#F58830]/10 dark:bg-[#F58830]/15 blur-[120px]"></div>
+        <div class="absolute bottom-[10%] right-[5%] w-[450px] h-[450px] rounded-full bg-[#162054]/10 dark:bg-[#162054]/40 blur-[140px]"></div>
+    </div>
+
+    <div class="container mx-auto px-4">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto">
+
+            <!-- Left: Visual -->
+            <div class="relative order-2 lg:order-1">
+                <div class="relative bg-gradient-to-br from-[#162054] to-[#0a0f2e] rounded-3xl p-10 md:p-14 text-white overflow-hidden shadow-2xl">
+                    <!-- Orbes decorativos -->
+                    <div class="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-[#F58830]/20 blur-3xl"></div>
+                    <div class="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+
+                    <!-- Borde superior decorativo -->
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#F58830] to-transparent"></div>
+
+                    <div class="relative">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F58830]/20 border border-[#F58830]/30 text-[#F58830] text-[10px] font-bold uppercase tracking-widest mb-6">
+                            <i class="fa-solid fa-star"></i>
+                            Movimiento pionero
+                        </div>
+
+                        <h3 class="text-3xl md:text-4xl font-black leading-tight mb-6">
+                            Innovación que<br>
+                            <span class="text-[#F58830]">transforma vidas</span>
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#F58830] flex-shrink-0">
+                                    <i class="fa-solid fa-flag"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-extrabold text-white mb-1">Primer movimiento universitario</h4>
+                                    <p class="text-sm text-blue-200 leading-relaxed">Pioneros en la UNEMI promoviendo innovación estudiantil real.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#F58830] flex-shrink-0">
+                                    <i class="fa-solid fa-handshake"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-extrabold text-white mb-1">Respaldo institucional</h4>
+                                    <p class="text-sm text-blue-200 leading-relaxed">Con el apoyo activo de las autoridades universitarias.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#F58830] flex-shrink-0">
+                                    <i class="fa-solid fa-toolbox"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-extrabold text-white mb-1">Herramientas reales</h4>
+                                    <p class="text-sm text-blue-200 leading-relaxed">Plataformas, recursos y formación al servicio del estudiante.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Texto -->
+            <div class="order-1 lg:order-2">
+                <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-5">
+                    <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                    Quiénes somos
+                </div>
+
+                <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#162054] dark:text-white leading-[1.05] mb-6">
+                    Somos el primer<br>
+                    <span class="text-[#F58830]">movimiento universitario</span><br>
+                    de la UNEMI.
+                </h2>
+
+                <p class="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-5 font-light">
+                    En <strong class="font-bold text-[#162054] dark:text-white">MUC Academy</strong> somos el primer movimiento universitario dentro de la <strong class="font-bold text-[#162054] dark:text-white">Universidad Estatal de Milagro</strong> que apuesta por la innovación y por dotar a los estudiantes de herramientas reales para su crecimiento profesional.
+                </p>
+
+                <p class="text-base text-gray-600 dark:text-gray-400 leading-relaxed mb-8 font-light">
+                    Con el respaldo activo de las autoridades universitarias, impulsamos seminarios, capacitaciones y certificaciones que abren nuevas oportunidades académicas y profesionales para toda la comunidad UNEMI.
+                </p>
+
+                <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold">
+                    <span class="w-8 h-[2px] bg-[#F58830]"></span>
+                    Innovación · Compromiso · Estudiantes
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     COMPROMISO / FEATURES
+============================================================ -->
+<section class="py-20 md:py-28 relative">
+    <div class="container mx-auto px-4">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <div class="inline-flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-4">
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                Nuestro compromiso
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+            </div>
+            <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#162054] dark:text-white mb-5 leading-[1.05]">
+                Comprometidos con tu<br>
+                <span class="text-[#F58830]">crecimiento académico</span>
+            </h2>
+            <p class="text-lg text-gray-600 dark:text-gray-300 font-light">
+                Trabajamos cada día por entregar más oportunidades de capacitación, mejorar la calidad educativa y dar reconocimiento formal al esfuerzo de cada estudiante de la UNEMI.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div class="group p-8 rounded-3xl bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10 hover:border-[#F58830] hover:-translate-y-1 transition-all shadow-sm hover:shadow-2xl">
+                <div class="w-14 h-14 rounded-2xl bg-[#162054] dark:bg-[#F58830]/20 flex items-center justify-center text-white dark:text-[#F58830] mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-bolt-lightning text-xl"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-[#162054] dark:text-white mb-3">Mejora continua</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Actualizamos constantemente la plataforma y los contenidos para ofrecer la mejor experiencia académica posible.
+                </p>
+            </div>
+
+            <div class="group p-8 rounded-3xl bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10 hover:border-[#F58830] hover:-translate-y-1 transition-all shadow-sm hover:shadow-2xl">
+                <div class="w-14 h-14 rounded-2xl bg-[#162054] dark:bg-[#F58830]/20 flex items-center justify-center text-white dark:text-[#F58830] mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-rocket text-xl"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-[#162054] dark:text-white mb-3">Nuevas oportunidades</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Cada seminario es una puerta abierta a nuevas habilidades, contactos y caminos profesionales para nuestros estudiantes.
+                </p>
+            </div>
+
+            <div class="group p-8 rounded-3xl bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10 hover:border-[#F58830] hover:-translate-y-1 transition-all shadow-sm hover:shadow-2xl">
+                <div class="w-14 h-14 rounded-2xl bg-[#162054] dark:bg-[#F58830]/20 flex items-center justify-center text-white dark:text-[#F58830] mb-5 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-[#162054] dark:text-white mb-3">Validez garantizada</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Cada certificado tiene un hash único de verificación, respaldado por la Universidad Estatal de Milagro.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     PASOS / PROCESO
+============================================================ -->
+<section class="py-20 md:py-24 bg-gray-50 dark:bg-[#0a0f2e]">
+    <div class="container mx-auto px-4">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <div class="inline-flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-4">
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                Cómo funciona
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-black tracking-tight text-[#162054] dark:text-white mb-4 leading-[1.05]">
+                Tu certificado en <span class="text-[#F58830]">3 pasos</span>
+            </h2>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div class="relative p-8 rounded-3xl bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10">
+                <span class="absolute -top-4 -left-4 w-12 h-12 rounded-2xl bg-[#162054] text-white font-black text-xl flex items-center justify-center shadow-lg">1</span>
+                <h3 class="text-lg font-extrabold text-[#162054] dark:text-white mb-2 mt-2">Asiste al evento</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Participa en cualquiera de los seminarios, capacitaciones o ponencias organizados por MUC Academy.
+                </p>
+            </div>
+
+            <div class="relative p-8 rounded-3xl bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10">
+                <span class="absolute -top-4 -left-4 w-12 h-12 rounded-2xl bg-[#F58830] text-white font-black text-xl flex items-center justify-center shadow-lg">2</span>
+                <h3 class="text-lg font-extrabold text-[#162054] dark:text-white mb-2 mt-2">Registra tu asistencia</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Completa el formulario o escanea el código QR <strong class="text-[#F58830]">antes de que finalice</strong> la sesión.
+                </p>
+            </div>
+
+            <div class="relative p-8 rounded-3xl bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10">
+                <span class="absolute -top-4 -left-4 w-12 h-12 rounded-2xl bg-[#162054] text-white font-black text-xl flex items-center justify-center shadow-lg">3</span>
+                <h3 class="text-lg font-extrabold text-[#162054] dark:text-white mb-2 mt-2">Descarga tu PDF</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    Busca por tu cédula o correo y obtén tu certificado oficial al instante, en formato PDF descargable.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     CTA FINAL
+============================================================ -->
+<section class="py-20 md:py-24 relative overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none -z-10">
+        <div class="absolute top-0 left-[20%] w-[500px] h-[500px] rounded-full bg-[#F58830]/10 dark:bg-[#F58830]/15 blur-[120px]"></div>
+        <div class="absolute bottom-0 right-[20%] w-[450px] h-[450px] rounded-full bg-[#162054]/10 dark:bg-[#162054]/40 blur-[120px]"></div>
+    </div>
+
+    <div class="container mx-auto px-4">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#162054] dark:text-white mb-6 leading-[1.05]">
+                ¿Listo para descargar<br>
+                <span class="text-[#F58830]">tu certificado?</span>
+            </h2>
+            <p class="text-lg text-gray-600 dark:text-gray-300 mb-10 max-w-2xl mx-auto font-light">
+                Acceso instantáneo, validación oficial UNEMI y disponible las 24 horas del día.
+            </p>
+            <a href="{% url 'public:home' %}"
+               class="inline-flex items-center justify-center gap-3 bg-[#F58830] hover:bg-[#e07820] text-white font-bold text-base px-10 py-5 rounded-2xl shadow-2xl shadow-[#F58830]/30 transition-all uppercase tracking-wider hover:-translate-y-1">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Buscar mi certificado
+                <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
     </div>
 </section>
 
-<!-- Stats Bar -->
-<section class="ios-stats ios-animate" data-animation="fadeInUp">
-    <div class="ios-stats-grid">
-        <div class="ios-stat-item">
-            <div class="ios-stat-icon">
-                <i class="fa-solid fa-certificate"></i>
-            </div>
-            <div class="ios-stat-info">
-                <span class="ios-stat-number">5,000+</span>
-                <span class="ios-stat-label">Certificados Emitidos</span>
-            </div>
-        </div>
-        <div class="ios-stat-divider"></div>
-        <div class="ios-stat-item">
-            <div class="ios-stat-icon ios-stat-icon-orange">
-                <i class="fa-solid fa-users"></i>
-            </div>
-            <div class="ios-stat-info">
-                <span class="ios-stat-number">1,200+</span>
-                <span class="ios-stat-label">Profesionales Certificados</span>
-            </div>
-        </div>
-        <div class="ios-stat-divider"></div>
-        <div class="ios-stat-item">
-            <div class="ios-stat-icon ios-stat-icon-green">
-                <i class="fa-solid fa-search"></i>
-            </div>
-            <div class="ios-stat-info">
-                <span class="ios-stat-number">24/7</span>
-                <span class="ios-stat-label">Búsqueda Disponible</span>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- How it Works -->
-<section class="ios-section">
-    <div class="ios-section-header ios-animate" data-animation="fadeInUp">
-        <span class="ios-section-eyebrow">Proceso</span>
-        <h2 class="ios-section-title">¿Cómo buscar tu certificado?</h2>
-        <p class="ios-section-subtitle">Sigue estos sencillos pasos para encontrar y descargar tu certificado</p>
-    </div>
-
-    <div class="ios-steps-grid">
-        <div class="ios-step-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.1s">
-            <div class="ios-step-number">1</div>
-            <div class="ios-step-icon-wrap">
-                <i class="fa-solid fa-search"></i>
-            </div>
-            <h3 class="ios-step-title">Busca tu Información</h3>
-            <p class="ios-step-desc">Son más de 5000 certificados que se entregarán a estudiantes. Ingresa tu cédula de identidad o correo institucional en el buscador.</p>
-        </div>
-
-        <div class="ios-step-connector ios-animate" data-animation="fadeIn">
-            <i class="fa-solid fa-chevron-right"></i>
-        </div>
-
-        <div class="ios-step-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.2s">
-            <div class="ios-step-number ios-step-number-orange">2</div>
-            <div class="ios-step-icon-wrap ios-step-icon-orange">
-                <i class="fa-solid fa-list-check"></i>
-            </div>
-            <h3 class="ios-step-title">Selecciona tu Certificado</h3>
-            <p class="ios-step-desc">Revisa la lista de certificados asociados a tu información y selecciona el que necesitas.</p>
-        </div>
-
-        <div class="ios-step-connector ios-animate" data-animation="fadeIn">
-            <i class="fa-solid fa-chevron-right"></i>
-        </div>
-
-        <div class="ios-step-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.3s">
-            <div class="ios-step-number">3</div>
-            <div class="ios-step-icon-wrap">
-                <i class="fa-solid fa-download"></i>
-            </div>
-            <h3 class="ios-step-title">Descarga tu PDF</h3>
-            <p class="ios-step-desc">Obtén tu certificado oficial en formato PDF con firma digital para validar su autenticidad.</p>
-        </div>
-    </div>
-
-    <!-- Important Notice -->
-    <div class="ios-notice ios-animate" data-animation="fadeInUp">
-        <div class="ios-notice-icon">
-            <i class="fa-solid fa-shield-halved"></i>
-        </div>
-        <div class="ios-notice-content">
-            <h4 class="ios-notice-title">Certificados Oficiales</h4>
-            <p class="ios-notice-text">Todos los certificados emitidos por MUC Academy incluyen firma digital y código QR para <strong>verificación inmediata</strong> de su autenticidad.</p>
-        </div>
-    </div>
-</section>
-
-<!-- Features -->
-<section class="ios-section">
-    <div class="ios-section-header ios-animate" data-animation="fadeInUp">
-        <span class="ios-section-eyebrow">Ventajas</span>
-        <h2 class="ios-section-title">¿Por qué buscar aquí?</h2>
-        <p class="ios-section-subtitle">Una plataforma segura y eficiente para tus certificados</p>
-    </div>
-
-    <div class="ios-features-grid">
-        <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.1s">
-            <div class="ios-feature-icon">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <h3 class="ios-feature-title">Certificados Auténticos</h3>
-            <p class="ios-feature-desc">Todos los certificados incluyen firma digital y código QR para verificación inmediata de su validez.</p>
-        </div>
-
-        <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.2s">
-            <div class="ios-feature-icon ios-feature-icon-orange">
-                <i class="fa-solid fa-search"></i>
-            </div>
-            <h3 class="ios-feature-title">Búsqueda Rápida</h3>
-            <p class="ios-feature-desc">Encuentra tus certificados en segundos usando tu cédula o correo institucional.</p>
-        </div>
-
-        <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.3s">
-            <div class="ios-feature-icon ios-feature-icon-green">
-                <i class="fa-solid fa-clock"></i>
-            </div>
-            <h3 class="ios-feature-title">Disponible 24/7</h3>
-            <p class="ios-feature-desc">Accede a tus certificados en cualquier momento, desde cualquier dispositivo.</p>
-        </div>
-
-        <div class="ios-feature-card ios-animate" data-animation="fadeInUp" style="animation-delay: 0.4s">
-            <div class="ios-feature-icon ios-feature-icon-purple">
-                <i class="fa-solid fa-file-pdf"></i>
-            </div>
-            <h3 class="ios-feature-title">PDF Oficial</h3>
-            <p class="ios-feature-desc">Descarga tus certificados en formato PDF oficial con diseño profesional y firma digital.</p>
-        </div>
-    </div>
-</section>
-
-<!-- Bottom CTA -->
-<section class="ios-bottom-cta ios-animate" data-animation="fadeInUp">
-    <div class="ios-cta-card">
-        <div class="ios-cta-glow"></div>
-        <h2 class="ios-cta-title">¿Listo para buscar tus certificados?</h2>
-        <p class="ios-cta-subtitle">Accede ahora a tu historial de capacitaciones y descargas tus PDFs oficiales</p>
-        <a href="{% url 'public:home' %}" class="ios-btn ios-btn-cta group">
-            <i class="fa-solid fa-arrow-right transition-transform group-hover:translate-x-1"></i>
-            <span>Buscar mis Certificados</span>
-        </a>
-    </div>
-</section>
-
-<!-- ==================== STYLES ==================== -->
 <style>
-/* ===== Variables ===== */
-:root {
-    --ios-blue: #162054;
-    --ios-orange: #F58830;
-    --ios-radius: 20px;
-    --ios-radius-sm: 14px;
-    --ios-radius-xs: 10px;
-    --ios-transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    --ios-glass-bg: rgba(255, 255, 255, 0.65);
-    --ios-glass-border: rgba(255, 255, 255, 0.5);
-    --ios-glass-blur: blur(30px);
-}
-
-/* ===== Hero ===== */
-.ios-hero {
-    position: relative;
-    min-height: 80vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem 2rem;
-    overflow: hidden;
-}
-
-.ios-hero-bg-orbs {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-}
-.ios-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.35;
-    animation: ios-float 8s ease-in-out infinite;
-}
-.ios-orb-1 {
-    width: 300px; height: 300px;
-    background: linear-gradient(135deg, #F58830, #ff6600);
-    top: -5%; right: -5%;
-    animation-delay: 0s;
-}
-.ios-orb-2 {
-    width: 250px; height: 250px;
-    background: linear-gradient(135deg, #162054, #3b82f6);
-    bottom: 10%; left: -8%;
-    animation-delay: -3s;
-}
-.ios-orb-3 {
-    width: 200px; height: 200px;
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    top: 40%; right: 20%;
-    animation-delay: -5s;
-}
-
-.dark .ios-orb { opacity: 0.2; }
-
-@keyframes ios-float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    25% { transform: translate(15px, -20px) scale(1.05); }
-    50% { transform: translate(-10px, 15px) scale(0.95); }
-    75% { transform: translate(20px, 10px) scale(1.02); }
-}
-
-.ios-hero-content {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-    max-width: 600px;
-    width: 100%;
-}
-
-.ios-hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.4rem 1rem;
-    border-radius: 100px;
-    background: rgba(245, 136, 48, 0.1);
-    color: var(--ios-orange);
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(245, 136, 48, 0.2);
-}
-.dark .ios-hero-badge {
-    background: rgba(245, 136, 48, 0.15);
-    border: 1px solid rgba(245, 136, 48, 0.25);
-}
-
-.ios-hero-title {
-    font-size: 2.75rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.15;
-    color: #1e293b;
-    margin-bottom: 1.25rem;
-}
-.dark .ios-hero-title { color: #f1f5f9; }
-
-.ios-gradient-text {
-    background: linear-gradient(135deg, #F58830, #ff6600, #F58830);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    background-size: 200% auto;
-    animation: ios-shimmer 3s ease-in-out infinite;
-}
-@keyframes ios-shimmer {
-    0%, 100% { background-position: 0% center; }
-    50% { background-position: 200% center; }
-}
-
-.ios-hero-subtitle {
-    font-size: 1.1rem;
-    color: #64748b;
-    line-height: 1.7;
-    margin-bottom: 2.5rem;
-    max-width: 480px;
-    margin-left: auto;
-    margin-right: auto;
-}
-.dark .ios-hero-subtitle { color: #94a3b8; }
-
-/* ===== Buttons ===== */
-.ios-hero-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-}
-
-.ios-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.95rem 1.75rem;
-    border-radius: var(--ios-radius-sm);
-    font-weight: 600;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: all var(--ios-transition);
-    cursor: pointer;
-    border: none;
-    width: 100%;
-    max-width: 340px;
-    justify-content: center;
-}
-
-.ios-btn-primary {
-    background: linear-gradient(135deg, var(--ios-blue), #1e3a8a);
-    color: white;
-    box-shadow: 0 4px 20px rgba(22, 32, 84, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-.ios-btn-primary:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 30px rgba(22, 32, 84, 0.4);
-}
-.ios-btn-primary:active { transform: translateY(0) scale(0.98); }
-
-.ios-btn-glass {
-    background: var(--ios-glass-bg);
-    backdrop-filter: var(--ios-glass-blur);
-    -webkit-backdrop-filter: var(--ios-glass-blur);
-    border: 1px solid var(--ios-glass-border);
-    color: #374151;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-}
-.dark .ios-btn-glass {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #e2e8f0;
-}
-.ios-btn-glass:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    border-color: var(--ios-orange);
-}
-
-.ios-btn-coming-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 340px;
-}
-.ios-badge-coming {
-    position: absolute;
-    top: -10px;
-    right: -8px;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 100px;
-    background: linear-gradient(135deg, var(--ios-orange), #ff6600);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    box-shadow: 0 2px 12px rgba(245, 136, 48, 0.4);
-    z-index: 5;
-    animation: ios-badge-pulse 2s ease-in-out infinite;
-}
-.ios-badge-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: white;
-    animation: ios-dot-blink 1.5s ease-in-out infinite;
-}
-@keyframes ios-badge-pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-}
-@keyframes ios-dot-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
-
-.ios-btn-cta {
-    background: linear-gradient(135deg, var(--ios-orange), #ff6600);
-    color: white;
-    font-size: 1.05rem;
-    padding: 1rem 2rem;
-    box-shadow: 0 4px 20px rgba(245, 136, 48, 0.3);
-    max-width: 380px;
-}
-.ios-btn-cta:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 30px rgba(245, 136, 48, 0.45);
-}
-
-/* ===== Stats ===== */
-.ios-stats {
-    padding: 0 1.5rem;
-    margin: -1rem auto 3rem;
-    max-width: 600px;
-}
-.ios-stats-grid {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    border-radius: var(--ios-radius);
-    background: var(--ios-glass-bg);
-    backdrop-filter: var(--ios-glass-blur);
-    -webkit-backdrop-filter: var(--ios-glass-blur);
-    border: 1px solid var(--ios-glass-border);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-}
-.dark .ios-stats-grid {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-}
-
-.ios-stat-item {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    flex: 1;
-    justify-content: center;
-}
-.ios-stat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--ios-blue), #1e3a8a);
-    color: white;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-}
-.ios-stat-icon-orange {
-    background: linear-gradient(135deg, var(--ios-orange), #ff6600);
-}
-.ios-stat-icon-green {
-    background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.ios-stat-info {
-    display: flex;
-    flex-direction: column;
-}
-.ios-stat-number {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #1e293b;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-}
-.dark .ios-stat-number { color: #f1f5f9; }
-.ios-stat-label {
-    font-size: 0.7rem;
-    color: #94a3b8;
-    font-weight: 500;
-}
-
-.ios-stat-divider {
-    width: 1px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.08);
-    flex-shrink: 0;
-}
-.dark .ios-stat-divider { background: rgba(255, 255, 255, 0.1); }
-
-/* ===== Sections ===== */
-.ios-section {
-    padding: 2.5rem 1.5rem;
-    max-width: 700px;
-    margin: 0 auto;
-}
-
-.ios-section-header {
-    text-align: center;
-    margin-bottom: 2.5rem;
-}
-.ios-section-eyebrow {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--ios-orange);
-    margin-bottom: 0.5rem;
-}
-.ios-section-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #1e293b;
-    letter-spacing: -0.025em;
-    margin-bottom: 0.5rem;
-}
-.dark .ios-section-title { color: #f1f5f9; }
-.ios-section-subtitle {
-    font-size: 1rem;
-    color: #64748b;
-}
-.dark .ios-section-subtitle { color: #94a3b8; }
-
-/* ===== Steps ===== */
-.ios-steps-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.ios-step-card {
-    padding: 1.5rem;
-    border-radius: var(--ios-radius);
-    background: var(--ios-glass-bg);
-    backdrop-filter: var(--ios-glass-blur);
-    -webkit-backdrop-filter: var(--ios-glass-blur);
-    border: 1px solid var(--ios-glass-border);
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-    text-align: center;
-    transition: all var(--ios-transition);
-    position: relative;
-}
-.dark .ios-step-card {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.ios-step-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border-color: rgba(245, 136, 48, 0.3);
-}
-.dark .ios-step-card:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-}
-
-.ios-step-number {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 28px;
-    height: 28px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--ios-blue), #1e3a8a);
-    color: white;
-    font-weight: 800;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 3px 12px rgba(22, 32, 84, 0.3);
-}
-.ios-step-number-orange {
-    background: linear-gradient(135deg, var(--ios-orange), #ff6600);
-    box-shadow: 0 3px 12px rgba(245, 136, 48, 0.3);
-}
-
-.ios-step-icon-wrap {
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.35rem;
-    margin-bottom: 0.75rem;
-    background: linear-gradient(135deg, rgba(22, 32, 84, 0.08), rgba(22, 32, 84, 0.04));
-    color: var(--ios-blue);
-    transition: all var(--ios-transition);
-}
-.dark .ios-step-icon-wrap {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    color: #93c5fd;
-}
-.ios-step-icon-orange {
-    background: linear-gradient(135deg, rgba(245, 136, 48, 0.12), rgba(245, 136, 48, 0.04));
-    color: var(--ios-orange);
-}
-.dark .ios-step-icon-orange {
-    background: linear-gradient(135deg, rgba(245, 136, 48, 0.15), rgba(245, 136, 48, 0.05));
-    color: #fbbf24;
-}
-
-.ios-step-card:hover .ios-step-icon-wrap {
-    transform: scale(1.1);
-}
-
-.ios-step-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.35rem;
-}
-.dark .ios-step-title { color: #f1f5f9; }
-.ios-step-desc {
-    font-size: 0.85rem;
-    color: #64748b;
-    line-height: 1.5;
-}
-.dark .ios-step-desc { color: #94a3b8; }
-
-.ios-step-connector {
-    display: none;
-}
-
-/* ===== Notice ===== */
-.ios-notice {
-    display: flex;
-    gap: 1rem;
-    padding: 1.25rem;
-    border-radius: var(--ios-radius-sm);
-    background: rgba(245, 136, 48, 0.06);
-    border: 1px solid rgba(245, 136, 48, 0.15);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-.dark .ios-notice {
-    background: rgba(245, 136, 48, 0.08);
-    border: 1px solid rgba(245, 136, 48, 0.2);
-}
-.ios-notice-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--ios-orange), #ff6600);
-    color: white;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-.ios-notice-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.25rem;
-}
-.dark .ios-notice-title { color: #f1f5f9; }
-.ios-notice-text {
-    font-size: 0.8rem;
-    color: #64748b;
-    line-height: 1.5;
-}
-.dark .ios-notice-text { color: #94a3b8; }
-.ios-notice-text strong {
-    color: var(--ios-orange);
-}
-
-/* ===== Features ===== */
-.ios-features-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-.ios-feature-card {
-    padding: 1.5rem;
-    border-radius: var(--ios-radius);
-    background: var(--ios-glass-bg);
-    backdrop-filter: var(--ios-glass-blur);
-    -webkit-backdrop-filter: var(--ios-glass-blur);
-    border: 1px solid var(--ios-glass-border);
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-    transition: all var(--ios-transition);
-}
-.dark .ios-feature-card {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.ios-feature-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border-color: rgba(245, 136, 48, 0.3);
-}
-.dark .ios-feature-card:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-}
-
-.ios-feature-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: white;
-    margin-bottom: 1rem;
-    background: linear-gradient(135deg, var(--ios-blue), #1e3a8a);
-    box-shadow: 0 4px 12px rgba(22, 32, 84, 0.2);
-    transition: all var(--ios-transition);
-}
-.ios-feature-icon-orange {
-    background: linear-gradient(135deg, var(--ios-orange), #ff6600);
-    box-shadow: 0 4px 12px rgba(245, 136, 48, 0.2);
-}
-.ios-feature-icon-green {
-    background: linear-gradient(135deg, #10b981, #059669);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-}
-.ios-feature-icon-purple {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
-}
-
-.ios-feature-card:hover .ios-feature-icon {
-    transform: scale(1.1) rotate(-3deg);
-}
-
-.ios-feature-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.35rem;
-}
-.dark .ios-feature-title { color: #f1f5f9; }
-.ios-feature-desc {
-    font-size: 0.8rem;
-    color: #64748b;
-    line-height: 1.5;
-}
-.dark .ios-feature-desc { color: #94a3b8; }
-
-/* ===== Bottom CTA ===== */
-.ios-bottom-cta {
-    padding: 2.5rem 1.5rem 3rem;
-    max-width: 600px;
-    margin: 0 auto;
-}
-.ios-cta-card {
-    position: relative;
-    text-align: center;
-    padding: 2.5rem 2rem;
-    border-radius: 24px;
-    background: linear-gradient(135deg, var(--ios-blue), #1e3a8a);
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(22, 32, 84, 0.3);
-}
-.ios-cta-glow {
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    background: rgba(245, 136, 48, 0.25);
-    filter: blur(60px);
-    top: -50px;
-    right: -50px;
-    pointer-events: none;
-}
-.ios-cta-title {
-    position: relative;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: white;
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
-}
-.ios-cta-subtitle {
-    position: relative;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 1.5rem;
-}
-
-/* ===== Animations (IntersectionObserver) ===== */
-.ios-animate {
-    opacity: 0;
-    transform: translateY(24px);
-}
-.ios-animate[data-animation="fadeIn"] {
-    transform: none;
-}
-.ios-animate.ios-visible {
-    animation: iosSlideUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.ios-animate[data-animation="fadeIn"].ios-visible {
-    animation: iosFadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes iosSlideUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes iosFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* ===== Tablet+ ===== */
-@media (min-width: 768px) {
-    .ios-hero-title { font-size: 3.5rem; }
-    .ios-hero-subtitle { font-size: 1.2rem; }
-    .ios-section-title { font-size: 2.5rem; }
-    
-    .ios-section { max-width: 850px; }
-    .ios-stats { max-width: 800px; }
-    .ios-bottom-cta { max-width: 850px; }
-    
-    .ios-steps-grid {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 1.25rem;
-    }
-    .ios-step-connector {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #cbd5e1;
-        font-size: 1.2rem;
-        padding-top: 3.25rem;
-    }
-    .dark .ios-step-connector { color: #475569; }
-    
-    .ios-step-card { flex: 1; min-height: 230px;}
-
-    .ios-features-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.5rem;
-    }
-}
-
-/* ===== Desktop+ ===== */
-@media (min-width: 1024px) {
-    .ios-section { max-width: 1100px; padding: 4rem 2rem; }
-    .ios-stats { max-width: 900px; }
-    .ios-hero-content { max-width: 800px; }
-    .ios-bottom-cta { max-width: 900px; }
-    
-    .ios-features-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 2rem;
-    }
-    
-    .ios-step-card, .ios-feature-card {
-        padding: 2.5rem 1.75rem;
-    }
-}
+@keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+.animate-bounce-slow { animation: bounce-slow 3s ease-in-out infinite; }
 </style>
 
-<!-- ==================== SCROLL ANIMATIONS ==================== -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const delay = entry.target.style.animationDelay || '0s';
-                entry.target.style.animationDelay = delay;
-                entry.target.classList.add('ios-visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, {
-        threshold: 0.1,
-        rootMargin: '0px 0px -40px 0px'
-    });
+// ============== CONTADOR ANIMADO AL ENTRAR EN VIEWPORT ==============
+(function () {
+    const counters = document.querySelectorAll('.stat-counter');
+    if (!counters.length) return;
 
-    document.querySelectorAll('.ios-animate').forEach(el => observer.observe(el));
-});
+    function animateCounter(el) {
+        if (el.dataset.done === '1') return;
+        el.dataset.done = '1';
+
+        const target = parseInt(el.dataset.count || '0', 10);
+        const duration = 1800; // ms
+        const startTime = performance.now();
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.floor(eased * target);
+            el.textContent = current.toLocaleString('es-EC');
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                el.textContent = target.toLocaleString('es-EC');
+            }
+        }
+        requestAnimationFrame(step);
+    }
+
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    animateCounter(entry.target);
+                    io.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.4 });
+
+        counters.forEach(function (el) { io.observe(el); });
+    } else {
+        // Fallback: animar inmediatamente
+        counters.forEach(animateCounter);
+    }
+})();
 </script>
 {% endblock %}

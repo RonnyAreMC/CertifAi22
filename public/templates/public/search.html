@@ -2,166 +2,150 @@
 {% load static %}
 
 {% block content %}
-    <!-- iOS Style Back Button -->
-    <div class="mb-6 flex justify-start">
-        <a href="{% url 'public:home' %}{% if query %}?q={{ query }}{% endif %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
-            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
-        </a>
+<div class="relative min-h-[80vh] py-10 md:py-14">
+
+    <!-- Orbes flotantes -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+        <div class="absolute top-[5%] left-[5%] w-[400px] h-[400px] rounded-full bg-[#162054]/5 dark:bg-[#162054]/40 blur-[120px]"></div>
+        <div class="absolute bottom-[10%] right-[5%] w-[450px] h-[450px] rounded-full bg-[#F58830]/10 dark:bg-[#F58830]/15 blur-[140px]"></div>
     </div>
 
-    <!-- Greeting and Stats -->
-    <div class="bg-white dark:bg-[#162054] rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-blue-900/30 mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div class="flex items-center gap-4">
-            <div class="w-24 h-24 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center overflow-hidden flex-shrink-0">
-                <img src="{% static 'searchq.png' %}" alt="Search Icon" class="w-full h-full object-cover animate-gentle-bounce">
-            </div>
-            <div>
-                {% if nombre_estudiante %}
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
-                    Hola, <span class="text-unemi-orange">{{ nombre_estudiante }}</span>
-                </h2>
-                <p class="text-gray-600 dark:text-gray-300">
-                    Hemos encontrado <strong class="text-unemi-blue dark:text-blue-300">{{ total_certificados }}</strong> certificado(s) asociados a tu búsqueda.
-                </p>
-                {% else %}
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
-                    Resultados de Búsqueda
-                </h2>
-                <p class="text-gray-600 dark:text-gray-300">
-                    Mostrando resultados para: <strong>{{ query }}</strong>
-                </p>
-                {% endif %}
-            </div>
-        </div>
+    <div class="container mx-auto px-4">
 
-        <div class="flex gap-3 w-full md:w-auto">
-            {% if total_certificados > 1 %}
-            <a href="{% url 'public:download_zip' %}?q={{ query|urlencode }}" target="_blank"
-               class="flex-1 md:flex-none bg-unemi-blue hover:bg-blue-900 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 group">
-                <i class="fa-solid fa-file-zipper group-hover:scale-110 transition-transform"></i>
-                Descargar Todo (ZIP)
+        <!-- Back -->
+        <div class="mb-8 flex justify-start">
+            <a href="{% url 'public:home' %}{% if query %}?q={{ query }}{% endif %}" class="w-11 h-11 rounded-full bg-white dark:bg-[#162054] flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-110 hover:border-[#F58830] transition-all group">
+                <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
             </a>
-            {% endif %}
         </div>
-    </div>
 
-    <!-- Results Grid -->
-    {% if certificados %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for cert in certificados %}
-        <div class="cert-card bg-white dark:bg-[#162054] rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border-t-4 overflow-hidden flex flex-col h-full group hover:-translate-y-1" 
-             data-faculty="{{ cert.lote.facultad|lower }}">
-            <div class="p-5 border-b border-gray-100 dark:border-blue-900/30 bg-gray-50 dark:bg-[#0F163A]/50 flex justify-between items-start">
-                <div class="flex-1">
-                    <span class="faculty-badge text-xs font-bold px-2.5 py-0.5 rounded border mb-2 inline-block">
-                        {{ cert.lote.get_facultad_display|default:"General" }}
-                    </span>
-                    <h3 class="font-bold text-gray-800 dark:text-white text-lg leading-tight line-clamp-2" title="{{ cert.curso }}">
-                        {{ cert.curso }}
-                    </h3>
-                </div>
-            </div>
-            
-            <div class="p-5 flex-grow space-y-3">
-                <div class="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                    <i class="fa-solid fa-user w-5 text-center text-unemi-orange mr-2"></i>
-                    <span class="font-medium truncate">{{ cert.nombres }} {{ cert.apellidos }}</span>
-                </div>
-                <div class="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                    <i class="fa-regular fa-calendar w-5 text-center text-unemi-orange mr-2"></i>
-                    <span>{{ cert.fecha_curso|default:cert.created_at|date:"d M, Y" }}</span>
-                </div>
-                <div class="flex items-center text-sm text-gray-600 dark:text-gray-300">
-                    <i class="fa-solid fa-hashtag w-5 text-center text-unemi-orange mr-2"></i>
-                    <span class="font-mono text-xs">{{ cert.hash_verificacion|slice:":8" }}...</span>
-                </div>
+        <!-- Header de resultados -->
+        <div class="mb-10">
+            <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-3">
+                <span class="w-12 h-[2px] bg-[#F58830]"></span>
+                Resultados de búsqueda
             </div>
 
-            <div class="p-4 bg-gray-50 dark:bg-[#0F163A]/50 border-t border-gray-100 dark:border-blue-900/30 flex gap-2">
-                <a href="{% url 'public:download_pdf' cert.hash_verificacion %}" target="_blank"
-                    class="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white text-sm font-bold py-2 px-3 rounded-lg text-center transition-colors shadow-sm flex items-center justify-center">
-                    <i class="fa-solid fa-download mr-1"></i>PDF
+            {% if nombre_estudiante %}
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#162054] dark:text-white leading-[0.95] mb-3">
+                Hola,<br>
+                <span class="text-[#F58830]">{{ nombre_estudiante }}</span>
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl">
+                Encontramos
+                <span class="inline-flex items-center justify-center min-w-[2rem] h-7 px-2 rounded-lg bg-[#F58830]/15 text-[#F58830] font-extrabold mx-1">{{ total_certificados }}</span>
+                certificado{{ total_certificados|pluralize:"s" }} asociado{{ total_certificados|pluralize:"s" }} a tu búsqueda.
+            </p>
+            {% else %}
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#162054] dark:text-white leading-[0.95] mb-3">
+                Sin resultados<br>
+                <span class="text-[#F58830]">para "{{ query }}"</span>
+            </h1>
+            {% endif %}
+
+            {% if total_certificados > 1 %}
+            <div class="mt-6">
+                <a href="{% url 'public:download_zip' %}?q={{ query|urlencode }}" target="_blank"
+                   class="inline-flex items-center gap-2 bg-[#162054] hover:bg-[#0d1740] dark:bg-[#F58830] dark:hover:bg-[#e07820] text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all uppercase text-xs tracking-wider">
+                    <i class="fa-solid fa-file-zipper"></i>
+                    Descargar todo (ZIP)
                 </a>
             </div>
+            {% endif %}
         </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <!-- No Results State -->
-    <div class="max-w-2xl mx-auto text-center py-12">
-        <div class="bg-white dark:bg-[#162054] p-10 rounded-2xl shadow-lg border-2 border-dashed border-gray-200 dark:border-blue-900/50 transition-colors duration-300">
-            <div class="w-24 h-24 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fa-solid fa-magnifying-glass text-4xl text-unemi-blue dark:text-blue-400 opacity-50"></i>
+
+        <!-- Results Grid -->
+        {% if certificados %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for cert in certificados %}
+            <div class="cert-card group bg-white dark:bg-[#162054] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-[#F58830]"
+                 data-faculty="{{ cert.lote.facultad|lower }}">
+
+                <!-- Top accent bar -->
+                <div class="cert-accent h-1.5 w-full bg-[#F58830]"></div>
+
+                <div class="p-5 flex-1 flex flex-col">
+                    <div class="flex items-start justify-between gap-3 mb-4">
+                        <span class="faculty-badge text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
+                            {{ cert.lote.get_facultad_display|default:"General" }}
+                        </span>
+                        <span class="text-[10px] text-gray-400 font-mono">#{{ cert.hash_verificacion|slice:":6" }}</span>
+                    </div>
+
+                    <h3 class="font-extrabold text-gray-900 dark:text-white text-base leading-snug line-clamp-2 mb-4" title="{{ cert.curso }}">
+                        {{ cert.curso }}
+                    </h3>
+
+                    <div class="space-y-2 mb-5 flex-1">
+                        <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                            <i class="fa-solid fa-user w-4 text-center text-[#F58830] mr-2"></i>
+                            <span class="font-medium truncate">{{ cert.nombres }} {{ cert.apellidos }}</span>
+                        </div>
+                        <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                            <i class="fa-regular fa-calendar w-4 text-center text-[#F58830] mr-2"></i>
+                            <span>{{ cert.fecha_curso|default:cert.created_at|date:"d M, Y" }}</span>
+                        </div>
+                        {% if cert.horas %}
+                        <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                            <i class="fa-regular fa-clock w-4 text-center text-[#F58830] mr-2"></i>
+                            <span>{{ cert.horas }} horas académicas</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'public:download_pdf' cert.hash_verificacion %}" target="_blank"
+                        class="w-full bg-[#162054] hover:bg-[#0d1740] dark:bg-[#F58830] dark:hover:bg-[#e07820] text-white text-xs font-bold py-3 px-4 rounded-xl text-center transition-colors flex items-center justify-center gap-2 uppercase tracking-wider shadow-md">
+                        <i class="fa-solid fa-download"></i>
+                        Descargar PDF
+                    </a>
+                </div>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">No encontramos certificados</h3>
-            <p class="text-gray-500 dark:text-gray-400 mb-8">
-                No hay registros asociados a "<strong>{{ query }}</strong>". Verifique que la cédula o correo sean correctos.
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Empty state -->
+        <div class="max-w-xl mx-auto text-center py-16">
+            <div class="w-24 h-24 mx-auto rounded-3xl bg-[#F58830]/10 dark:bg-[#F58830]/20 flex items-center justify-center mb-6">
+                <i class="fa-solid fa-magnifying-glass text-4xl text-[#F58830]"></i>
+            </div>
+            <h3 class="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">No encontramos nada</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
+                No hay registros asociados a <strong class="text-[#F58830]">"{{ query }}"</strong>. Verifica que la cédula o correo sean correctos.
             </p>
-            <a href="{% url 'public:home' %}" onclick="showLoader()"
-                class="inline-flex items-center px-8 py-3 text-base font-medium text-white bg-unemi-blue dark:bg-blue-700 rounded-full hover:bg-blue-900 dark:hover:bg-blue-600 transition-colors shadow-lg shadow-blue-900/20">
-                <i class="fa-solid fa-rotate-left mr-2"></i>Intentar otra búsqueda
+            <a href="{% url 'public:home' %}" onclick="showLoader && showLoader()"
+                class="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#162054] dark:bg-[#F58830] hover:opacity-90 rounded-xl transition-all shadow-lg uppercase tracking-wider">
+                <i class="fa-solid fa-rotate-left"></i>
+                Intentar otra búsqueda
             </a>
         </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 <script>
 const facultyColors = {
-    'faci': { border: '#0071CE', bg: 'rgba(0, 113, 206, 0.1)', bgDark: 'rgba(0, 113, 206, 0.2)', text: '#0071CE', textDark: '#60A5FA' },
-    'facs': { border: '#10B981', bg: 'rgba(16, 185, 129, 0.1)', bgDark: 'rgba(16, 185, 129, 0.2)', text: '#10B981', textDark: '#34D399' },
-    'face': { border: '#EC4899', bg: 'rgba(236, 72, 153, 0.1)', bgDark: 'rgba(236, 72, 153, 0.2)', text: '#EC4899', textDark: '#F472B6' },
-    'facsecyd': { border: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)', bgDark: 'rgba(139, 92, 246, 0.2)', text: '#8B5CF6', textDark: '#A78BFA' },
-    'posgrado': { border: '#FF9100', bg: 'rgba(255, 145, 0, 0.1)', bgDark: 'rgba(255, 145, 0, 0.2)', text: '#FF9100', textDark: '#FFAB40' }
+    'faci':     { bar: '#0071CE', bg: 'rgba(0, 113, 206, 0.12)',  text: '#0071CE' },
+    'facs':     { bar: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981' },
+    'face':     { bar: '#EC4899', bg: 'rgba(236, 72, 153, 0.12)', text: '#EC4899' },
+    'facsecyd': { bar: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)', text: '#8B5CF6' },
+    'posgrado': { bar: '#FF9100', bg: 'rgba(255, 145, 0, 0.12)',  text: '#FF9100' }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    const isDark = document.documentElement.classList.contains('dark');
-    
     document.querySelectorAll('.cert-card').forEach(card => {
         const faculty = card.getAttribute('data-faculty');
         const colors = facultyColors[faculty];
         if (colors) {
-            card.style.borderTopColor = colors.border;
+            const accent = card.querySelector('.cert-accent');
+            if (accent) accent.style.background = colors.bar;
             const badge = card.querySelector('.faculty-badge');
             if (badge) {
-                badge.style.backgroundColor = isDark ? colors.bgDark : colors.bg;
-                badge.style.color = isDark ? colors.textDark : colors.text;
-                badge.style.borderColor = colors.border;
+                badge.style.background = colors.bg;
+                badge.style.color = colors.text;
             }
         }
     });
-    
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.attributeName === 'class') {
-                const isDark = document.documentElement.classList.contains('dark');
-                document.querySelectorAll('.cert-card').forEach(card => {
-                    const faculty = card.getAttribute('data-faculty');
-                    const colors = facultyColors[faculty];
-                    if (colors) {
-                        const badge = card.querySelector('.faculty-badge');
-                        if (badge) {
-                            badge.style.backgroundColor = isDark ? colors.bgDark : colors.bg;
-                            badge.style.color = isDark ? colors.textDark : colors.text;
-                        }
-                    }
-                });
-            }
-        });
-    });
-    
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 });
 </script>
-
-<style>
-@keyframes gentle-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-}
-.animate-gentle-bounce {
-    animation: gentle-bounce 3s infinite ease-in-out;
-}
-</style>
 {% endblock %}
