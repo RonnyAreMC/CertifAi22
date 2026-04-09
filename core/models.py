@@ -53,6 +53,60 @@ class FirmaInstitucional(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.cargo})"
 
+class DisenoGlobal(models.Model):
+    """
+    Configuración de diseño GLOBAL para todos los certificados.
+    Es un singleton: siempre existe una sola fila (id=1).
+    Solo el superadmin puede modificarlo.
+    """
+    PLANTILLAS = [
+        ('clasico', 'Clásico (Elegante)'),
+        ('moderno', 'Moderno (Barra Lateral)'),
+        ('geometrico', 'Geométrico (Formas)'),
+    ]
+    plantilla = models.CharField(max_length=20, choices=PLANTILLAS, default='clasico')
+    color_primario = models.CharField(max_length=7, default='#162054')
+    color_secundario = models.CharField(max_length=7, default='#D4AF37')
+    color_terciario = models.CharField(max_length=7, default='#F3F4F6')
+    color_texto = models.CharField(max_length=7, default='#333333')
+
+    cuerpo_certificado = models.TextField(
+        default="Por haber completado satisfactoriamente el curso de capacitación continua, demostrando compromiso y excelencia académica. Por su participación en el seminario '{curso}', contribuyendo de manera activa y profesional al desarrollo de nuevas competencias.",
+    )
+
+    firma_inst_1 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='diseno_firma1')
+    firma_inst_2 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='diseno_firma2')
+    firma_inst_3 = models.ForeignKey(FirmaInstitucional, on_delete=models.SET_NULL, null=True, blank=True, related_name='diseno_firma3')
+
+    # Firma personalizada (opcional)
+    nombre_firma_4 = models.CharField(max_length=100, blank=True, default='')
+    cargo_firma_4 = models.CharField(max_length=100, blank=True, default='')
+    imagen_firma_4 = models.TextField(blank=True, default='')
+
+    logo_header_1 = models.ImageField(upload_to='logos/', null=True, blank=True)
+    logo_header_2 = models.ImageField(upload_to='logos/', null=True, blank=True)
+    logo_header_3 = models.ImageField(upload_to='logos/', null=True, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Diseño Global'
+        verbose_name_plural = 'Diseño Global'
+
+    def __str__(self):
+        return f"Diseño Global ({self.get_plantilla_display()})"
+
+    def save(self, *args, **kwargs):
+        # Garantizar singleton
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class LoteCertificados(models.Model):
     nombre_lote = models.CharField(max_length=200)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -61,7 +115,15 @@ class LoteCertificados(models.Model):
     activo = models.BooleanField(default=True)
     
     facultad = models.CharField(max_length=20, choices=FACULTADES_CHOICES, default='FACI', db_index=True)
-    
+
+    # Si está en False (default) el lote usa el Diseño Global.
+    # Si el admin lo activa, el lote usa sus propios valores de los campos siguientes.
+    personalizar_diseno = models.BooleanField(
+        default=False,
+        verbose_name='Personalizar diseño para este lote',
+        help_text='Si está activo, este lote usará su propio diseño en lugar del Diseño Global.'
+    )
+
     # Customization Fields
     PLANTILLAS = [
         ('clasico', 'Clásico (Elegante)'),

@@ -23,7 +23,24 @@
 
             <form method="post" enctype="multipart/form-data" class="space-y-10" id="configForm">
                 {% csrf_token %}
-                
+
+                <!-- Toggle: usar diseño global o personalizar -->
+                <div class="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-900/10 p-5 flex items-start gap-4">
+                    <label class="relative inline-flex items-center cursor-pointer mt-0.5">
+                        <input type="checkbox" name="personalizar_diseno" id="personalizar_diseno"
+                               class="sr-only peer" {% if lote.personalizar_diseno %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:ring-2 peer-focus:ring-unemi-blue rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-unemi-orange"></div>
+                    </label>
+                    <div class="flex-1">
+                        <label for="personalizar_diseno" class="block text-sm font-bold text-gray-800 dark:text-white cursor-pointer">
+                            Personalizar diseño para este lote
+                        </label>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Por defecto, este lote usa el <strong>Diseño Global</strong>. Activa esta opción solo si quieres que este lote use colores, plantilla o firmas distintas a las del resto.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Template Selector & Colors -->
                 <div class="space-y-6">
                     <label class="block text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-blue-300 flex items-center gap-2 border-b border-gray-100 dark:border-blue-900/30 pb-2">

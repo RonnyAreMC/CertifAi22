@@ -21,19 +21,21 @@
         <div class="flex gap-3">
              <!-- Delete Button -->
              <!-- Add Student Button -->
-             <button onclick="document.getElementById('addStudentModal').classList.remove('hidden')" 
+             <button onclick="document.getElementById('addStudentModal').classList.remove('hidden')"
                      class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white bg-unemi-orange border-2 border-unemi-orange rounded-xl hover:bg-orange-600 hover:border-orange-600 transition-all duration-200 shadow-sm hover:shadow-md group">
                 <i class="fa-solid fa-user-plus mr-2 group-hover:scale-110 transition-transform"></i>
                 Agregar Estudiante
              </button>
-            
-             <a href="{% url 'panel:batch_configure' lote.id %}" 
+
+             {% if user.rol == 'admin' or user.rol == 'superadmin' %}
+             <a href="{% url 'panel:batch_configure' lote.id %}"
                class="inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold text-unemi-blue bg-white border-2 border-unemi-blue/20 rounded-xl hover:bg-blue-50 hover:border-unemi-blue transition-all duration-200 shadow-sm hover:shadow-md group">
                 <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mr-3 group-hover:scale-110 transition-transform">
                     <i class="fa-solid fa-paintbrush text-unemi-blue"></i>
                 </span>
                 Configurar Diseño
             </a>
+            {% endif %}
         </div>
     </div>
 

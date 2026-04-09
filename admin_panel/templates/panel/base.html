@@ -1,9 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MUC Academy Admin - Gestión de Certificados</title>
+    <link rel="icon" type="image/png" href="{% static 'tiger_chase_loader.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'tiger_chase_loader.png' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -170,6 +173,9 @@
                                 <a href="{% url 'panel:firma_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
                                     <i class="fa-solid fa-signature mr-2 text-xs opacity-70"></i> Firmas Inst.
                                 </a>
+                                <a href="{% url 'panel:design_global' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
+                                    <i class="fa-solid fa-palette mr-2 text-xs opacity-70"></i> Diseño Global
+                                </a>
                                 <a href="{% url 'panel:usuarios_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
                                     <i class="fa-solid fa-users-cog mr-2 text-xs opacity-70"></i> Usuarios
                                 </a>
@@ -195,7 +201,7 @@
                     <div class="flex items-center gap-3 pl-4 border-l border-white/10">
                         <div class="hidden md:block text-right">
                             <p class="text-sm font-bold text-white leading-tight">{{ user.first_name }}</p>
-                            <p class="text-xs text-blue-200">Administrador</p>
+                            <p class="text-xs text-blue-200">{% if user.rol == 'superadmin' %}Administrador{% else %}Coordinador{% endif %}</p>
                         </div>
                         <div class="h-10 w-10 rounded-full bg-unemi-orange border-2 border-white/20 flex items-center justify-center text-white shadow-lg">
                             <span class="font-bold text-lg">{{ user.username|first|upper }}</span>
@@ -258,6 +264,9 @@
                  </a>
                  <a href="{% url 'panel:firma_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
                      <i class="fa-solid fa-signature mr-2 text-sm opacity-70"></i> Firmas Institucionales
+                 </a>
+                 <a href="{% url 'panel:design_global' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
+                     <i class="fa-solid fa-palette mr-2 text-sm opacity-70"></i> Diseño Global
                  </a>
                  <a href="{% url 'panel:usuarios_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
                      <i class="fa-solid fa-users-cog mr-2 text-sm opacity-70"></i> Usuarios

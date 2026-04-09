@@ -675,11 +675,60 @@ def draw_classic_wow(c, certificado, width, height, pri, sec, ter, txt):
     draw_signatures(c, certificado, width, 35*mm + 10*mm)
 
 
+def _apply_diseno_global(lote):
+    """
+    Sobrescribe los campos de diseño del lote (en memoria) con los del
+    DisenoGlobal singleton, para que toda la generación de PDF use el
+    diseño global sin tener que tocar cada función.
+
+    Si el lote tiene `personalizar_diseno=True`, se usa el diseño propio del lote.
+    """
+    if getattr(lote, 'personalizar_diseno', False):
+        return lote
+
+    try:
+        from core.models import DisenoGlobal
+        diseno = DisenoGlobal.get_solo()
+    except Exception:
+        return lote
+
+    lote.plantilla = diseno.plantilla
+    lote.color_primario = diseno.color_primario
+    lote.color_secundario = diseno.color_secundario
+    lote.color_terciario = diseno.color_terciario
+    lote.color_texto = diseno.color_texto
+    lote.cuerpo_certificado = diseno.cuerpo_certificado
+
+    lote.firma_inst_1 = diseno.firma_inst_1
+    lote.firma_inst_2 = diseno.firma_inst_2
+    lote.firma_inst_3 = diseno.firma_inst_3
+    # Limpiar firmas custom (1-3) — el diseño global solo usa firmas institucionales 1-3
+    for i in (1, 2, 3):
+        setattr(lote, f'nombre_firma_{i}', '')
+        setattr(lote, f'cargo_firma_{i}', '')
+        setattr(lote, f'imagen_firma_{i}', '')
+
+    # Firma 4 = la personalizada del diseño global
+    lote.firma_inst_4 = None
+    lote.nombre_firma_4 = diseno.nombre_firma_4 or ''
+    lote.cargo_firma_4 = diseno.cargo_firma_4 or ''
+    lote.imagen_firma_4 = diseno.imagen_firma_4 or ''
+
+    lote.logo_header_1 = diseno.logo_header_1
+    lote.logo_header_2 = diseno.logo_header_2
+    lote.logo_header_3 = diseno.logo_header_3
+
+    return lote
+
+
 def generate_certificate_pdf(certificado):
+    # Aplicar diseño global (sobrescribe los campos del lote en memoria)
+    _apply_diseno_global(certificado.lote)
+
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=landscape(A4))
     width, height = landscape(A4)
-    
+
     plantilla = certificado.lote.plantilla
     
     # Default Colors (Classic Blue/Gold) - STRICT FOR CLASSIC

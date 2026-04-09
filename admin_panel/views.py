@@ -79,6 +79,11 @@ def _is_admin(user):
     return user.is_authenticated and user.rol in ['admin', 'superadmin']
 
 
+def _is_superadmin(user):
+    """Solo superadmin (para configuración global)."""
+    return user.is_authenticated and user.rol == 'superadmin'
+
+
 def _log_audit(user, action, detail):
     """Create an audit log entry."""
     if user:  # Solo crear log si el usuario no es None
@@ -253,22 +258,27 @@ def batch_detail(request, id):
 @login_required
 @user_passes_test(_is_admin)
 def configure_batch(request, id):
-    """Configure batch template, colors, signatures, and logos."""
+    """
+    Configurar diseño específico de un lote.
+    Por defecto un lote usa el Diseño Global; aquí el admin puede activar
+    'personalizar_diseno' y editar los campos solo para este lote.
+    """
     lote = get_object_or_404(LoteCertificados, id=id)
 
     if request.method == 'POST':
-        lote.cuerpo_certificado = request.POST.get('cuerpo_certificado')
+        lote.personalizar_diseno = request.POST.get('personalizar_diseno') == 'on'
+        lote.cuerpo_certificado = request.POST.get('cuerpo_certificado') or lote.cuerpo_certificado
 
-        # Template & Colors
         plantilla = request.POST.get('plantilla')
         if plantilla:
             lote.plantilla = plantilla
+
         for color_field in ('color_primario', 'color_secundario', 'color_terciario', 'color_texto'):
             val = request.POST.get(color_field)
             if val:
                 setattr(lote, color_field, val)
 
-        # Firmas institucionales (1, 2 y 3)
+        # Firmas institucionales (1, 2, 3)
         for i in range(1, 4):
             firma_id = request.POST.get(f'firma_inst_{i}')
             if firma_id:
@@ -276,7 +286,7 @@ def configure_batch(request, id):
             else:
                 setattr(lote, f'firma_inst_{i}', None)
 
-        # Firma personalizada opcional (4)
+        # Firma personalizada (4)
         lote.firma_inst_4 = None
         nombre = request.POST.get('nombre_firma_4')
         cargo = request.POST.get('cargo_firma_4')
@@ -289,7 +299,6 @@ def configure_batch(request, id):
             encoded = base64.b64encode(file_obj.read()).decode('utf-8')
             lote.imagen_firma_4 = encoded
 
-        # Template & Colors
         if 'logo_header_1' in request.FILES:
             lote.logo_header_1 = request.FILES['logo_header_1']
         if 'logo_header_2' in request.FILES:
@@ -298,11 +307,113 @@ def configure_batch(request, id):
             lote.logo_header_3 = request.FILES['logo_header_3']
 
         lote.save()
-        messages.success(request, 'Diseño guardado correctamente.')
+        if lote.personalizar_diseno:
+            messages.success(request, 'Diseño personalizado guardado para este lote.')
+        else:
+            messages.success(request, 'Lote actualizado. Está usando el Diseño Global.')
         return redirect('panel:batch_configure', id=lote.id)
 
     firmas_institucionales = FirmaInstitucional.objects.filter(activa=True).order_by('nombre')
-    return render(request, 'panel/batch/config.html', {'lote': lote, 'firmas_institucionales': firmas_institucionales})
+    return render(request, 'panel/batch/config.html', {
+        'lote': lote,
+        'firmas_institucionales': firmas_institucionales,
+    })
+
+
+@login_required
+@user_passes_test(_is_superadmin)
+def design_global(request):
+    """
+    Configuración GLOBAL del diseño de certificados.
+    Solo el superadmin puede modificarla. Aplica a todos los lotes.
+    """
+    from core.models import DisenoGlobal
+    diseno = DisenoGlobal.get_solo()
+
+    if request.method == 'POST':
+        cuerpo = request.POST.get('cuerpo_certificado')
+        if cuerpo is not None:
+            diseno.cuerpo_certificado = cuerpo
+
+        plantilla = request.POST.get('plantilla')
+        if plantilla:
+            diseno.plantilla = plantilla
+
+        for color_field in ('color_primario', 'color_secundario', 'color_terciario', 'color_texto'):
+            val = request.POST.get(color_field)
+            if val:
+                setattr(diseno, color_field, val)
+
+        # Firmas institucionales 1, 2, 3
+        for i in range(1, 4):
+            firma_id = request.POST.get(f'firma_inst_{i}')
+            if firma_id:
+                setattr(diseno, f'firma_inst_{i}_id', int(firma_id))
+            else:
+                setattr(diseno, f'firma_inst_{i}', None)
+
+        # Firma personalizada (4)
+        nombre = request.POST.get('nombre_firma_4')
+        cargo = request.POST.get('cargo_firma_4')
+        if nombre is not None:
+            diseno.nombre_firma_4 = nombre
+        if cargo is not None:
+            diseno.cargo_firma_4 = cargo
+        if 'imagen_firma_4' in request.FILES:
+            file_obj = request.FILES['imagen_firma_4']
+            encoded = base64.b64encode(file_obj.read()).decode('utf-8')
+            diseno.imagen_firma_4 = encoded
+
+        if 'logo_header_1' in request.FILES:
+            diseno.logo_header_1 = request.FILES['logo_header_1']
+        if 'logo_header_2' in request.FILES:
+            diseno.logo_header_2 = request.FILES['logo_header_2']
+        if 'logo_header_3' in request.FILES:
+            diseno.logo_header_3 = request.FILES['logo_header_3']
+
+        diseno.save()
+        _log_audit(request.user, 'EDITAR_DISENO_GLOBAL', 'Diseño global actualizado')
+        messages.success(request, 'Diseño global guardado. Aplica a todos los certificados.')
+        return redirect('panel:design_global')
+
+    firmas_institucionales = FirmaInstitucional.objects.filter(activa=True).order_by('nombre')
+    return render(request, 'panel/design/config.html', {
+        'diseno': diseno,
+        'firmas_institucionales': firmas_institucionales,
+    })
+
+
+@login_required
+@user_passes_test(_is_superadmin)
+@xframe_options_exempt
+def design_global_preview(request):
+    """Preview del diseño global con datos dummy."""
+    # Buscar cualquier lote para asociar el dummy_cert (necesario por FK)
+    lote = LoteCertificados.objects.first()
+    if not lote:
+        # Crear un lote temporal en memoria (no se persiste)
+        return HttpResponse("Crea primero un lote para previsualizar el diseño.", status=400)
+
+    dummy_cert = Certificado(
+        lote=lote,
+        cedula="0999999999",
+        nombres="ESTUDIANTE",
+        apellidos="DE PRUEBA",
+        email="prueba@unemi.edu.ec",
+        curso="CURSO DE DEMOSTRACIÓN",
+        fecha_curso=date.today(),
+        horas=40,
+        hash_verificacion=uuid.uuid4(),
+    )
+    dummy_cert.id = random.randint(10000, 99999)
+
+    try:
+        pdf_buffer = generate_certificate_pdf(dummy_cert)
+        response = FileResponse(pdf_buffer, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="DesignPreview.pdf"'
+        return response
+    except Exception as e:
+        return HttpResponse(f"Error generando preview: {str(e)}", status=500)
 
 
 @login_required

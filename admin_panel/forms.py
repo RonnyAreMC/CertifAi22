@@ -27,7 +27,7 @@ class SolicitudAccesoForm(forms.ModelForm):
     
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+            'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
             'placeholder': '••••••••',
             'required': True,
             'minlength': '6',
@@ -38,7 +38,7 @@ class SolicitudAccesoForm(forms.ModelForm):
     
     password_confirm = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+            'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
             'placeholder': '••••••••',
             'required': True,
         }),
@@ -50,22 +50,22 @@ class SolicitudAccesoForm(forms.ModelForm):
         fields = ['nombres', 'apellidos', 'email', 'telefono', 'facultad']
         widgets = {
             'nombres': forms.TextInput(attrs={
-                'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+                'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
                 'placeholder': 'Tus nombres',
                 'required': True
             }),
             'apellidos': forms.TextInput(attrs={
-                'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+                'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
                 'placeholder': 'Tus apellidos',
                 'required': True
             }),
             'email': forms.EmailInput(attrs={
-                'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+                'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
                 'placeholder': 'correo@ejemplo.com',
                 'required': True
             }),
             'telefono': forms.TextInput(attrs={
-                'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+                'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
                 'placeholder': 'Ej: 0997541322',
                 'type': 'tel',
                 'inputmode': 'numeric',
@@ -73,7 +73,7 @@ class SolicitudAccesoForm(forms.ModelForm):
                 'maxlength': '10',
             }),
             'facultad': forms.Select(attrs={
-                'class': 'w-full bg-gray-800/50 border border-gray-600 rounded-xl px-4 py-3 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300',
+                'class': 'w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors',
                 'required': True
             }),
         }
