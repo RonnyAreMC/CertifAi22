@@ -1,7 +1,11 @@
-django
+Django>=5.0,<6.0
 pandas
 openpyxl
 python-dotenv
 pillow
 reportlab
 python-magic
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary

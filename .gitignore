@@ -1,8 +1,12 @@
 venv/
+env/
 db.sqlite3
 __pycache__/
 *.pyc
 .BS_Store
+.DS_Store
 .idea/
 .vscode/
 *.log
+.env
+staticfiles/
