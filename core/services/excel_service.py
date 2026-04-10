@@ -63,6 +63,9 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
     try:
         with transaction.atomic():
             lote = LoteCertificados.objects.select_for_update().get(id=lote_id)
+            if lote.certificados.exists():
+                return False, "Este lote ya ha sido procesado anteriormente y ya contiene certificados."
+            
             file_path = lote.archivo_excel.path
             
             # Read Excel
@@ -98,6 +101,7 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
             # Row Processing
             # ---------------------------------------------------------
             certificates_to_create = []
+            procesados_en_excel = set() # (cedula, email, curso) to prevent intra-file duplicates
             
             for index, row in df.iterrows():
                 # Extract Data using Mapping
@@ -192,6 +196,12 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
                 participante = None
                 is_generated_cedula = cedula.startswith('GEN-') or not cedula
                 real_cedula = '' if is_generated_cedula else cedula
+
+                # Check if this exact combination was already processed in this file
+                unique_key = (real_cedula, email_raw, final_curso)
+                if unique_key in procesados_en_excel:
+                    continue # Skip duplicates within the excel file
+                procesados_en_excel.add(unique_key)
 
                 if real_cedula:
                     participante = Participante.objects.filter(cedula=real_cedula).first()

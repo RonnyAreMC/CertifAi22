@@ -483,7 +483,7 @@ def search(request):
                 Q(email__iexact=query_lower) |
                 Q(hash_verificacion__iexact=query) |
                 name_filter
-            ).select_related('lote')
+            ).select_related('lote').distinct()
         )
 
         for c in certificados:
