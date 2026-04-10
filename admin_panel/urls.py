@@ -27,6 +27,7 @@ urlpatterns = [
     path('batches/<int:id>/configure/', views.configure_batch, name='batch_configure'),  # legacy → redirige a diseno
     path('diseno/', views.design_global, name='design_global'),
     path('diseno/preview/', views.design_global_preview, name='design_global_preview'),
+    path('diseno/firma-pos/', views.design_save_firma_pos, name='design_save_firma_pos'),
     path('batches/<int:id>/delete/', views.delete_batch, name='batch_delete'),
     path('batches/<int:id>/preview/', views.preview_pdf, name='batch_preview'),
     path('batches/<int:id>/process-mapping/', views.process_batch_mapping, name='batch_process_mapping'),

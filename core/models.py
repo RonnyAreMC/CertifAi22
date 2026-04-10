@@ -87,6 +87,22 @@ class DisenoGlobal(models.Model):
     logo_header_2 = models.ImageField(upload_to='logos/', null=True, blank=True)
     logo_header_3 = models.ImageField(upload_to='logos/', null=True, blank=True)
 
+    posicion_firmas = models.FloatField(
+        default=4.2,
+        verbose_name='Posición vertical de firmas (cm)',
+        help_text='Distancia desde el borde inferior en centímetros. Mayor = más arriba.'
+    )
+
+    # Per-signature adjustments (offset_y in cm, escala in %)
+    firma_1_offset_y = models.FloatField(default=0, help_text='Ajuste vertical firma 1 (cm)')
+    firma_1_escala = models.FloatField(default=100, help_text='Escala firma 1 (%)')
+    firma_2_offset_y = models.FloatField(default=0, help_text='Ajuste vertical firma 2 (cm)')
+    firma_2_escala = models.FloatField(default=100, help_text='Escala firma 2 (%)')
+    firma_3_offset_y = models.FloatField(default=0, help_text='Ajuste vertical firma 3 (cm)')
+    firma_3_escala = models.FloatField(default=100, help_text='Escala firma 3 (%)')
+    firma_4_offset_y = models.FloatField(default=0, help_text='Ajuste vertical firma 4 (cm)')
+    firma_4_escala = models.FloatField(default=100, help_text='Escala firma 4 (%)')
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -169,6 +185,12 @@ class LoteCertificados(models.Model):
     logo_header_1 = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo Cabecera 1")
     logo_header_2 = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo Cabecera 2")
     logo_header_3 = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo Cabecera 3")
+
+    posicion_firmas = models.FloatField(
+        default=4.2,
+        verbose_name='Posición vertical de firmas (cm)',
+        help_text='Distancia desde el borde inferior. Mayor = más arriba.'
+    )
 
     def __str__(self):
         return self.nombre_lote

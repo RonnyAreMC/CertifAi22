@@ -31,4 +31,7 @@ urlpatterns = [
     path('sesion/<int:id>/registro/buscar/', views.session_register_search, name='session_register_search'),
     path('sesion/<int:id>/registro/confirmar/', views.session_register_confirm, name='session_register_confirm'),
     path('sesion/<int:id>/registro/nuevo/', views.session_register_new, name='session_register_new'),
+
+    # Certificate Verification (QR Code)
+    path('verificar/<str:hash>/', views.verify_certificate, name='verify_certificate'),
 ]

@@ -8,7 +8,7 @@ from django.db.models import Sum, Count, F, Max, Q as models_Q
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta, datetime, date, time
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.views import LoginView as DjangoLoginView
 
@@ -182,9 +182,11 @@ def create_batch(request):
     if request.method == 'POST':
         form = BatchForm(request.POST, request.FILES)
         if form.is_valid():
-            lote = form.save(commit=False)
-            lote.administrador = request.user
-            lote.save()
+            from django.db import transaction
+            with transaction.atomic():
+                lote = form.save(commit=False)
+                lote.administrador = request.user
+                lote.save()
             _log_audit(request.user, 'CREAR_LOTE', f'Lote creado: {lote.nombre_lote}')
 
             # Redirect to mapping page instead of immediate processing
@@ -381,17 +383,83 @@ def design_global(request):
         if 'logo_header_3' in request.FILES:
             diseno.logo_header_3 = request.FILES['logo_header_3']
 
+        # Posición de firmas
+        posicion = request.POST.get('posicion_firmas')
+        if posicion:
+            try:
+                diseno.posicion_firmas = float(posicion)
+            except (ValueError, TypeError):
+                pass
+
         diseno.save()
         _log_audit(request.user, 'EDITAR_DISENO_GLOBAL', 'Diseño global actualizado')
         messages.success(request, 'Diseño global guardado. Aplica a todos los certificados.')
         return redirect('panel:design_global')
 
     firmas_institucionales = FirmaInstitucional.objects.filter(activa=True).order_by('nombre')
+    
+    # Build signature preview data for visual editor
+    firma_preview = []
+    for i in range(1, 4):
+        firma = getattr(diseno, f'firma_inst_{i}')
+        if firma:
+            firma_preview.append({
+                'slot': i,
+                'name': firma.nombre or '',
+                'cargo': firma.cargo or '',
+                'has_img': bool(firma.imagen),
+                'offset_y': getattr(diseno, f'firma_{i}_offset_y', 0),
+                'escala': getattr(diseno, f'firma_{i}_escala', 100),
+            })
+    # Firma 4 (custom)
+    if diseno.nombre_firma_4:
+        firma_preview.append({
+            'slot': 4,
+            'name': diseno.nombre_firma_4,
+            'cargo': diseno.cargo_firma_4 or '',
+            'has_img': bool(diseno.imagen_firma_4),
+            'offset_y': getattr(diseno, 'firma_4_offset_y', 0),
+            'escala': getattr(diseno, 'firma_4_escala', 100),
+        })
+    
+    import json as json_mod
     return render(request, 'panel/design/config.html', {
         'diseno': diseno,
         'firmas_institucionales': firmas_institucionales,
+        'firma_preview_json': json_mod.dumps(firma_preview),
     })
 
+
+@login_required
+@user_passes_test(_is_superadmin)
+@require_POST
+def design_save_firma_pos(request):
+    """AJAX: Save per-signature position/scale from the visual editor."""
+    from core.models import DisenoGlobal
+    import json as json_mod
+    
+    try:
+        data = json_mod.loads(request.body)
+    except (json_mod.JSONDecodeError, AttributeError):
+        return JsonResponse({'ok': False, 'error': 'Invalid JSON'}, status=400)
+    
+    diseno = DisenoGlobal.get_solo()
+    
+    for item in data.get('firmas', []):
+        slot = item.get('slot')
+        if slot not in (1, 2, 3, 4):
+            continue
+        offset_y = item.get('offset_y', 0)
+        escala = item.get('escala', 100)
+        setattr(diseno, f'firma_{slot}_offset_y', float(offset_y))
+        setattr(diseno, f'firma_{slot}_escala', float(escala))
+    
+    # Also save global posicion_firmas if provided
+    if 'posicion_firmas' in data:
+        diseno.posicion_firmas = float(data['posicion_firmas'])
+    
+    diseno.save()
+    return JsonResponse({'ok': True})
 
 @login_required
 @user_passes_test(_is_superadmin)
@@ -608,57 +676,65 @@ def session_generate_batch(request, id):
         return redirect('panel:session_list')
 
     if request.method == 'POST':
-        # Create batch
-        lote = LoteCertificados.objects.create(
-            nombre_lote=sesion.titulo or f'Sesión {sesion.fecha} {sesion.label}',
-            administrador=request.user,
-            facultad=request.POST.get('facultad', 'FACI'),
-        )
-        # Auto-asignar firmas institucionales por defecto
-        firmas_default = list(FirmaInstitucional.objects.filter(activa=True).order_by('orden')[:3])
-        if len(firmas_default) >= 1:
-            lote.firma_inst_1 = firmas_default[0]
-        if len(firmas_default) >= 2:
-            lote.firma_inst_2 = firmas_default[1]
-        if len(firmas_default) >= 3:
-            lote.firma_inst_3 = firmas_default[2]
+        from django.db import transaction
+        with transaction.atomic():
+            # Re-fetch with lock to prevent race condition (double-click creates 2 batches)
+            sesion = SesionAsistencia.objects.select_for_update().get(id=id)
+            if sesion.lote:
+                messages.warning(request, 'Esta sesión ya tiene un lote de certificados asociado.')
+                return redirect('panel:batch_configure', id=sesion.lote.id)
 
-        # Precargar logos de cabecera por defecto
-        import os
-        from django.conf import settings as django_settings
-        from django.core.files import File
-        default_logos = [
-            ('logo_header_1', 'muc.png'),
-            ('logo_header_2', 'logo-unemi-removebg-preview.png'),
-            ('logo_header_3', 'feue.png'),
-        ]
-        for field_name, filename in default_logos:
-            img_path = os.path.join(django_settings.BASE_DIR, 'static', 'img', filename)
-            if os.path.exists(img_path):
-                with open(img_path, 'rb') as f:
-                    getattr(lote, field_name).save(filename, File(f), save=False)
+            # Create batch
+            lote = LoteCertificados.objects.create(
+                nombre_lote=sesion.titulo or f'Sesión {sesion.fecha} {sesion.label}',
+                administrador=request.user,
+                facultad=request.POST.get('facultad', 'FACI'),
+            )
+            # Auto-asignar firmas institucionales por defecto
+            firmas_default = list(FirmaInstitucional.objects.filter(activa=True).order_by('orden')[:3])
+            if len(firmas_default) >= 1:
+                lote.firma_inst_1 = firmas_default[0]
+            if len(firmas_default) >= 2:
+                lote.firma_inst_2 = firmas_default[1]
+            if len(firmas_default) >= 3:
+                lote.firma_inst_3 = firmas_default[2]
 
-        lote.save()
+            # Precargar logos de cabecera por defecto
+            import os
+            from django.conf import settings as django_settings
+            from django.core.files import File
+            default_logos = [
+                ('logo_header_1', 'muc.png'),
+                ('logo_header_2', 'logo-unemi-removebg-preview.png'),
+                ('logo_header_3', 'feue.png'),
+            ]
+            for field_name, filename in default_logos:
+                img_path = os.path.join(django_settings.BASE_DIR, 'static', 'img', filename)
+                if os.path.exists(img_path):
+                    with open(img_path, 'rb') as f:
+                        getattr(lote, field_name).save(filename, File(f), save=False)
 
-        # Create certificates from participants
-        certs = []
-        for conf in confirmaciones:
-            p = conf.participante
-            certs.append(Certificado(
-                lote=lote,
-                participante=p,
-                cedula=p.cedula or f'GEN-{uuid.uuid4().hex[:8].upper()}',
-                nombres=p.nombres,
-                apellidos=p.apellidos,
-                email=p.email,
-                celular=p.celular,
-                curso=lote.nombre_lote.upper(),
-            ))
-        Certificado.objects.bulk_create(certs)
+            lote.save()
 
-        # Link session to batch
-        sesion.lote = lote
-        sesion.save(update_fields=['lote'])
+            # Create certificates from participants
+            certs = []
+            for conf in confirmaciones:
+                p = conf.participante
+                certs.append(Certificado(
+                    lote=lote,
+                    participante=p,
+                    cedula=p.cedula or f'GEN-{uuid.uuid4().hex[:8].upper()}',
+                    nombres=p.nombres,
+                    apellidos=p.apellidos,
+                    email=p.email,
+                    celular=p.celular,
+                    curso=lote.nombre_lote.upper(),
+                ))
+            Certificado.objects.bulk_create(certs)
+
+            # Link session to batch
+            sesion.lote = lote
+            sesion.save(update_fields=['lote'])
 
         _log_audit(request.user, 'GENERAR_LOTE_SESION',
                    f'Lote "{lote.nombre_lote}" generado desde sesión {sesion.id} con {len(certs)} certificados')

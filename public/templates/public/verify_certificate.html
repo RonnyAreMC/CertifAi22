@@ -1,0 +1,127 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-12">
+
+    {% if found %}
+    <!-- ✅ Certificate Found - Verified -->
+    <div class="bg-white dark:bg-[#1a2b4d] rounded-3xl shadow-2xl border border-gray-200 dark:border-blue-900/50 overflow-hidden animate__animated animate__fadeIn">
+        
+        <!-- Header: Green Success -->
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-center">
+            <div class="w-20 h-20 bg-white/20 rounded-full mx-auto flex items-center justify-center mb-4 backdrop-blur-sm">
+                <i class="fa-solid fa-circle-check text-white text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">Certificado Verificado</h1>
+            <p class="text-white/80 text-sm">Este certificado es auténtico y fue emitido por MUC Academy</p>
+        </div>
+
+        <!-- Certificate Details -->
+        <div class="p-8 space-y-6">
+            
+            <!-- Person -->
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-user-graduate text-blue-600 dark:text-blue-400 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Participante</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white">{{ certificado.nombres }} {{ certificado.apellidos }}</p>
+                    {% if certificado.cedula %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <i class="fa-solid fa-id-card mr-1"></i> {{ certificado.cedula }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="border-gray-200 dark:border-blue-900/30">
+
+            <!-- Course -->
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-certificate text-amber-600 dark:text-amber-400 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Seminario / Evento</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ certificado.curso }}</p>
+                    {% if certificado.horas %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <i class="fa-solid fa-clock mr-1"></i> {{ certificado.horas }} horas
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="border-gray-200 dark:border-blue-900/30">
+
+            <!-- Batch & Date -->
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-calendar-check text-purple-600 dark:text-purple-400 text-lg"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-1">Información del Lote</p>
+                    <p class="text-base font-semibold text-gray-900 dark:text-white">{{ certificado.lote.nombre_lote }}</p>
+                    {% if certificado.fecha_curso %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        <i class="fa-solid fa-calendar mr-1"></i> {{ certificado.fecha_curso|date:"d/m/Y" }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="border-gray-200 dark:border-blue-900/30">
+
+            <!-- Verification Hash -->
+            <div class="bg-gray-50 dark:bg-[#0F163A] rounded-2xl p-4 text-center">
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-bold mb-2">
+                    <i class="fa-solid fa-fingerprint mr-1"></i> ID de Verificación
+                </p>
+                <p class="font-mono text-sm text-gray-700 dark:text-gray-300 break-all">{{ certificado.hash_verificacion }}</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-gray-50 dark:bg-[#0F163A] border-t border-gray-200 dark:border-blue-900/30 p-4 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-shield-check mr-1 text-emerald-500"></i>
+                Verificado por el Sistema de Certificación de MUC Academy — Universidad Estatal de Milagro (UNEMI)
+            </p>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ❌ Certificate Not Found -->
+    <div class="bg-white dark:bg-[#1a2b4d] rounded-3xl shadow-2xl border border-gray-200 dark:border-blue-900/50 overflow-hidden animate__animated animate__fadeIn">
+        
+        <!-- Header: Red Error -->
+        <div class="bg-gradient-to-r from-red-500 to-rose-600 p-8 text-center">
+            <div class="w-20 h-20 bg-white/20 rounded-full mx-auto flex items-center justify-center mb-4 backdrop-blur-sm">
+                <i class="fa-solid fa-circle-xmark text-white text-4xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-2">Certificado No Encontrado</h1>
+            <p class="text-white/80 text-sm">No se pudo verificar la autenticidad de este certificado</p>
+        </div>
+
+        <div class="p-8 text-center">
+            <div class="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 mb-6">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-2xl mb-3"></i>
+                <p class="text-gray-700 dark:text-gray-300">
+                    El código de verificación <span class="font-mono font-bold text-red-600 dark:text-red-400">{{ hash }}</span> 
+                    no corresponde a ningún certificado registrado en nuestro sistema.
+                </p>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                Si crees que esto es un error, contacta al administrador del sistema.
+            </p>
+            <a href="{% url 'public:landing' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-unemi-blue hover:bg-unemi-dark text-white font-bold rounded-xl transition-all shadow-lg">
+                <i class="fa-solid fa-house"></i> Volver al Inicio
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

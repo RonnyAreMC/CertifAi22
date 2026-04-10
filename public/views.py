@@ -829,3 +829,14 @@ def session_register_new(request, id):
     })
 
 
+# ─── Certificate Verification (QR Page) ──────────────────────────
+
+def verify_certificate(request, hash):
+    """Public certificate verification page — linked from QR code on certificate."""
+    certificado = Certificado.objects.filter(hash_verificacion=hash).select_related('lote').first()
+    
+    return render(request, 'public/verify_certificate.html', {
+        'certificado': certificado,
+        'hash': hash,
+        'found': certificado is not None,
+    })

@@ -467,5 +467,49 @@
             closeModal(); 
         });
     </script>
+
+    <!-- Prevención global de doble-submit -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('form').forEach(form => {
+                // Skip forms that are just logout/simple actions
+                if (form.querySelector('button[type="submit"]') && !form.closest('#confirmationModal')) {
+                    form.addEventListener('submit', function(e) {
+                        // Don't double-bind
+                        if (this.dataset.submitted === 'true') {
+                            e.preventDefault();
+                            return false;
+                        }
+                        this.dataset.submitted = 'true';
+
+                        // Find the submit button and disable it with loading state
+                        const btn = this.querySelector('button[type="submit"]');
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.6';
+                            btn.style.cursor = 'wait';
+                            // Save original content and show spinner
+                            btn.dataset.originalHtml = btn.innerHTML;
+                            const originalText = btn.textContent.trim();
+                            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Procesando...';
+                        }
+
+                        // Safety: re-enable after 30 seconds in case of error
+                        setTimeout(() => {
+                            this.dataset.submitted = 'false';
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.style.opacity = '1';
+                                btn.style.cursor = '';
+                                if (btn.dataset.originalHtml) {
+                                    btn.innerHTML = btn.dataset.originalHtml;
+                                }
+                            }
+                        }, 30000);
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

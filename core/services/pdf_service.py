@@ -718,6 +718,13 @@ def _apply_diseno_global(lote):
     lote.logo_header_2 = diseno.logo_header_2
     lote.logo_header_3 = diseno.logo_header_3
 
+    lote.posicion_firmas = diseno.posicion_firmas
+
+    # Per-signature adjustments
+    for i in range(1, 5):
+        setattr(lote, f'firma_{i}_offset_y', getattr(diseno, f'firma_{i}_offset_y', 0))
+        setattr(lote, f'firma_{i}_escala', getattr(diseno, f'firma_{i}_escala', 100))
+
     return lote
 
 
@@ -745,7 +752,6 @@ def generate_certificate_pdf(certificado):
         try: 
             if certificado.lote.color_primario: pri = hex2rgb(certificado.lote.color_primario)
             if certificado.lote.color_secundario: sec = hex2rgb(certificado.lote.color_secundario)
-            # if certificado.lote.color_terciario: ter = hex2rgb(certificado.lote.color_terciario) # Optional
             if certificado.lote.color_texto: txt = hex2rgb(certificado.lote.color_texto)
         except: pass
     
@@ -754,14 +760,19 @@ def generate_certificate_pdf(certificado):
         draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt)
     elif plantilla == 'geometrico':
         draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt)
+        
+        # --- SECOND PAGE: QR Verification ---
+        c.showPage()
+        _draw_geometric_verification_page(c, certificado, width, height, pri, sec)
     else:
         # Default / Clasico -> Always Standard Colors (as requested)
         draw_classic_wow(c, certificado, width, height, PR_DEF, SC_DEF, TR_DEF, TX_DEF)
     
-    # Footer
-    c.setFont("Helvetica", 6); c.setFillColor(HexColor('#999999'))
-    validation_text = f"ID: {certificado.hash_verificacion} - Documento generado electrónicamente"
-    c.drawCentredString(width/2, 0.8*cm, validation_text)
+    # Footer (only on first page for geometric since we handle 2nd page separately)
+    if plantilla != 'geometrico':
+        c.setFont("Helvetica", 6); c.setFillColor(HexColor('#999999'))
+        validation_text = f"ID: {certificado.hash_verificacion} - Documento generado electrónicamente"
+        c.drawCentredString(width/2, 0.8*cm, validation_text)
     
     c.save()
     buffer.seek(0)
@@ -998,11 +1009,14 @@ def draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt):
 
 def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     """
-    Replica of 'Zuñiga' Reference:
-    - Large UNEMI Watermark
-    - Big Logos Top
-    - Script Title 'Otorga el presente Reconocimiento' (Gold)
-    - Corner Geometrics (Blue/Gold)
+    Plantilla Geométrica Premium - Diseño Profesional UNEMI
+    - Esquinas geométricas profesionales (chevron layers)
+    - Marca de agua UNEMI de fondo
+    - Tipografía refinada con GreatVibes para nombre
+    - Firmas profesionales con línea DEBAJO del texto
+    - Fecha entre logos y cuerpo del texto
+    - Curso en NEGRITA en el cuerpo
+    - Segunda página con QR de verificación
     """
     lote = certificado.lote
     register_fonts()
@@ -1016,63 +1030,52 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     
     # --- 1. WATERMARK (Background IMAGE - FULL WIDTH ZOOMED) ---
     c.saveState()
-    # Attempt to set transparency for the image
-    c.setFillAlpha(0.10) # Faded ("desenfocado")
-    c.setStrokeAlpha(0.10)
+    c.setFillAlpha(0.08)
+    c.setStrokeAlpha(0.08)
     
-    # Load Logo
     logo_watermark_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'logo-unemi-removebg-preview.png')
     
     if os.path.exists(logo_watermark_path):
-        # "Zoom como pegado desde borde a borde" 
-        # 1.5 was too much ("solo sale unem"). 
-        # Reducing to 1.18 to cut padding but keep text.
         w_img = width * 1.18 
-        h_img = w_img * 0.28 # slightly adjust aspect ratio
-        x_img = (width - w_img) / 2 # Center it so sides flow off page
-        y_img = -1.5*cm # Start lower to center vertically better
-        
+        h_img = w_img * 0.28
+        x_img = (width - w_img) / 2
+        y_img = -1.5*cm
         c.drawImage(logo_watermark_path, x_img, y_img, width=w_img, height=h_img, mask='auto', preserveAspectRatio=True, anchor='c')
     
     c.restoreState()
 
-    # --- 2. GEOMETRIC CORNERS (Professional Layered Chevrons - Compact) ---
-    # Reference Step 1047: Complex "Arrow/Chevron" layers.
-    # Scaled DOWN to avoid signature overlap.
-    
+    # --- 2. GEOMETRIC CORNERS (Professional Layered Chevrons) ---
     def draw_corner_professional(origin_x, origin_y, rotation, main_col, acc_col):
         c.saveState()
         c.translate(origin_x, origin_y)
         c.rotate(rotation)
         
-        # 1. Base Layer (Large Dark Chevron)
+        # Base Layer (Large Dark Chevron)
         c.setFillColor(main_col)
         p1 = c.beginPath()
         p1.moveTo(0, 0)
-        p1.lineTo(9.0*cm, 0)     # Reduced from 12
-        p1.lineTo(7.5*cm, 3.0*cm) # Reduced/Tightened
+        p1.lineTo(9.0*cm, 0)
+        p1.lineTo(7.5*cm, 3.0*cm)
         p1.lineTo(3.0*cm, 3.0*cm)
-        p1.lineTo(0, 9.0*cm)     # Reduced from 12
+        p1.lineTo(0, 9.0*cm)
         p1.close()
         c.drawPath(p1, fill=1, stroke=0)
         
-        # 2. Gold Accent Chevron (Nested)
+        # Gold Accent Chevron (Nested)
         c.setFillColor(acc_col)
         c.setStrokeColor(white)
-        c.setLineWidth(3) # Thinner stroke for smaller shape
+        c.setLineWidth(3)
         
         p2 = c.beginPath()
-        # Coordinates relative to rotation origin (corner)
         p2.moveTo(0, 0)
-        p2.lineTo(5.5*cm, 0) # Reduced from 7
+        p2.lineTo(5.5*cm, 0)
         p2.lineTo(0, 5.5*cm)
         p2.close()
         c.drawPath(p2, fill=1, stroke=1) 
         
-        # 3. Floating "Satellite" Chevron (The "Cut" look)
+        # Floating Satellite Chevron
         c.setFillColor(main_col)
         p3 = c.beginPath()
-        # Adjusted positions for compact layout
         p3.moveTo(6.5*cm, 0.4*cm)
         p3.lineTo(9.0*cm, 0.4*cm)
         p3.lineTo(7.5*cm, 2.6*cm)
@@ -1083,21 +1086,15 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
         c.restoreState()
 
     # Apply Professional Corners
-    # Bottom Left: Blue Base, Gold Accent
     draw_corner_professional(0, 0, 0, pri, sec)
-    
-    # Top Right: Gold Base, Blue Accent? Or Keep Symmetric Style with color swap?
-    # Reference implies symmetry in shape, possibly assymetry in color.
-    # Let's do Gold Base, Blue Accent for Top Right to maintain the accepted color scheme.
     draw_corner_professional(width, height, 180, sec, pri)
 
     # --- 3. LOGOS (Strict Order: UNEMI - MUC - FEUE) ---
-    logo_y = height - 5.2*cm
-    logo_h = 4.0*cm
-    logo_w = 6.0*cm
+    logo_y = height - 4.8*cm
+    logo_h = 3.5*cm
+    logo_w = 5.5*cm
     gap = 0.8*cm    
     
-    # Helper
     def get_l_path(f, d):
          p = f.path if (f and hasattr(f,'path')) else (f if isinstance(f, str) else None)
          if not p: p = os.path.join(settings.BASE_DIR, 'static', 'img', d)
@@ -1123,65 +1120,350 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     # --- 4. CONTENT ---
     center_x = width / 2
     
-    # Signature area reserved at bottom (fixed)
-    SIG_AREA_BOTTOM = 1.8*cm  # Bottom margin for signature text
-    SIG_LINE_Y = 4.5*cm       # Where signature lines go
-    DATE_Y = SIG_LINE_Y + 3.2*cm  # Date above signatures
-    
     # Content starts below logos
-    y_cursor = height - 7.2*cm
-    # Content must end above the date
-    content_bottom = DATE_Y + 1.0*cm
+    y_cursor = logo_y - 0.8*cm
     
-    # A. Title (Script)
+    # A. Title (Script - Gold)
     script_font_use = "Times-Italic"
     if "GreatVibes" in pdfmetrics.getRegisteredFontNames():
         script_font_use = "GreatVibes"
         
-    c.setFont(script_font_use, 48) 
-    c.setFillColor(sec) # Gold
+    c.setFont(script_font_use, 44) 
+    c.setFillColor(sec)  # Gold
     c.drawCentredString(center_x, y_cursor, "Otorga el presente Reconocimiento")
-    y_cursor -= 2.2*cm
+    y_cursor -= 1.8*cm
     
-    # B. Name (Script/GreatVibes)
-    c.setFont(script_font_use, 54)
-    c.setFillColor(HexColor('#222222'))
+    # C. "a:" small text
+    c.setFont("Times-Italic", 12)
+    c.setFillColor(HexColor('#888888'))
+    c.drawCentredString(center_x, y_cursor, "a:")
+    y_cursor -= 1.4*cm
+    
+    # D. Name (Script/GreatVibes - Large)
+    name_font_size = 50 if script_font_use == 'GreatVibes' else 36
+    c.setFont(script_font_use, name_font_size)
+    c.setFillColor(HexColor('#1a1a1a'))
     nombre = f"{certificado.nombres} {certificado.apellidos}".title()
     c.drawCentredString(center_x, y_cursor, nombre)
-    y_cursor -= 2.5*cm
+    y_cursor -= 2.0*cm
     
-    # C. Body Text (Dynamic sizing based on content length)
-    body = certificado.lote.cuerpo_certificado.replace("{curso}", certificado.curso.upper()).replace("{horas}", str(certificado.horas))
+    # E. Body Text with BOLD course name
+    body_raw = certificado.lote.cuerpo_certificado
+    curso_upper = certificado.curso.upper()
+    horas_str = str(certificado.horas)
+    
+    # Split body at {curso} to render course in bold
+    body_parts = body_raw.replace("{horas}", horas_str).split("{curso}")
+    
     from textwrap import wrap
     
-    # Calculate available space for body
-    available_body_height = y_cursor - content_bottom
+    # Calculate available space
+    sig_area_top = 5.8*cm  # Where signatures start
+    available_height = y_cursor - sig_area_top
     
-    # Try normal size first, reduce if too many lines
-    body_font_size = 16
-    line_spacing = 0.75*cm
-    wrap_width = 70
-    lines = wrap(body, width=wrap_width)
+    # Auto-size based on space
+    body_font_size = 14
+    line_spacing = 0.65*cm
+    wrap_width = 75
     
-    # If text doesn't fit, reduce size
-    needed_height = len(lines) * line_spacing
-    if needed_height > available_body_height:
-        body_font_size = 13
-        line_spacing = 0.65*cm
-        wrap_width = 85
-        lines = wrap(body, width=wrap_width)
+    # Build full body for wrapping (with marker for bold)
+    BOLD_MARKER = "<<<BOLD>>>"
+    full_body = BOLD_MARKER.join(body_parts) if len(body_parts) > 1 else body_raw.replace("{curso}", curso_upper).replace("{horas}", horas_str)
     
-    c.setFont("Helvetica", body_font_size) 
+    if BOLD_MARKER in full_body:
+        # Render with mixed bold - line by line approach
+        # First, create the plain text for wrapping
+        plain_body = full_body.replace(BOLD_MARKER, curso_upper)
+        lines = wrap(plain_body, width=wrap_width)
+        
+        # Check if fits
+        needed_height = len(lines) * line_spacing
+        if needed_height > available_height:
+            body_font_size = 12
+            line_spacing = 0.55*cm
+            wrap_width = 90
+            lines = wrap(plain_body, width=wrap_width)
+        
+        # Render each line with bold detection for the course name
+        for line in lines:
+            if curso_upper in line:
+                # Split this line at the course name and draw segments
+                parts = line.split(curso_upper)
+                # Calculate total line width to center it
+                regular_widths = sum(c.stringWidth(p, "Times-Roman", body_font_size) for p in parts)
+                bold_width = c.stringWidth(curso_upper, "Times-Bold", body_font_size)
+                total_line_width = regular_widths + bold_width
+                
+                draw_x = center_x - total_line_width / 2
+                
+                for idx, part in enumerate(parts):
+                    if part:
+                        c.setFont("Times-Roman", body_font_size)
+                        c.setFillColor(HexColor('#333333'))
+                        c.drawString(draw_x, y_cursor, part)
+                        draw_x += c.stringWidth(part, "Times-Roman", body_font_size)
+                    
+                    if idx < len(parts) - 1:
+                        c.setFont("Times-Bold", body_font_size)
+                        c.setFillColor(HexColor('#111111'))
+                        c.drawString(draw_x, y_cursor, curso_upper)
+                        draw_x += c.stringWidth(curso_upper, "Times-Bold", body_font_size)
+            else:
+                c.setFont("Times-Roman", body_font_size)
+                c.setFillColor(HexColor('#333333'))
+                c.drawCentredString(center_x, y_cursor, line)
+            
+            y_cursor -= line_spacing
+    else:
+        # No marker - simple render
+        body_text = full_body
+        lines = wrap(body_text, width=wrap_width)
+        
+        needed_height = len(lines) * line_spacing
+        if needed_height > available_height:
+            body_font_size = 12
+            line_spacing = 0.55*cm
+            wrap_width = 90
+            lines = wrap(body_text, width=wrap_width)
+        
+        c.setFont("Times-Roman", body_font_size)
+        c.setFillColor(HexColor('#333333'))
+        
+        for line in lines:
+            c.drawCentredString(center_x, y_cursor, line)
+            y_cursor -= line_spacing
+    
+    # --- 5. SIGNATURES (Professional Layout) ---
+    sig_y_cm = getattr(lote, 'posicion_firmas', 4.2)
+    _draw_geometric_signatures(c, lote, width, pri, sec, sig_y=sig_y_cm * cm)
+    
+    # --- 6. DATE (below signatures) ---
+    date_y = (sig_y_cm * cm) - 2.0*cm
+    c.setFont("Times-Roman", 10)
+    c.setFillColor(HexColor('#555555'))
+    date_text = get_current_date_text(certificado.fecha_curso)
+    c.drawRightString(width - 3.5*cm, date_y, date_text)
+
+
+def _draw_geometric_signatures(c, lote, width, pri, sec, sig_y=None):
+    """
+    Firmas profesionales para la plantilla geométrica.
+    - Imagen de firma centrada
+    - Línea DEBAJO de la imagen (nunca cruza texto)
+    - Nombre en Times-Bold (serif profesional)
+    - Cargo en Times-Roman italic
+    - Ordenado: imagen → línea → nombre → cargo
+    """
+    signatures = get_signatures_for_lote(lote)
+    num = len(signatures)
+    if num == 0:
+        return
+
+    BASE_LINE_Y = sig_y if sig_y is not None else 4.2*cm
+    BASE_IMG_H = 2.0*cm
+    BASE_IMG_W = 3.8*cm
+    LINE_HALF = 3.2*cm
+
+    margin_left = 3.0*cm
+    margin_right = 3.0*cm
+    usable = width - margin_left - margin_right
+    spacing = usable / num
+
+    for i, sig in enumerate(signatures):
+        cx = margin_left + spacing * i + spacing / 2
+        
+        # Per-signature adjustments — ONLY affect the image, NOT the line/text
+        sig_num = i + 1
+        img_offset_y = getattr(lote, f'firma_{sig_num}_offset_y', 0) * cm
+        escala = getattr(lote, f'firma_{sig_num}_escala', 100) / 100.0
+        
+        # Scale image dimensions
+        img_h = BASE_IMG_H * escala
+        img_w = BASE_IMG_W * escala
+
+        # 1. Signature Image (above the line, position/size adjustable)
+        if sig.get('img'):
+            try:
+                img_b64 = sig['img']
+                missing = len(img_b64) % 4
+                if missing:
+                    img_b64 += '=' * (4 - missing)
+                img_data = base64.b64decode(img_b64)
+                img_reader = ImageReader(BytesIO(img_data))
+                # Image Y = line + small gap + user offset
+                img_y = BASE_LINE_Y + 0.15*cm + img_offset_y
+                c.drawImage(img_reader, cx - img_w / 2, img_y,
+                            width=img_w, height=img_h, mask='auto', preserveAspectRatio=True)
+            except:
+                pass
+
+        # 2. Signature Line — FIXED position (gold accent with decorative ends)
+        c.saveState()
+        c.setStrokeColor(sec)
+        c.setLineWidth(1.0)
+        c.line(cx - LINE_HALF, BASE_LINE_Y, cx + LINE_HALF, BASE_LINE_Y)
+        c.setFillColor(sec)
+        c.circle(cx - LINE_HALF, BASE_LINE_Y, 1.5, fill=1, stroke=0)
+        c.circle(cx + LINE_HALF, BASE_LINE_Y, 1.5, fill=1, stroke=0)
+        c.restoreState()
+
+        # 3. Name — FIXED below line
+        name_text = sig['name'].strip()
+        if name_text:
+            name_size = 9.5 if num <= 3 else 8
+            c.setFont("Times-Bold", name_size)
+            c.setFillColor(HexColor('#1a1a1a'))
+            c.drawCentredString(cx, BASE_LINE_Y - 0.5*cm, name_text)
+
+        # 4. Cargo — FIXED below name
+        cargo_text = sig.get('cargo', '').strip()
+        if cargo_text:
+            cargo_size = 8 if num <= 3 else 7
+            c.setFont("Times-Italic", cargo_size)
+            c.setFillColor(HexColor('#555555'))
+            if len(cargo_text) > 30 and num >= 3:
+                words = cargo_text.upper().split()
+                mid = len(words) // 2
+                line1 = ' '.join(words[:mid])
+                line2 = ' '.join(words[mid:])
+                c.drawCentredString(cx, BASE_LINE_Y - 0.9*cm, line1)
+                c.drawCentredString(cx, BASE_LINE_Y - 1.25*cm, line2)
+            else:
+                c.drawCentredString(cx, BASE_LINE_Y - 0.9*cm, cargo_text.upper())
+
+
+def _draw_geometric_verification_page(c, certificado, width, height, pri, sec):
+    """
+    Segunda página: Solo verificación con QR.
+    Sin logos, sin nombre. Minimalista para que un empleador escanee.
+    """
+    lote = certificado.lote
+    
+    # --- GEOMETRIC CORNERS (smaller version) ---
+    def draw_corner_mini(origin_x, origin_y, rotation, main_col, acc_col):
+        c.saveState()
+        c.translate(origin_x, origin_y)
+        c.rotate(rotation)
+        
+        c.setFillColor(main_col)
+        p1 = c.beginPath()
+        p1.moveTo(0, 0)
+        p1.lineTo(5.0*cm, 0)
+        p1.lineTo(4.0*cm, 1.8*cm)
+        p1.lineTo(1.8*cm, 1.8*cm)
+        p1.lineTo(0, 5.0*cm)
+        p1.close()
+        c.drawPath(p1, fill=1, stroke=0)
+        
+        c.setFillColor(acc_col)
+        c.setStrokeColor(white)
+        c.setLineWidth(2)
+        p2 = c.beginPath()
+        p2.moveTo(0, 0)
+        p2.lineTo(3.0*cm, 0)
+        p2.lineTo(0, 3.0*cm)
+        p2.close()
+        c.drawPath(p2, fill=1, stroke=1)
+        
+        c.restoreState()
+
+    draw_corner_mini(0, 0, 0, pri, sec)
+    draw_corner_mini(width, height, 180, sec, pri)
+    
+    # --- Top/Bottom bars ---
+    c.setFillColor(pri)
+    c.rect(0, 0, width * 0.4, 0.3*cm, fill=1, stroke=0)
+    c.setFillColor(sec)
+    c.rect(width * 0.4, 0, width * 0.6, 0.3*cm, fill=1, stroke=0)
+    c.setFillColor(sec)
+    c.rect(0, height - 0.3*cm, width * 0.6, 0.3*cm, fill=1, stroke=0)
+    c.setFillColor(pri)
+    c.rect(width * 0.6, height - 0.3*cm, width * 0.4, 0.3*cm, fill=1, stroke=0)
+    
+    center_x = width / 2
+    center_y = height / 2
+    
+    # --- QR CODE (centered, large) ---
+    qr_size = 7.0*cm
+    qr_drawn = False
+    
+    try:
+        import qrcode
+        from io import BytesIO as QRBytesIO
+        
+        base_url = getattr(settings, 'SITE_URL', 'https://mucacademy.up.railway.app')
+        verify_url = f"{base_url}/verificar/{certificado.hash_verificacion}/"
+        
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_H,
+            box_size=12,
+            border=2,
+        )
+        qr.add_data(verify_url)
+        qr.make(fit=True)
+        
+        qr_img = qr.make_image(fill_color="#162054", back_color="white")
+        
+        qr_buffer = QRBytesIO()
+        qr_img.save(qr_buffer, format='PNG')
+        qr_buffer.seek(0)
+        
+        qr_reader = ImageReader(qr_buffer)
+        qr_x = center_x - qr_size / 2
+        qr_y = center_y - qr_size / 2 - 0.5*cm
+        
+        # QR background box with gold border
+        c.saveState()
+        c.setFillColor(HexColor('#FFFFFF'))
+        c.setStrokeColor(sec)
+        c.setLineWidth(2.5)
+        padding = 0.5*cm
+        c.roundRect(qr_x - padding, qr_y - padding, 
+                    qr_size + 2*padding, qr_size + 2*padding, 
+                    0.4*cm, fill=1, stroke=1)
+        c.restoreState()
+        
+        c.drawImage(qr_reader, qr_x, qr_y, width=qr_size, height=qr_size, mask='auto')
+        qr_drawn = True
+        
+    except Exception:
+        pass
+    
+    # --- Title above QR ---
+    title_y = center_y + qr_size / 2 + 1.5*cm
+    
+    c.setFont("Times-Bold", 24)
+    c.setFillColor(pri)
+    c.drawCentredString(center_x, title_y + 1.2*cm, "VERIFICACIÓN DE CERTIFICADO")
+    
+    # Gold underline
+    c.setStrokeColor(sec)
+    c.setLineWidth(2)
+    line_w = 12*cm
+    c.line(center_x - line_w/2, title_y + 0.8*cm, center_x + line_w/2, title_y + 0.8*cm)
+    
+    # Subtitle
+    c.setFont("Times-Roman", 12)
+    c.setFillColor(HexColor('#555555'))
+    c.drawCentredString(center_x, title_y, "Escanee el código QR para verificar la autenticidad de este certificado")
+    
+    # --- Text below QR ---
+    info_y = center_y - qr_size / 2 - 1.8*cm
+    
+    c.setFont("Times-Roman", 11)
     c.setFillColor(HexColor('#444444'))
+    c.drawCentredString(center_x, info_y, "Este código le redirigirá a una página segura donde podrá confirmar")
+    c.drawCentredString(center_x, info_y - 0.5*cm, "que el titular participó en el evento o seminario certificado.")
     
-    for line in lines:
-        c.drawCentredString(center_x, y_cursor, line)
-        y_cursor -= line_spacing
+    # Verification ID
+    c.setFont("Helvetica", 8)
+    c.setFillColor(HexColor('#999999'))
+    c.drawCentredString(center_x, info_y - 1.5*cm, f"ID: {certificado.hash_verificacion}")
     
-    # D. Date (bottom-right corner)
-    c.setFont("Times-Italic", 13)
-    c.setFillColor(HexColor('#777777'))
-    c.drawRightString(width - 2.5*cm, 2.0*cm, get_current_date_text(certificado.fecha_curso))
-    
-    # --- 5. SIGNATURES (más arriba para no chocar con decoración inferior) ---
-    draw_signatures_bottom(c, lote, width, sig_y=4.5*cm)
+    # Footer text
+    c.setFont("Times-Italic", 9)
+    c.setFillColor(HexColor('#888888'))
+    c.drawCentredString(center_x, 1.5*cm, "Documento generado electrónicamente — MUC Academy / Universidad Estatal de Milagro")
+
+

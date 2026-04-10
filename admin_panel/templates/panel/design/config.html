@@ -146,6 +146,41 @@
                     </details>
                 </div>
 
+                <!-- Posición y Editor de Firmas -->
+                <div class="space-y-4">
+                    <label class="block text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-blue-300 flex items-center gap-2 border-b border-gray-100 dark:border-blue-900/30 pb-2">
+                        <i class="fa-solid fa-arrows-up-down text-green-500"></i> Editor de Firmas (Posición y Tamaño)
+                    </label>
+                    
+                    <!-- Global Y slider -->
+                    <div class="p-4 rounded-xl border border-gray-100 dark:border-blue-900/30 bg-white dark:bg-[#0F163A]">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase mb-3">
+                            <i class="fa-solid fa-ruler-vertical mr-1"></i> Altura Base de Todas las Firmas
+                        </h4>
+                        <div class="flex items-center gap-4">
+                            <span class="text-xs text-gray-400 w-12">Abajo</span>
+                            <input type="range" name="posicion_firmas" min="2.5" max="7" step="0.1" value="{{ diseno.posicion_firmas }}" 
+                                class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-unemi-orange"
+                                id="globalSigY"
+                                oninput="document.getElementById('globalSigYVal').textContent = this.value + ' cm'">
+                            <span class="text-xs text-gray-400 w-12">Arriba</span>
+                        </div>
+                        <p class="text-center mt-2 text-sm font-bold text-gray-600 dark:text-gray-300">
+                            <span id="globalSigYVal">{{ diseno.posicion_firmas }} cm</span> desde el borde inferior
+                        </p>
+                    </div>
+
+                    <!-- Per-signature cards -->
+                    <div id="firmaEditorCards" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Dynamically generated from JS -->
+                    </div>
+
+                    <button type="button" onclick="saveFirmaPositions()" 
+                        class="w-full py-2.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-bold shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2" id="saveFirmaPosBtn">
+                        <i class="fa-solid fa-save"></i> Guardar Posiciones y Actualizar Preview
+                    </button>
+                </div>
+
                 <!-- Logos -->
                 <div class="space-y-4">
                     <label class="block text-xs uppercase tracking-wider font-bold text-gray-500 dark:text-blue-300 flex items-center gap-2 border-b border-gray-100 dark:border-blue-900/30 pb-2">
@@ -207,6 +242,7 @@
 </div>
 
 <script>
+    // --- Insert tag helper ---
     function insertTag(tag) {
         var textarea = document.querySelector('textarea[name="cuerpo_certificado"]');
         var start = textarea.selectionStart;
@@ -214,6 +250,107 @@
         textarea.value = textarea.value.substring(0, start) + tag + textarea.value.substring(end);
         textarea.focus();
         textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+    }
+
+    // --- Signature Editor ---
+    const firmaData = {{ firma_preview_json|safe }};
+    const container = document.getElementById('firmaEditorCards');
+    
+    if (firmaData.length === 0) {
+        container.innerHTML = '<div class="col-span-2 p-4 rounded-xl border border-dashed border-gray-300 dark:border-blue-900/30 text-center text-sm text-gray-400"><i class="fa-solid fa-info-circle mr-1"></i> Selecciona firmas institucionales arriba para poder ajustar su posición.</div>';
+    } else {
+        firmaData.forEach(f => {
+            const card = document.createElement('div');
+            card.className = 'p-4 rounded-xl border border-gray-100 dark:border-blue-900/30 bg-white dark:bg-[#0F163A] space-y-3';
+            card.innerHTML = `
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-signature text-amber-500 text-sm"></i>
+                    </div>
+                    <div>
+                        <h5 class="text-xs font-bold text-gray-700 dark:text-gray-200">${f.name || 'Firma ' + f.slot}</h5>
+                        <p class="text-[10px] text-gray-400">${f.cargo}</p>
+                    </div>
+                    <span class="ml-auto text-[10px] px-2 py-0.5 rounded-full ${f.has_img ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}">${f.has_img ? '✓ Imagen' : '✗ Sin imagen'}</span>
+                </div>
+                
+                <div>
+                    <label class="flex items-center justify-between text-[10px] font-bold uppercase text-gray-400 mb-1">
+                        <span><i class="fa-solid fa-arrows-up-down mr-1"></i> Posición Vertical</span>
+                        <span id="offsetVal_${f.slot}" class="text-unemi-orange">${f.offset_y > 0 ? '+' : ''}${f.offset_y} cm</span>
+                    </label>
+                    <input type="range" min="-2" max="3" step="0.1" value="${f.offset_y}" 
+                        data-slot="${f.slot}" data-field="offset_y"
+                        class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500"
+                        oninput="document.getElementById('offsetVal_${f.slot}').textContent = (parseFloat(this.value) > 0 ? '+' : '') + this.value + ' cm'">
+                </div>
+                
+                <div>
+                    <label class="flex items-center justify-between text-[10px] font-bold uppercase text-gray-400 mb-1">
+                        <span><i class="fa-solid fa-expand mr-1"></i> Tamaño</span>
+                        <span id="scaleVal_${f.slot}" class="text-unemi-orange">${f.escala}%</span>
+                    </label>
+                    <input type="range" min="50" max="200" step="5" value="${f.escala}" 
+                        data-slot="${f.slot}" data-field="escala"
+                        class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-500"
+                        oninput="document.getElementById('scaleVal_${f.slot}').textContent = this.value + '%'">
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function saveFirmaPositions() {
+        const btn = document.getElementById('saveFirmaPosBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+        
+        const firmas = [];
+        container.querySelectorAll('input[type="range"]').forEach(input => {
+            const slot = parseInt(input.dataset.slot);
+            const field = input.dataset.field;
+            const val = parseFloat(input.value);
+            
+            let existing = firmas.find(f => f.slot === slot);
+            if (!existing) {
+                existing = { slot: slot };
+                firmas.push(existing);
+            }
+            existing[field] = val;
+        });
+        
+        const globalY = document.getElementById('globalSigY');
+        
+        fetch('{% url "panel:design_save_firma_pos" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                firmas: firmas,
+                posicion_firmas: globalY ? parseFloat(globalY.value) : null
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                showToast('Posiciones guardadas. Actualizando preview...', 'success');
+                // Refresh preview
+                setTimeout(() => {
+                    document.getElementById('pdfPreview').contentWindow.location.reload();
+                }, 500);
+            } else {
+                showToast('Error al guardar: ' + (data.error || ''), 'error');
+            }
+        })
+        .catch(e => {
+            showToast('Error de conexión', 'error');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-save"></i> Guardar Posiciones y Actualizar Preview';
+        });
     }
 </script>
 {% endblock %}
