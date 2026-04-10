@@ -52,10 +52,17 @@
                     <!-- Nombre del Lote -->
                     <div class="group">
                         <label for="{{ form.nombre_lote.id_for_label }}" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
-                            <i class="fa-solid fa-tag mr-2 text-gray-400 dark:text-gray-500"></i>Nombre del Evento / Seminario
+                            <i class="fa-solid fa-tag mr-2 text-gray-400 dark:text-gray-500"></i>Nombre del Evento
                         </label>
                         {{ form.nombre_lote }}
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Este nombre aparecerá en el certificado como "POR ASISTIR AL [NOMBRE DEL LOTE]"</p>
+                        <div class="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-dashed border-gray-300 dark:border-blue-900/30">
+                            <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">
+                                <i class="fa-solid fa-eye mr-1"></i> Así se verá en el certificado:
+                            </p>
+                            <p class="text-sm text-gray-700 dark:text-gray-200">
+                                "...participación en el seminario <strong class="text-unemi-orange" id="lotePreviewText">_______________</strong>, contribuyendo de manera activa..."
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Facultad -->
@@ -258,4 +265,17 @@
 
     </div>
 </div>
+<script>
+    // Live preview of how the name will appear on the certificate
+    const nameInput = document.getElementById('{{ form.nombre_lote.id_for_label }}');
+    const previewEl = document.getElementById('lotePreviewText');
+    if (nameInput && previewEl) {
+        function updatePreview() {
+            const val = nameInput.value.trim();
+            previewEl.textContent = val ? val.toUpperCase() : '_______________';
+        }
+        nameInput.addEventListener('input', updatePreview);
+        updatePreview();
+    }
+</script>
 {% endblock %}

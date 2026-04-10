@@ -1391,7 +1391,7 @@ def _draw_geometric_verification_page(c, certificado, width, height, pri, sec):
         import qrcode
         from io import BytesIO as QRBytesIO
         
-        base_url = getattr(settings, 'SITE_URL', 'https://mucacademy.up.railway.app')
+        base_url = getattr(settings, 'SITE_URL', 'https://muc-academy.up.railway.app')
         verify_url = f"{base_url}/verificar/{certificado.hash_verificacion}/"
         
         qr = qrcode.QRCode(
