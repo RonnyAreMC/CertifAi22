@@ -1089,24 +1089,20 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     draw_corner_professional(0, 0, 0, pri, sec)
     draw_corner_professional(width, height, 180, sec, pri)
 
-    # --- 3. LOGOS (Strict Order: UNEMI - MUC - FEUE) ---
+    # --- 3. LOGOS (Order: FEUE - UNEMI - MUC) --- Always from static/img/
     logo_y = height - 4.8*cm
     logo_h = 3.5*cm
     logo_w = 5.5*cm
     gap = 0.8*cm    
     
-    def get_l_path(f, d):
-         p = f.path if (f and hasattr(f,'path')) else (f if isinstance(f, str) else None)
-         if not p: p = os.path.join(settings.BASE_DIR, 'static', 'img', d)
-         if not os.path.exists(p): p = os.path.join(settings.BASE_DIR, 'certify', 'static', 'img', d)
-         return p if os.path.exists(p) else None
-
+    # Always use static logos (survive deploys)
+    static_img = os.path.join(settings.BASE_DIR, 'static', 'img')
+    logo_files = ['feue.png', 'logo-unemi-removebg-preview.png', 'muc.png']
     logos_ordered = []
-    logos_ordered.append(get_l_path(lote.logo_header_2, 'logo-unemi-removebg-preview.png'))
-    logos_ordered.append(get_l_path(lote.logo_header_1, 'muc.png'))
-    logos_ordered.append(get_l_path(lote.logo_header_3, 'feue.png'))
-    
-    logos_ordered = [l for l in logos_ordered if l]
+    for lf in logo_files:
+        p = os.path.join(static_img, lf)
+        if os.path.exists(p):
+            logos_ordered.append(p)
     
     total_w = (len(logos_ordered) * logo_w) + ((len(logos_ordered)-1) * gap)
     cx = (width - total_w) / 2
