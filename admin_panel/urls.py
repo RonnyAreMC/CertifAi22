@@ -33,6 +33,7 @@ urlpatterns = [
     path('batches/<int:id>/process-mapping/', views.process_batch_mapping, name='batch_process_mapping'),
 
     # Certificate Management
+    path('api/participante-lookup/', views.participante_lookup, name='participante_lookup'),
     path('batches/<int:id>/add-certificate/', views.add_certificate, name='add_certificate'),
 
     # Session Management (QR Attendance)

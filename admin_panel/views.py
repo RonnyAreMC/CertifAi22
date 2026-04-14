@@ -545,6 +545,38 @@ def preview_pdf(request, id):
 
 @login_required
 @user_passes_test(_is_admin)
+def participante_lookup(request):
+    """AJAX: lookup a Participante by cedula or email for auto-fill."""
+    q = request.GET.get('q', '').strip()
+    if len(q) < 3:
+        return JsonResponse({'found': False})
+
+    participante = Participante.objects.filter(cedula=q).first()
+    if not participante:
+        participante = Participante.objects.filter(email__iexact=q).first()
+    if not participante:
+        # Partial match by cedula or email
+        participante = (
+            Participante.objects.filter(
+                db_models.Q(cedula__icontains=q) | db_models.Q(email__icontains=q)
+            ).first()
+        )
+
+    if participante:
+        return JsonResponse({
+            'found': True,
+            'cedula': participante.cedula,
+            'nombres': participante.nombres,
+            'apellidos': participante.apellidos,
+            'email': participante.email,
+            'celular': participante.celular,
+            'cursos': participante.certificados.count(),
+        })
+    return JsonResponse({'found': False})
+
+
+@login_required
+@user_passes_test(_is_admin)
 def add_certificate(request, id):
     """Manually add a certificate to a batch."""
     lote = get_object_or_404(LoteCertificados, id=id)

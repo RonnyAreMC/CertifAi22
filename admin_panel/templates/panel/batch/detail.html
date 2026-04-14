@@ -211,32 +211,47 @@
                     <!-- Form -->
                     <form action="{% url 'panel:add_certificate' lote.id %}" method="POST" class="p-6">
                         {% csrf_token %}
+
+                        <!-- Lookup banner (hidden by default) -->
+                        <div id="lookupBanner" class="hidden mb-4 px-4 py-3 rounded-xl border flex items-center gap-3 text-sm font-medium">
+                            <i id="lookupIcon" class="fa-solid text-lg"></i>
+                            <span id="lookupMsg"></span>
+                        </div>
+
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    <i class="fa-solid fa-magnifying-glass text-unemi-orange mr-1"></i>
+                                    Buscar por Cedula o Email
+                                </label>
+                                <input type="text" id="lookupInput" placeholder="Escribe cedula o correo para buscar..."
+                                    class="w-full bg-gray-50 dark:bg-[#0F163A] border-2 border-dashed border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white transition-all">
+                            </div>
+
                             <div class="col-span-1">
-                                <label for="cedula" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cédula</label>
-                                <input type="text" name="cedula" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
+                                <label for="cedula" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cedula</label>
+                                <input type="text" name="cedula" id="fieldCedula" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
                             </div>
                             <div class="col-span-1">
                                 <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" name="email" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
+                                <input type="email" name="email" id="fieldEmail" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
                             </div>
-                            
+
                             <div class="col-span-1">
                                 <label for="nombres" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombres</label>
-                                <input type="text" name="nombres" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
+                                <input type="text" name="nombres" id="fieldNombres" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
                             </div>
                             <div class="col-span-1">
                                 <label for="apellidos" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Apellidos</label>
-                                <input type="text" name="apellidos" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
+                                <input type="text" name="apellidos" id="fieldApellidos" required class="w-full bg-gray-50 dark:bg-[#0F163A] border border-gray-300 dark:border-blue-900 rounded-lg px-3 py-2 text-sm focus:ring-unemi-orange focus:border-unemi-orange dark:text-white">
                             </div>
-                            
+
                             <!-- Hidden Fields (Defaults from Lote) -->
                             <input type="hidden" name="curso" value="{{ lote.nombre_lote }}">
                             <input type="hidden" name="horas" value="40">
-                            <!-- Fecha defaults to today in backend if empty, or we can set it via JS to today -->
                             <input type="hidden" name="fecha_curso" id="hiddenFecha" value="{% now 'Y-m-d' %}">
                         </div>
-                        
+
                         <div class="mt-6 flex justify-end gap-3">
                             <button type="button" onclick="document.getElementById('addStudentModal').classList.add('hidden')" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5">
                                 Cancelar
@@ -246,6 +261,66 @@
                             </button>
                         </div>
                     </form>
+
+                    <script>
+                    (function(){
+                        const lookupInput = document.getElementById('lookupInput');
+                        const banner = document.getElementById('lookupBanner');
+                        const bannerIcon = document.getElementById('lookupIcon');
+                        const bannerMsg = document.getElementById('lookupMsg');
+                        const fields = {
+                            cedula: document.getElementById('fieldCedula'),
+                            email: document.getElementById('fieldEmail'),
+                            nombres: document.getElementById('fieldNombres'),
+                            apellidos: document.getElementById('fieldApellidos'),
+                        };
+                        let timer = null;
+
+                        function showBanner(type, msg) {
+                            banner.classList.remove('hidden',
+                                'bg-green-50','dark:bg-green-900/10','border-green-300','dark:border-green-800/30','text-green-700','dark:text-green-300',
+                                'bg-gray-50','dark:bg-gray-800/10','border-gray-300','dark:border-gray-700','text-gray-500','dark:text-gray-400');
+                            if (type === 'found') {
+                                banner.className = banner.className.replace(/hidden/g,'');
+                                banner.classList.add('bg-green-50','dark:bg-green-900/10','border-green-300','dark:border-green-800/30','text-green-700','dark:text-green-300');
+                                bannerIcon.className = 'fa-solid fa-circle-check text-lg text-green-500';
+                            } else {
+                                banner.classList.add('bg-gray-50','dark:bg-gray-800/10','border-gray-300','dark:border-gray-700','text-gray-500','dark:text-gray-400');
+                                bannerIcon.className = 'fa-solid fa-circle-info text-lg text-gray-400';
+                            }
+                            banner.classList.remove('hidden');
+                            bannerMsg.textContent = msg;
+                        }
+
+                        function doLookup() {
+                            const q = lookupInput.value.trim();
+                            if (q.length < 3) {
+                                banner.classList.add('hidden');
+                                return;
+                            }
+                            fetch('{% url "panel:participante_lookup" %}?q=' + encodeURIComponent(q), {
+                                headers: {'X-Requested-With': 'XMLHttpRequest'}
+                            })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.found) {
+                                    fields.cedula.value = data.cedula || '';
+                                    fields.email.value = data.email || '';
+                                    fields.nombres.value = data.nombres || '';
+                                    fields.apellidos.value = data.apellidos || '';
+                                    showBanner('found', 'Registro encontrado: ' + data.nombres + ' ' + data.apellidos + (data.cursos ? ' (' + data.cursos + ' certificados)' : ''));
+                                } else {
+                                    showBanner('notfound', 'No se encontro registro. Completa los datos para crear uno nuevo.');
+                                }
+                            });
+                        }
+
+                        lookupInput.addEventListener('input', function() {
+                            if (timer) clearTimeout(timer);
+                            timer = setTimeout(doLookup, 400);
+                        });
+                    })();
+                    </script>
                 </div>
             </div>
         </div>
