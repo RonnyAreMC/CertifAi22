@@ -556,12 +556,48 @@ def add_certificate(request, id):
                 datetime.strptime(fecha_str, '%Y-%m-%d').date() if fecha_str else None
             )
 
+            cedula_raw = (request.POST.get('cedula') or '').strip()
+            nombres_raw = (request.POST.get('nombres') or '').strip().upper()
+            apellidos_raw = (request.POST.get('apellidos') or '').strip().upper()
+            email_raw = (request.POST.get('email') or '').strip().lower()
+            celular_raw = (request.POST.get('celular') or '').strip()
+
+            # Deduplication: find or create Participante
+            is_generated = cedula_raw.startswith('GEN-') or not cedula_raw
+            real_cedula = '' if is_generated else cedula_raw
+
+            participante = None
+            if real_cedula:
+                participante = Participante.objects.filter(cedula=real_cedula).first()
+            if not participante and email_raw:
+                participante = Participante.objects.filter(email__iexact=email_raw).first()
+
+            if participante:
+                updated = []
+                if real_cedula and not participante.cedula:
+                    participante.cedula = real_cedula
+                    updated.append('cedula')
+                if celular_raw and not participante.celular:
+                    participante.celular = celular_raw
+                    updated.append('celular')
+                if updated:
+                    participante.save(update_fields=updated)
+            else:
+                participante = Participante.objects.create(
+                    cedula=real_cedula,
+                    nombres=nombres_raw,
+                    apellidos=apellidos_raw,
+                    email=email_raw,
+                    celular=celular_raw,
+                )
+
             Certificado.objects.create(
                 lote=lote,
-                cedula=request.POST.get('cedula'),
-                nombres=request.POST.get('nombres'),
-                apellidos=request.POST.get('apellidos'),
-                email=request.POST.get('email'),
+                participante=participante,
+                cedula=cedula_raw or f'GEN-{uuid.uuid4().hex[:8].upper()}',
+                nombres=nombres_raw,
+                apellidos=apellidos_raw,
+                email=email_raw,
                 curso=request.POST.get('curso'),
                 horas=int(request.POST.get('horas', 0)),
                 fecha_curso=fecha_curso,

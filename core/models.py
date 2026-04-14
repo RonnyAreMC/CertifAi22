@@ -215,6 +215,11 @@ class Participante(models.Model):
                 name='unique_cedula_when_not_empty',
                 condition=~models.Q(cedula=''),
             ),
+            models.UniqueConstraint(
+                fields=['email'],
+                name='unique_email_when_not_empty',
+                condition=~models.Q(email=''),
+            ),
         ]
         indexes = [
             models.Index(fields=['email']),

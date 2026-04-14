@@ -36,6 +36,7 @@ def search_autocomplete(request):
     if not tokens:
         return JsonResponse({'results': []})
 
+    # Search Participante first (canonical, deduplicated source)
     q_filter = Q()
     for token in tokens:
         q_filter &= (
@@ -45,12 +46,12 @@ def search_autocomplete(request):
             Q(apellidos__icontains=token)
         )
 
-    certificados = Certificado.objects.filter(q_filter).values('nombres', 'apellidos').distinct()[:20]
+    participantes = Participante.objects.filter(q_filter)[:20]
     resultados = []
     seen = set()
 
-    for cert in certificados:
-        full_name = f"{cert.get('nombres', '').strip()} {cert.get('apellidos', '').strip()}".strip()
+    for p in participantes:
+        full_name = f"{p.nombres.strip()} {p.apellidos.strip()}".strip()
         if not full_name:
             continue
         key = full_name.lower()
@@ -60,6 +61,32 @@ def search_autocomplete(request):
         resultados.append({'name': full_name})
         if len(resultados) >= 12:
             break
+
+    # Fallback: also check Certificado for orphaned records without Participante
+    if len(resultados) < 12:
+        q_cert = Q()
+        for token in tokens:
+            q_cert &= (
+                Q(cedula__icontains=token) |
+                Q(email__icontains=token) |
+                Q(nombres__icontains=token) |
+                Q(apellidos__icontains=token)
+            )
+        orphan_certs = (
+            Certificado.objects.filter(q_cert, participante__isnull=True)
+            .values('nombres', 'apellidos').distinct()[:20]
+        )
+        for cert in orphan_certs:
+            full_name = f"{cert.get('nombres', '').strip()} {cert.get('apellidos', '').strip()}".strip()
+            if not full_name:
+                continue
+            key = full_name.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            resultados.append({'name': full_name})
+            if len(resultados) >= 12:
+                break
 
     return JsonResponse({'results': resultados})
 
