@@ -542,9 +542,15 @@ def download_pdf(request, hash):
     try:
         pdf_buffer = generate_certificate_pdf(certificado)
         response = FileResponse(pdf_buffer, content_type='application/pdf')
-        response['Content-Disposition'] = (
-            f'inline; filename="Certificado_{certificado.cedula}.pdf"'
-        )
+
+        safe_curso = slugify(certificado.curso or 'certificado') or 'certificado'
+        short_hash = str(certificado.hash_verificacion)[:8]
+        filename = f"Certificado_{certificado.cedula}_{safe_curso}_{short_hash}.pdf"
+
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
 
         certificado.descargas_count += 1
         certificado.save(update_fields=['descargas_count'])
@@ -576,11 +582,15 @@ def download_zip(request):
 
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        seen_names = {}
         for cert in certificados:
             try:
                 pdf_buffer = generate_certificate_pdf(cert)
-                safe_curso = slugify(cert.curso)
-                filename = f"{safe_curso}_{cert.cedula}.pdf"
+                safe_curso = slugify(cert.curso) or 'certificado'
+                base = f"{safe_curso}_{cert.cedula}"
+                count = seen_names.get(base, 0)
+                seen_names[base] = count + 1
+                filename = f"{base}.pdf" if count == 0 else f"{base}_{count+1}.pdf"
                 zip_file.writestr(filename, pdf_buffer.getvalue())
             except Exception:
                 continue
