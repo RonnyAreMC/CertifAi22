@@ -278,17 +278,30 @@ def configure_batch(request, id):
     lote = get_object_or_404(LoteCertificados, id=id)
 
     if request.method == 'POST':
+        # Load global design to detect "has user personalized anything?"
+        from core.models import DisenoGlobal
+        try:
+            diseno_global = DisenoGlobal.get_solo()
+        except Exception:
+            diseno_global = None
+
         lote.personalizar_diseno = request.POST.get('personalizar_diseno') == 'on'
         lote.cuerpo_certificado = request.POST.get('cuerpo_certificado') or lote.cuerpo_certificado
 
         plantilla = request.POST.get('plantilla')
         if plantilla:
             lote.plantilla = plantilla
+            # Auto-enable personalization if user chose a different template than global
+            if diseno_global and plantilla != diseno_global.plantilla:
+                lote.personalizar_diseno = True
 
         for color_field in ('color_primario', 'color_secundario', 'color_terciario', 'color_texto'):
             val = request.POST.get(color_field)
             if val:
                 setattr(lote, color_field, val)
+                # Auto-enable personalization if user changed a color vs the global one
+                if diseno_global and val != getattr(diseno_global, color_field, None):
+                    lote.personalizar_diseno = True
 
         # Firmas institucionales (1, 2, 3)
         for i in range(1, 4):

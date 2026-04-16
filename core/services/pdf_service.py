@@ -740,8 +740,8 @@ def generate_certificate_pdf(certificado):
     width, height = landscape(A4)
 
     plantilla = certificado.lote.plantilla
-    
-    # Default Colors (Classic Blue/Gold) - STRICT FOR CLASSIC
+
+    # Default Colors (fallback if custom not set)
     PR_DEF = HexColor('#0B3D91')
     SC_DEF = HexColor('#D4AF37')
     TR_DEF = HexColor('#F3F4F6')
@@ -750,26 +750,27 @@ def generate_certificate_pdf(certificado):
     # Assign Defaults initially
     pri, sec, ter, txt = PR_DEF, SC_DEF, TR_DEF, TX_DEF
 
-    # ONLY Apply Custom Colors if NOT Classic (Classic must be standard)
-    if plantilla != 'clasico': 
-        try: 
-            if certificado.lote.color_primario: pri = hex2rgb(certificado.lote.color_primario)
-            if certificado.lote.color_secundario: sec = hex2rgb(certificado.lote.color_secundario)
-            if certificado.lote.color_texto: txt = hex2rgb(certificado.lote.color_texto)
-        except: pass
-    
+    # Apply Custom Colors for ALL templates (classic included)
+    try:
+        if certificado.lote.color_primario: pri = hex2rgb(certificado.lote.color_primario)
+        if certificado.lote.color_secundario: sec = hex2rgb(certificado.lote.color_secundario)
+        if certificado.lote.color_terciario: ter = hex2rgb(certificado.lote.color_terciario)
+        if certificado.lote.color_texto: txt = hex2rgb(certificado.lote.color_texto)
+    except Exception:
+        pass
+
     # Dispatch Strategy
     if plantilla == 'moderno':
         draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt)
     elif plantilla == 'geometrico':
         draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt)
-        
+
         # --- SECOND PAGE: QR Verification ---
         c.showPage()
         _draw_geometric_verification_page(c, certificado, width, height, pri, sec)
     else:
-        # Default / Clasico -> Always Standard Colors (as requested)
-        draw_classic_wow(c, certificado, width, height, PR_DEF, SC_DEF, TR_DEF, TX_DEF)
+        # Default / Clasico — ahora respeta colores custom
+        draw_classic_wow(c, certificado, width, height, pri, sec, ter, txt)
     
     # Footer (only on first page for geometric since we handle 2nd page separately)
     if plantilla != 'geometrico':
