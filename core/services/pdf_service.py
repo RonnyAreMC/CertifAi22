@@ -291,23 +291,24 @@ def draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt):
     c.setFont("Helvetica", 11)
     c.setFillColor(HexColor('#555555'))
     
-    body = certificado.lote.cuerpo_certificado.replace("{curso}", certificado.curso.upper()).replace("{horas}", str(certificado.horas))
+    curso_name = certificado.lote.nombre_lote.upper()
+    body = certificado.lote.cuerpo_certificado.replace("{curso}", curso_name).replace("{horas}", str(certificado.horas))
     from textwrap import wrap
     lines = wrap(body, width=75)
-    
+
     for line in lines:
         c.drawCentredString(center_x, y_cursor, line)
         y_cursor -= 6*mm
-        
+
     y_cursor -= 8*mm
-    
+
     # 6. Date
     c.setFont("Times-Italic", 13)
     c.setFillColor(HexColor('#777777'))
     c.drawCentredString(center_x, y_cursor, get_current_date_text(certificado.fecha_curso))
-    
+
     y_cursor -= 2.5*cm
-    
+
     # 7. Signatures (fixed at bottom, desplazadas a la derecha del sidebar)
     draw_signatures_bottom(c, lote, width, name_color='#333333', cargo_color='#777777',
                            margin_left=margin_left)
@@ -444,8 +445,9 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     c.setFont("Helvetica", 12)
     c.setFillColor(HexColor('#333333'))
     
-    body = certificado.lote.cuerpo_certificado.replace("{curso}", certificado.curso.upper()).replace("{horas}", str(certificado.horas))
-    
+    curso_name = certificado.lote.nombre_lote.upper()
+    body = certificado.lote.cuerpo_certificado.replace("{curso}", curso_name).replace("{horas}", str(certificado.horas))
+
     # Center block
     from textwrap import wrap
     lines = wrap(body, width=80)
@@ -657,8 +659,9 @@ def draw_classic_wow(c, certificado, width, height, pri, sec, ter, txt):
     c.setFillColor(HexColor('#000000'))  # Black - fixed, not affected by style colors
     
     # Body Text from Lote
-    body = certificado.lote.cuerpo_certificado.replace("{curso}", certificado.curso.upper()).replace("{horas}", str(certificado.horas))
-    
+    curso_name = certificado.lote.nombre_lote.upper()
+    body = certificado.lote.cuerpo_certificado.replace("{curso}", curso_name).replace("{horas}", str(certificado.horas))
+
     # Simple Wrap
     from textwrap import wrap
     lines = wrap(body, width=75)
@@ -984,7 +987,8 @@ def draw_modern_wow(c, certificado, width, height, pri, sec, ter, txt):
     c.setFont("Helvetica", 11)
     c.setFillColor(HexColor('#555555'))
     
-    body = certificado.lote.cuerpo_certificado.replace("{curso}", certificado.curso.upper()).replace("{horas}", str(certificado.horas))
+    curso_name = certificado.lote.nombre_lote.upper()
+    body = certificado.lote.cuerpo_certificado.replace("{curso}", curso_name).replace("{horas}", str(certificado.horas))
     from textwrap import wrap
     lines = wrap(body, width=75)
     
@@ -1145,7 +1149,7 @@ def draw_geometric_wow(c, certificado, width, height, pri, sec, ter, txt):
     
     # E. Body Text with BOLD course name
     body_raw = certificado.lote.cuerpo_certificado
-    curso_upper = certificado.curso.upper()
+    curso_upper = certificado.lote.nombre_lote.upper()
     horas_str = str(certificado.horas)
     
     # Split body at {curso} to render course in bold
