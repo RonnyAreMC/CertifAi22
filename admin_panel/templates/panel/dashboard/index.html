@@ -10,70 +10,69 @@
             </h1>
             <p class="text-gray-500 dark:text-gray-400 mt-1">Resumen de actividad del sistema de certificados.</p>
         </div>
+        <a href="{% url 'panel:session_list' %}" class="bg-[#F58830] hover:bg-[#D97520] text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days"></i>
+            Ver Eventos Disponibles
+        </a>
     </div>
 
     <!-- Stats Row -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <!-- Total Issued -->
         <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
             <div class="flex items-center gap-4 relative z-10">
                 <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-unemi-blue dark:text-blue-400 text-xl font-bold">
                     <i class="fa-solid fa-certificate"></i>
                 </div>
                 <div>
-                    <h3 class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_certificados }}</h3>
+                    <h3 id="stat-certificados" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
                     <p class="text-sm font-medium text-gray-500 dark:text-blue-300">Total Emitidos</p>
                 </div>
             </div>
             <div class="absolute right-0 top-0 w-32 h-32 bg-blue-50 dark:bg-blue-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
         </div>
 
-        <!-- Total Downloads -->
         <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
              <div class="flex items-center gap-4 relative z-10">
                 <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center text-unemi-orange dark:text-orange-400 text-xl font-bold">
                     <i class="fa-solid fa-download"></i>
                 </div>
                 <div>
-                     <h3 class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_descargas }}</h3>
+                     <h3 id="stat-descargas" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
                     <p class="text-sm font-medium text-gray-500 dark:text-orange-300">Total Descargas</p>
                 </div>
             </div>
             <div class="absolute right-0 top-0 w-32 h-32 bg-orange-50 dark:bg-orange-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
         </div>
-        
-        <!-- Total Searches -->
+
         <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
              <div class="flex items-center gap-4 relative z-10">
                 <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 text-xl font-bold">
                     <i class="fa-solid fa-magnifying-glass-chart"></i>
                 </div>
                 <div>
-                     <h3 class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_busquedas }}</h3>
+                     <h3 id="stat-busquedas" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
                     <p class="text-sm font-medium text-gray-500 dark:text-purple-300">Búsquedas</p>
                 </div>
             </div>
             <div class="absolute right-0 top-0 w-32 h-32 bg-purple-50 dark:bg-purple-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
         </div>
 
-        <!-- Lotes Activos -->
         <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
              <div class="flex items-center gap-4 relative z-10">
                 <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 dark:text-green-400 text-xl font-bold">
                     <i class="fa-solid fa-layer-group"></i>
                 </div>
                 <div>
-                    <h3 class="text-3xl font-bold text-gray-900 dark:text-white">{{ recent_lotes.count }}</h3>
+                    <h3 id="stat-lotes" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
                     <p class="text-sm font-medium text-gray-500 dark:text-green-300">Lotes Activos</p>
                 </div>
             </div>
             <div class="absolute right-0 top-0 w-32 h-32 bg-green-50 dark:bg-green-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
         </div>
     </div>
-    
-    <!-- Emission Trend & Charts -->
+
+    <!-- Trend + Donut -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Main Chart: Emission Trend (Area) -->
         <div class="lg:col-span-2 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fa-solid fa-chart-area text-purple-500"></i>
@@ -81,8 +80,6 @@
             </h3>
             <div id="chartTrend" class="w-full h-80"></div>
         </div>
-
-        <!-- Faculty Distribution (Donut) -->
         <div class="lg:col-span-1 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fa-solid fa-chart-pie text-unemi-blue"></i>
@@ -91,10 +88,9 @@
             <div id="chartFacultades" class="w-full h-80"></div>
         </div>
     </div>
-    
-    <!-- Top Lotes & Audit -->
+
+    <!-- Top Lotes + Audit -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Chart: Top Lotes (Bar) -->
         <div class="lg:col-span-2 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fa-solid fa-chart-simple text-unemi-orange"></i>
@@ -102,169 +98,125 @@
             </h3>
             <div id="chartTopLotes" class="w-full h-80"></div>
         </div>
-        
-        <!-- Audit Log (Small) -->
         <div class="lg:col-span-1 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 overflow-hidden">
              <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fa-solid fa-clock-rotate-left text-unemi-orange"></i>
                 Actividad Reciente
             </h3>
-            <div class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                {% for log in auditoria %}
-                <div class="flex gap-3 items-start pb-3 border-b border-gray-100 dark:border-blue-900/30 last:border-0 last:pb-0">
-                     <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-blue-900/30 text-[10px] font-bold text-gray-600 dark:text-blue-200">
-                        {{ log.usuario.username|slice:":1"|upper }}
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold text-gray-800 dark:text-gray-200">
-                            {{ log.accion }}
-                        </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words max-w-[180px]">
-                            {{ log.detalle }}
-                        </p>
-                        <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                            {{ log.fecha|timesince }} hace
-                        </p>
-                    </div>
-                </div>
-                {% empty %}
-                <p class="text-sm text-gray-500 text-center py-4">Sin actividad.</p>
-                {% endfor %}
+            <div id="audit-list" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                <p class="text-sm text-gray-500 text-center py-4">Cargando…</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ApexCharts Script -->
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const isDark = document.documentElement.classList.contains('dark');
-        const themeMode = isDark ? 'dark' : 'light';
-        const textColor = isDark ? '#fff' : '#374151';
+function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
-        // 1. Chart: Emission Trend (Area)
-        var optionsTrend = {
-            series: [{
-                name: 'Certificados Emitidos',
-                data: {{ data_daily|safe }}
-            }],
-            chart: {
-                type: 'area',
-                height: 320,
-                fontFamily: 'Inter, sans-serif',
-                background: 'transparent',
-                toolbar: { show: false },
-                animations: { enabled: true, easing: 'easeinout', speed: 800 }
-            },
-            colors: ['#6366F1'],
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shadeIntensity: 1,
-                    opacityFrom: 0.7,
-                    opacityTo: 0.1,
-                    stops: [0, 90, 100]
-                }
-            },
-            dataLabels: { enabled: false },
-            stroke: { curve: 'smooth', width: 3 },
-            xaxis: {
-                categories: {{ labels_daily|safe }},
-                labels: { style: { colors: textColor } },
-                axisBorder: { show: false },
-                axisTicks: { show: false }
-            },
-            yaxis: { labels: { style: { colors: textColor } } },
-            grid: {
-                borderColor: isDark ? '#1e293b' : '#e2e8f0',
-                strokeDashArray: 4,
-            },
-            theme: { mode: themeMode }
-        };
-        new ApexCharts(document.querySelector("#chartTrend"), optionsTrend).render();
+function timeAgo(iso) {
+    const d = new Date(iso);
+    const s = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (s < 60) return `${s} seg`;
+    if (s < 3600) return `${Math.floor(s / 60)} min`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h`;
+    return `${Math.floor(s / 86400)} d`;
+}
 
-        // 2. Chart: Faculty Distribution (Donut)
-        var optionsFacultad = {
-            series: {{ data_facultad|safe }},
-            chart: {
-                type: 'donut',
-                height: 320,
-                fontFamily: 'Inter, sans-serif',
-                background: 'transparent'
-            },
-            labels: {{ labels_facultad|safe }},
-            colors: ['#0071CE', '#FF9100', '#10B981', '#EC4899', '#8B5CF6'],
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '75%',
-                        labels: {
-                            show: true,
-                            name: { color: textColor },
-                            value: {
-                                color: isDark ? '#fff' : '#111827',
-                                fontSize: '24px',
-                                fontWeight: 700,
-                            },
-                            total: {
-                                show: true,
-                                label: 'Total',
-                                color: '#9CA3AF',
-                                formatter: function (w) {
-                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            dataLabels: { enabled: false },
-            stroke: { show: false }, 
-            legend: { position: 'bottom', labels: { colors: textColor } },
-            theme: { mode: themeMode }
-        };
-        new ApexCharts(document.querySelector("#chartFacultades"), optionsFacultad).render();
+(async function loadDashboard() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const themeMode = isDark ? 'dark' : 'light';
+    const textColor = isDark ? '#fff' : '#374151';
 
-        // 3. Chart: Top Lotes (Bar)
-        var optionsLotes = {
-            series: [{
-                name: 'Descargas',
-                data: {{ data_top_lotes|safe }}
-            }],
-            chart: {
-                type: 'bar',
-                height: 320,
-                fontFamily: 'Inter, sans-serif',
-                background: 'transparent',
-                toolbar: { show: false }
-            },
-            plotOptions: {
-                bar: {
-                    borderRadius: 6,
-                    horizontal: true,
-                    barHeight: '50%',
-                    distributed: true,
-                    dataLabels: { position: 'bottom' }
-                }
-            },
-            colors: ['#0071CE', '#FF9100', '#10B981', '#EC4899', '#8B5CF6'],
-            dataLabels: { enabled: false },
-            xaxis: {
-                categories: {{ labels_top_lotes|safe }},
-                labels: { style: { colors: textColor } },
-                 axisBorder: { show: false },
-                axisTicks: { show: false }
-            },
-            yaxis: { labels: { style: { colors: textColor } } },
-            grid: {
-                borderColor: isDark ? '#1e293b' : '#e2e8f0',
-                strokeDashArray: 4,
-            },
-            legend: { show: false },
-            theme: { mode: themeMode }
-        };
-        new ApexCharts(document.querySelector("#chartTopLotes"), optionsLotes).render();
-    });
+    let data;
+    try {
+        const res = await fetch('/api/v1/admin/dashboard/', { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        data = await res.json();
+    } catch (err) {
+        console.error('Dashboard API error:', err);
+        document.getElementById('audit-list').innerHTML =
+            '<p class="text-sm text-red-500 text-center py-4">Error al cargar datos</p>';
+        return;
+    }
+
+    // Totals
+    document.getElementById('stat-certificados').textContent = data.totals.certificados.toLocaleString('es-EC');
+    document.getElementById('stat-descargas').textContent = data.totals.descargas.toLocaleString('es-EC');
+    document.getElementById('stat-busquedas').textContent = data.totals.busquedas.toLocaleString('es-EC');
+    document.getElementById('stat-lotes').textContent = data.recent_lotes.length;
+
+    // Audit list
+    const auditList = document.getElementById('audit-list');
+    if (data.auditoria.length === 0) {
+        auditList.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Sin actividad.</p>';
+    } else {
+        auditList.innerHTML = data.auditoria.map(a => `
+            <div class="flex gap-3 items-start pb-3 border-b border-gray-100 dark:border-blue-900/30 last:border-0 last:pb-0">
+                <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-blue-900/30 text-[10px] font-bold text-gray-600 dark:text-blue-200">
+                    ${esc((a.usuario_username || '?').charAt(0).toUpperCase())}
+                </div>
+                <div>
+                    <p class="text-xs font-bold text-gray-800 dark:text-gray-200">${esc(a.accion)}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words max-w-[180px]">${esc(a.detalle)}</p>
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">${timeAgo(a.fecha)} hace</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Chart: Emission Trend
+    new ApexCharts(document.querySelector('#chartTrend'), {
+        series: [{ name: 'Certificados Emitidos', data: data.charts.daily.data }],
+        chart: { type: 'area', height: 320, fontFamily: 'Inter, sans-serif', background: 'transparent',
+                 toolbar: { show: false }, animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+        colors: ['#6366F1'],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
+        dataLabels: { enabled: false },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: { categories: data.charts.daily.labels, labels: { style: { colors: textColor } },
+                 axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { colors: textColor } } },
+        grid: { borderColor: isDark ? '#1e293b' : '#e2e8f0', strokeDashArray: 4 },
+        theme: { mode: themeMode }
+    }).render();
+
+    // Chart: Faculty Donut
+    new ApexCharts(document.querySelector('#chartFacultades'), {
+        series: data.charts.facultad.data,
+        chart: { type: 'donut', height: 320, fontFamily: 'Inter, sans-serif', background: 'transparent' },
+        labels: data.charts.facultad.labels,
+        colors: ['#0071CE', '#FF9100', '#10B981', '#EC4899', '#8B5CF6'],
+        plotOptions: { pie: { donut: { size: '75%', labels: {
+            show: true, name: { color: textColor },
+            value: { color: isDark ? '#fff' : '#111827', fontSize: '24px', fontWeight: 700 },
+            total: { show: true, label: 'Total', color: '#9CA3AF',
+                     formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0) }
+        } } } },
+        dataLabels: { enabled: false },
+        stroke: { show: false },
+        legend: { position: 'bottom', labels: { colors: textColor } },
+        theme: { mode: themeMode }
+    }).render();
+
+    // Chart: Top Lotes Bar
+    new ApexCharts(document.querySelector('#chartTopLotes'), {
+        series: [{ name: 'Descargas', data: data.charts.top_lotes.data }],
+        chart: { type: 'bar', height: 320, fontFamily: 'Inter, sans-serif', background: 'transparent', toolbar: { show: false } },
+        plotOptions: { bar: { borderRadius: 6, horizontal: true, barHeight: '50%', distributed: true,
+                              dataLabels: { position: 'bottom' } } },
+        colors: ['#0071CE', '#FF9100', '#10B981', '#EC4899', '#8B5CF6'],
+        dataLabels: { enabled: false },
+        xaxis: { categories: data.charts.top_lotes.labels, labels: { style: { colors: textColor } },
+                 axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { colors: textColor } } },
+        grid: { borderColor: isDark ? '#1e293b' : '#e2e8f0', strokeDashArray: 4 },
+        legend: { show: false },
+        theme: { mode: themeMode }
+    }).render();
+})();
 </script>
 {% endblock %}

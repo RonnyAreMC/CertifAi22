@@ -14,11 +14,9 @@ def send_certificate_email(certificado):
             return False
 
         subject = f"¡Felicidades {certificado.nombres}! Tu certificado está listo - MUC"
-        
-        # Link construction (Assuming standard port 8000 for dev, should be domain in prod)
-        # Ideally this should come from settings or sites framework
-        domain = "http://localhost:8000" 
-        search_url = f"{domain}/buscar/"
+
+        site_url = getattr(settings, 'SITE_URL', 'http://localhost:8001').rstrip('/')
+        search_url = f"{site_url}/buscar/"
         
         html_message = f"""
         <html>

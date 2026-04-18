@@ -251,9 +251,7 @@
         if (q.length < 2) { clearSuggestions(); return; }
 
         timeout = setTimeout(function() {
-            fetch('{% url "public:search_autocomplete" %}?q=' + encodeURIComponent(q), {
-                method: 'GET', headers: {'X-Requested-With': 'XMLHttpRequest'}
-            })
+            fetch('/api/v1/public/certificates/autocomplete/?q=' + encodeURIComponent(q))
             .then(r => r.json())
             .then(data => {
                 const results = (data.results || []).map(item => ({ name: item.name }));

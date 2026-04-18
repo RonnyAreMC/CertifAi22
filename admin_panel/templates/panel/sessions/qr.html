@@ -102,8 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // Polling for Attendees
 async function pollAttendees() {
     try {
-        const url = `/panel/sessions/${sessionId}/attendees/?since=${encodeURIComponent(lastTimestamp)}`;
-        const res = await fetch(url);
+        const url = `/api/v1/admin/sessions/${sessionId}/attendees/?since=${encodeURIComponent(lastTimestamp)}`;
+        const res = await fetch(url, { credentials: 'same-origin' });
         const data = await res.json();
         
         // Update counter

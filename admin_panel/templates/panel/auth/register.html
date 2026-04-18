@@ -126,38 +126,38 @@
                 </div>
                 {% endif %}
 
-                <form method="POST" class="space-y-4">
-                    {% csrf_token %}
+                {% with css="w-full bg-white dark:bg-[#0B1221] border border-gray-200 dark:border-white/10 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-unemi-orange focus:ring-1 focus:ring-unemi-orange transition-colors" %}
+                <form id="register-form" class="space-y-4">
+                    <div id="register-errors" class="hidden bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-500/30 rounded-lg px-3 py-2 text-xs"></div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Nombres *</label>
-                            {{ form.nombres }}
-                            {% if form.nombres.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.nombres.errors.0 }}</p>{% endif %}
+                            <input type="text" name="nombres" required placeholder="Tus nombres" class="{{ css }}">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Apellidos *</label>
-                            {{ form.apellidos }}
-                            {% if form.apellidos.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.apellidos.errors.0 }}</p>{% endif %}
+                            <input type="text" name="apellidos" required placeholder="Tus apellidos" class="{{ css }}">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Correo *</label>
-                        {{ form.email }}
-                        {% if form.email.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+                        <input type="email" name="email" required placeholder="correo@ejemplo.com" class="{{ css }}">
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Teléfono</label>
-                            {{ form.telefono }}
-                            {% if form.telefono.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.telefono.errors.0 }}</p>{% endif %}
+                            <input type="tel" name="telefono" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="Ej: 0997541322" class="{{ css }}">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Facultad *</label>
-                            {{ form.facultad }}
-                            {% if form.facultad.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.facultad.errors.0 }}</p>{% endif %}
+                            <select name="facultad" required class="{{ css }}">
+                                {% for val, lbl in facultades_choices %}
+                                <option value="{{ val }}">{{ lbl }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
 
@@ -165,31 +165,70 @@
                         <div>
                             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Contraseña *</label>
                             <div class="relative">
-                                {{ form.password }}
+                                <input type="password" name="password" required minlength="6" placeholder="••••••••" class="{{ css }}">
                                 <button type="button" class="password-toggle absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-unemi-orange" data-target="password">
                                     <i class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
-                            {% if form.password.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.password.errors.0 }}</p>{% endif %}
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">Confirmar *</label>
                             <div class="relative">
-                                {{ form.password_confirm }}
+                                <input type="password" name="password_confirm" required placeholder="••••••••" class="{{ css }}">
                                 <button type="button" class="password-toggle absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-unemi-orange" data-target="password_confirm">
                                     <i class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
-                            {% if form.password_confirm.errors %}<p class="text-red-500 text-[11px] mt-1">{{ form.password_confirm.errors.0 }}</p>{% endif %}
                         </div>
                     </div>
 
-                    <button type="submit"
+                    <button type="submit" id="register-submit"
                         class="w-full bg-unemi-blue hover:bg-unemi-blue/90 dark:bg-unemi-orange dark:hover:bg-unemi-orange/90 text-white font-bold text-sm py-4 rounded-xl transition-colors mt-3 shadow-lg shadow-unemi-blue/20 dark:shadow-unemi-orange/20 flex items-center justify-center gap-2 uppercase tracking-wider">
                         <i class="fa-solid fa-paper-plane"></i>
                         Enviar solicitud
                     </button>
                 </form>
+                {% endwith %}
+
+                <script>
+                (function() {
+                    const form = document.getElementById('register-form');
+                    const btn = document.getElementById('register-submit');
+                    const errBox = document.getElementById('register-errors');
+                    form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        btn.disabled = true;
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+                        errBox.classList.add('hidden');
+
+                        const payload = Object.fromEntries(new FormData(e.target).entries());
+                        try {
+                            const res = await fetch('/api/v1/auth/register/', {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload),
+                            });
+                            const data = await res.json();
+                            if (!res.ok) {
+                                errBox.innerHTML = Object.entries(data).map(([k, v]) =>
+                                    `<p><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</p>`
+                                ).join('');
+                                errBox.classList.remove('hidden');
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar solicitud';
+                                return;
+                            }
+                            window.location.href = `/panel/solicitud-pendiente/${data.solicitud_id}/`;
+                        } catch (err) {
+                            errBox.textContent = 'Error de red: ' + err.message;
+                            errBox.classList.remove('hidden');
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar solicitud';
+                        }
+                    });
+                })();
+                </script>
 
                 <div class="text-center mt-6 pt-5 border-t border-gray-100 dark:border-white/10">
                     <p class="text-sm text-gray-500 dark:text-gray-400">

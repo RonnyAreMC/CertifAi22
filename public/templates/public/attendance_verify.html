@@ -349,7 +349,7 @@ async function savePhone() {
     formData.append('csrfmiddlewaretoken', csrfToken);
 
     try {
-        const response = await fetch("{% url 'public:attendance_update_phone' %}", {
+        const response = await fetch('/api/v1/public/attendance/update-phone/', {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -422,7 +422,7 @@ async function submitConfirmation() {
         formData.append('cert_id', certId);
         formData.append('sesion_id', sesionId);
         
-        const res = await fetch("{% url 'public:attendance_confirm' %}", {
+        const res = await fetch('/api/v1/public/attendance/confirm/', {
             method: 'POST',
             headers: { 'X-CSRFToken': csrfToken },
             body: formData

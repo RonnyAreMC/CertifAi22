@@ -4,54 +4,50 @@ from core.models import LoteCertificados, Certificado, Participante
 import uuid
 from core.validators import validate_file_content, sanitize_text
 
-def analyze_excel_headers(lote_id):
-    """
-    Analyzes the Excel file of a Lote and returns headers, preview data, and suggested mapping.
-    """
+def analyze_excel_file(file_path):
+    """Analyze any Excel file at a path and return headers, preview, and suggested mapping."""
     try:
-        lote = LoteCertificados.objects.get(id=lote_id)
-        file_path = lote.archivo_excel.path
-        
-        # Read Excel (Force all to string to avoid auto-formatting issues)
-        # Read only first 5 rows for preview
-        df = pd.read_excel(file_path, dtype=str, nrows=5) 
-        
+        df = pd.read_excel(file_path, dtype=str, nrows=5)
         columns = [str(c).strip() for c in df.columns]
-        
-        # Smart suggestions
+
         suggestions = {}
         original_cols_lower = {c.lower(): c for c in columns}
-        
-        # Helper to find best match
+
         def find_match(keywords, exclude=None):
             for k in keywords:
                 for col_lower in original_cols_lower:
-                    # Skip excluded terms (e.g. don't match 'apellidos' for 'id')
                     if exclude and any(ex in col_lower for ex in exclude):
                         continue
-                        
                     if k in col_lower:
                         return original_cols_lower[col_lower]
             return None
 
-        # Exclude name-related columns from Cédula detection to prevent 'id' matching 'apell(id)os'
         suggestions['cedula'] = find_match(['cedula', 'dni', 'identidad', 'documento', 'identificación'], exclude=['nombre', 'apellido', 'participante'])
-        
         suggestions['nombres'] = find_match(['nombres', 'nombre', 'participante', 'estudiante'])
         suggestions['apellidos'] = find_match(['apellidos', 'apellido'])
         suggestions['email'] = find_match(['email', 'correo', 'e-mail', 'mail'])
         suggestions['celular'] = find_match(['celular', 'telefono', 'movil', 'whatsapp', 'tlf'])
         suggestions['curso'] = find_match(['curso', 'seminario', 'tema', 'capacitacion'])
-        
-        # Preview data (list of lists)
+
         preview = df.fillna('').values.tolist()
-        
+
         return {
             'success': True,
             'columns': columns,
             'suggestions': suggestions,
-            'preview': preview
+            'preview': preview,
         }
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
+def analyze_excel_headers(lote_id):
+    """Analyze the Excel file attached to a Lote."""
+    try:
+        lote = LoteCertificados.objects.get(id=lote_id)
+        return analyze_excel_file(lote.archivo_excel.path)
+    except LoteCertificados.DoesNotExist:
+        return {'success': False, 'error': 'Lote no encontrado.'}
     except Exception as e:
         return {'success': False, 'error': str(e)}
 
@@ -261,42 +257,6 @@ def procesar_archivo_excel_lote_business(lote_id, mapping=None):
         return False, str(e)
 
 
-def analyze_excel_file(file_path):
-    """Analyze any Excel file and return headers, preview, and suggested mapping."""
-    try:
-        df = pd.read_excel(file_path, dtype=str, nrows=5)
-        columns = [str(c).strip() for c in df.columns]
-
-        suggestions = {}
-        original_cols_lower = {c.lower(): c for c in columns}
-
-        def find_match(keywords, exclude=None):
-            for k in keywords:
-                for col_lower in original_cols_lower:
-                    if exclude and any(ex in col_lower for ex in exclude):
-                        continue
-                    if k in col_lower:
-                        return original_cols_lower[col_lower]
-            return None
-
-        suggestions['cedula'] = find_match(['cedula', 'dni', 'identidad', 'documento', 'identificación'], exclude=['nombre', 'apellido', 'participante'])
-        suggestions['nombres'] = find_match(['nombres', 'nombre', 'participante', 'estudiante'])
-        suggestions['apellidos'] = find_match(['apellidos', 'apellido'])
-        suggestions['email'] = find_match(['email', 'correo', 'e-mail', 'mail'])
-        suggestions['celular'] = find_match(['celular', 'telefono', 'movil', 'whatsapp', 'tlf'])
-
-        preview = df.fillna('').values.tolist()
-
-        return {
-            'success': True,
-            'columns': columns,
-            'suggestions': suggestions,
-            'preview': preview,
-        }
-    except Exception as e:
-        return {'success': False, 'error': str(e)}
-
-
-# English alias for clean imports
+# English aliases for clean imports
 process_excel_batch = procesar_archivo_excel_lote_business
 analyze_headers = analyze_excel_headers

@@ -371,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hint.style.opacity = '0';
         spinner.style.display = 'block';
 
-        fetch(`/attendance/autocomplete/?q=${encodeURIComponent(query)}`)
+        fetch(`/api/v1/public/attendance/search/?q=${encodeURIComponent(query)}`)
             .then(r => r.json())
             .then(data => {
                 spinner.style.display = 'none';

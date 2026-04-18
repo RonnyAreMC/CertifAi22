@@ -1,0 +1,491 @@
+{% extends 'public/base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 md:py-12 px-4">
+
+    <!-- Header -->
+    <div class="mb-10 text-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F58830]/10 text-[#F58830] text-xs font-bold uppercase tracking-wider mb-3">
+            <i class="fa-solid fa-calendar-days"></i> Eventos Próximos
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black text-[#162054] dark:text-white tracking-tight mb-3">
+            Eventos disponibles
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+            Inscríbete en los próximos seminarios, talleres y capacitaciones de MUC Academy.
+        </p>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading-state" class="text-center py-12">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-[#F58830]"></i>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">Cargando eventos...</p>
+    </div>
+
+    <!-- Upcoming grid (populated by JS) -->
+    <div id="upcoming-section" class="hidden">
+        <div id="upcoming-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+    <!-- Empty state for upcoming -->
+    <div id="empty-upcoming" class="hidden text-center py-12">
+        <div class="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl text-gray-300">
+            <i class="fa-solid fa-calendar-xmark"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-500 dark:text-gray-400">No hay eventos próximos</h3>
+        <p class="text-gray-400 dark:text-gray-500 mt-1 text-sm">Vuelve pronto para ver próximos eventos.</p>
+    </div>
+
+    <!-- Past events section -->
+    <div id="past-section" class="mt-16 hidden">
+        <div class="flex items-center gap-3 mb-6">
+            <div class="h-px bg-gray-200 dark:bg-blue-900/30 flex-1"></div>
+            <h2 class="text-sm font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Eventos Recientes
+            </h2>
+            <div class="h-px bg-gray-200 dark:bg-blue-900/30 flex-1"></div>
+        </div>
+        <div id="past-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </div>
+
+    <!-- Fallback: no upcoming, no past -->
+    <div id="empty-all" class="hidden text-center mt-8">
+        <a href="{% url 'public:landing' %}" class="inline-flex items-center gap-2 text-[#F58830] hover:underline font-bold">
+            <i class="fa-solid fa-arrow-left"></i> Volver al inicio
+        </a>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div id="eventModal" class="fixed inset-0 z-[200] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto" onclick="closeEventModal(event)">
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden relative flex flex-col md:flex-row" onclick="event.stopPropagation()">
+        <button type="button" onclick="closeEventModal()" aria-label="Cerrar"
+            class="absolute top-3 right-3 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white text-lg flex items-center justify-center transition-all">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div id="modal-image-wrap" class="md:w-1/2 relative bg-gradient-to-br from-gray-50 to-gray-200 dark:from-[#0F163A] dark:to-[#162054] flex-shrink-0 flex items-center justify-center min-h-[240px] md:min-h-[450px] md:max-h-[92vh] overflow-hidden">
+            <img id="modal-img-bg" src="" alt="" class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 hidden">
+            <img id="modal-img" src="" alt="" class="hidden relative z-10 max-w-full max-h-full md:max-h-[92vh] object-contain cursor-zoom-in transition-all" onclick="zoomModalImage()">
+            <div id="modal-gradient" class="hidden w-full h-full min-h-[240px] md:min-h-[450px] items-center justify-center">
+                <i id="modal-gradient-icon" class="fa-solid fa-calendar-check text-white/50 text-8xl"></i>
+            </div>
+            <div id="modal-status-badge" class="absolute top-4 left-4 z-20"></div>
+        </div>
+
+        <div class="md:w-1/2 flex flex-col overflow-y-auto">
+            <div class="p-6 md:p-8 flex-1">
+                <div id="modal-badges" class="flex flex-wrap gap-2 mb-4"></div>
+                <h2 id="modal-title" class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white leading-tight mb-3"></h2>
+                <p id="modal-description" class="text-gray-500 dark:text-gray-400 leading-relaxed mb-6 hidden"></p>
+
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#F58830]/10 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-calendar-day text-[#F58830]"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Fecha</p>
+                            <p id="modal-fecha" class="text-gray-800 dark:text-white font-bold"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#F58830]/10 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-clock text-[#F58830]"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Horario</p>
+                            <p id="modal-horario" class="text-gray-800 dark:text-white font-bold"></p>
+                        </div>
+                    </div>
+                    <div id="modal-ubicacion-row" class="flex items-start gap-3 hidden">
+                        <div id="modal-ubicacion-icon-wrap" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                            <i id="modal-ubicacion-icon" class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p id="modal-ubicacion-label" class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Lugar</p>
+                            <p id="modal-ubicacion" class="text-gray-800 dark:text-white font-bold break-words"></p>
+                            <a id="modal-enlace" href="#" target="_blank" rel="noopener" class="hidden text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold break-all"></a>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[#F58830]/10 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-users text-[#F58830]"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Cupos</p>
+                            <p id="modal-cupos" class="text-gray-800 dark:text-white font-bold"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modal-cap-bar" class="hidden mb-6">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span id="modal-cap-text" class="text-gray-500 dark:text-gray-400 font-bold"></span>
+                    </div>
+                    <div class="w-full bg-gray-100 dark:bg-[#0F163A]/50 rounded-full h-2 overflow-hidden">
+                        <div id="modal-cap-fill" class="h-full bg-[#F58830] rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-8 pt-0 md:pt-0 border-t border-gray-100 dark:border-blue-900/30 bg-white dark:bg-[#162054] md:bg-transparent">
+                <div id="modal-cta"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen image lightbox -->
+<div id="imageLightbox" class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/95 backdrop-blur-sm p-4" onclick="closeImageLightbox(event)">
+    <button type="button" onclick="closeImageLightbox()" class="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl flex items-center justify-center z-10">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+    <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[90vh] object-contain rounded-xl" onclick="event.stopPropagation()">
+</div>
+
+<script>
+const REGISTER_URL_BASE = "{% url 'public:session_register' 0 %}";
+
+// ─── Escape HTML helper ───────────────────────────────────────
+function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+}
+
+// ─── Format fecha (YYYY-MM-DD → dd/mm/yyyy) ──────────────────
+function formatDate(isoDate) {
+    if (!isoDate) return '';
+    const [y, m, d] = isoDate.split('-');
+    return `${d}/${m}/${y}`;
+}
+
+function formatTime(t) {
+    if (!t) return '';
+    return t.substring(0, 5);
+}
+
+// ─── Render one card as HTML ─────────────────────────────────
+function renderCard(s, isPast) {
+    const esVirtual = s.modalidad === 'virtual';
+    const titulo = s.titulo || s.dia_semana;
+    const fechaFmt = formatDate(s.fecha);
+    const horaIni = formatTime(s.hora_inicio);
+    const horaFin = formatTime(s.hora_fin);
+
+    // Header image / gradient
+    let header;
+    if (s.imagen_banner_url) {
+        const grayCls = isPast ? 'grayscale group-hover:grayscale-0' : 'group-hover:scale-105';
+        const heightCls = isPast ? 'h-32' : 'h-40';
+        header = `
+            <div class="relative ${heightCls} overflow-hidden bg-gray-100 dark:bg-[#0F163A]">
+                <img src="${esc(s.imagen_banner_url)}" alt="${esc(titulo)}" class="w-full h-full object-cover ${grayCls} transition-all duration-500">
+                <div class="absolute top-3 right-3">${badgeStatus(isPast, esVirtual, false)}</div>
+            </div>`;
+    } else {
+        const gradCls = isPast ? 'h-24 bg-gradient-to-br from-gray-400 to-gray-600'
+            : esVirtual ? 'h-32 bg-gradient-to-br from-blue-500 to-blue-700'
+            : 'h-32 bg-gradient-to-br from-[#F58830] to-[#D97520]';
+        const icon = isPast ? 'fa-flag-checkered' : esVirtual ? 'fa-video' : 'fa-calendar-check';
+        const iconSize = isPast ? 'text-4xl' : 'text-6xl';
+        header = `
+            <div class="relative ${gradCls} flex items-center justify-center">
+                <i class="fa-solid ${icon} text-white/40 ${iconSize}"></i>
+                <div class="absolute top-3 right-3">${badgeStatus(isPast, esVirtual, true)}</div>
+            </div>`;
+    }
+
+    // Info rows
+    const ubicacionHtml = esVirtual
+        ? `<p><i class="fa-solid fa-video mr-2 ${isPast ? 'text-gray-400' : 'text-blue-500'} w-4"></i>${esc(s.plataforma_display || 'Reunión virtual')}</p>`
+        : (s.lugar ? `<p class="truncate"><i class="fa-solid fa-location-dot mr-2 ${isPast ? 'text-gray-400' : 'text-[#F58830]'} w-4"></i>${esc(s.lugar)}</p>` : '');
+
+    const infoRows = isPast
+        ? `<p><i class="fa-solid fa-calendar-day mr-2 text-gray-400 w-4"></i>${fechaFmt}</p>
+           ${ubicacionHtml}
+           <p><i class="fa-solid fa-users mr-2 text-gray-400"></i>${s.confirmados_count} inscritos</p>`
+        : `<p><i class="fa-solid fa-calendar-day mr-2 text-[#F58830] w-4"></i>${esc(s.dia_semana)} ${fechaFmt}</p>
+           <p><i class="fa-solid fa-clock mr-2 text-[#F58830] w-4"></i>${horaIni} – ${horaFin}</p>
+           ${ubicacionHtml}`;
+
+    // Cupos
+    let cuposHtml = '';
+    if (!isPast) {
+        if (s.capacidad === 0) {
+            cuposHtml = `<div class="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 font-bold mb-4"><i class="fa-solid fa-infinity"></i> Cupos ilimitados</div>`;
+        } else if (!s.esta_llena) {
+            const pct = Math.min(100, (s.confirmados_count / s.capacidad) * 100);
+            cuposHtml = `<div class="mb-4">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-gray-500 dark:text-gray-400 font-bold">${s.cupos_disponibles} cupos disponibles</span>
+                    <span class="text-gray-400">${s.confirmados_count}/${s.capacidad}</span>
+                </div>
+                <div class="w-full bg-gray-100 dark:bg-[#0F163A]/50 rounded-full h-1.5 overflow-hidden">
+                    <div class="h-full bg-[#F58830] rounded-full" style="width: ${pct}%"></div>
+                </div>
+            </div>`;
+        } else {
+            cuposHtml = `<div class="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 font-bold mb-4"><i class="fa-solid fa-ban"></i> Cupos agotados</div>`;
+        }
+    }
+
+    // Solo líderes badge
+    const liderBadge = (s.solo_lideres && !isPast)
+        ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 mb-2"><i class="fa-solid fa-user-tie text-[10px]"></i> Solo Líderes Académicos</span>`
+        : '';
+
+    const descripcion = (s.descripcion && !isPast)
+        ? `<p class="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">${esc(s.descripcion)}</p>`
+        : '';
+
+    const footerCls = isPast ? 'text-gray-400 dark:text-gray-500' : 'text-[#F58830]';
+    const titleCls = isPast ? 'text-base' : 'text-xl';
+    const padding = isPast ? 'p-5' : 'p-6';
+    const spacing = isPast ? 'space-y-1 text-xs' : 'space-y-1.5 text-sm';
+    const pastOpacity = isPast ? 'opacity-80 hover:opacity-100' : '';
+
+    // Data attributes for modal
+    const dataAttrs = `
+        data-sesion-id="${s.id}"
+        data-titulo="${esc(titulo)}"
+        data-descripcion="${esc(s.descripcion || '')}"
+        data-dia-semana="${esc(s.dia_semana)}"
+        data-fecha-format="${fechaFmt}"
+        data-hora-inicio="${horaIni}"
+        data-hora-fin="${horaFin}"
+        data-modalidad="${esc(s.modalidad)}"
+        data-plataforma="${esc(s.plataforma_display || '')}"
+        data-enlace-virtual="${esc(s.enlace_virtual || '')}"
+        data-lugar="${esc(s.lugar || '')}"
+        data-capacidad="${s.capacidad}"
+        data-confirmados="${s.confirmados_count}"
+        data-solo-lideres="${s.solo_lideres ? 1 : 0}"
+        data-is-past="${isPast ? 1 : 0}"
+        ${s.imagen_banner_url ? `data-banner="${esc(s.imagen_banner_url)}"` : ''}`;
+
+    return `<div role="button" tabindex="0"
+        class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer ${pastOpacity}"
+        onclick="openEventModal(this)"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEventModal(this);}"
+        ${dataAttrs}>
+        ${header}
+        <div class="${padding}">
+            ${liderBadge}
+            <h3 class="font-black ${titleCls} text-gray-800 dark:text-white mb-2 line-clamp-2">${esc(titulo)}</h3>
+            ${descripcion}
+            <div class="${spacing} text-gray-500 dark:text-gray-400 mb-4">
+                ${infoRows}
+            </div>
+            ${cuposHtml}
+            <div class="text-center text-xs font-bold ${footerCls} mt-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                <i class="fa-solid fa-eye mr-1"></i> Ver detalles completos
+            </div>
+        </div>
+    </div>`;
+}
+
+function badgeStatus(isPast, esVirtual, onGradient) {
+    const bg = onGradient ? 'bg-white/20' : (isPast ? 'bg-gray-700/90' : (esVirtual ? 'bg-blue-500/90' : 'bg-[#F58830]/90'));
+    if (isPast) return `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${bg} text-white backdrop-blur-sm"><i class="fa-solid fa-flag-checkered text-[10px]"></i> Finalizado</span>`;
+    if (esVirtual) return `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${bg} text-white backdrop-blur-sm"><i class="fa-solid fa-video text-[10px]"></i> Virtual</span>`;
+    return `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${bg} text-white backdrop-blur-sm"><i class="fa-solid fa-building text-[10px]"></i> Presencial</span>`;
+}
+
+// ─── Load events from API ────────────────────────────────────
+(async function loadEvents() {
+    const loadingEl = document.getElementById('loading-state');
+    try {
+        const [upRes, pastRes] = await Promise.all([
+            fetch('/api/v1/public/sessions/upcoming/'),
+            fetch('/api/v1/public/sessions/past/'),
+        ]);
+        const upData = await upRes.json();
+        const pastData = await pastRes.json();
+
+        const upcoming = upData.results || upData; // supports paginated or plain array
+        const past = Array.isArray(pastData) ? pastData : (pastData.results || []);
+
+        loadingEl.classList.add('hidden');
+
+        if (upcoming.length > 0) {
+            document.getElementById('upcoming-section').classList.remove('hidden');
+            document.getElementById('upcoming-grid').innerHTML = upcoming.map(s => renderCard(s, false)).join('');
+        } else {
+            document.getElementById('empty-upcoming').classList.remove('hidden');
+        }
+
+        if (past.length > 0) {
+            document.getElementById('past-section').classList.remove('hidden');
+            document.getElementById('past-grid').innerHTML = past.map(s => renderCard(s, true)).join('');
+        }
+
+        if (upcoming.length === 0 && past.length === 0) {
+            document.getElementById('empty-all').classList.remove('hidden');
+        }
+    } catch (err) {
+        loadingEl.innerHTML = `<p class="text-red-500">Error al cargar eventos. <a href="" class="underline">Reintentar</a></p>`;
+        console.error(err);
+    }
+})();
+
+// ─── Modal logic (same as before) ────────────────────────────
+function openEventModal(btn) {
+    const d = btn.dataset;
+    const modal = document.getElementById('eventModal');
+
+    const img = document.getElementById('modal-img');
+    const imgBg = document.getElementById('modal-img-bg');
+    const grad = document.getElementById('modal-gradient');
+    const gradIcon = document.getElementById('modal-gradient-icon');
+    if (d.banner) {
+        img.src = d.banner;
+        imgBg.src = d.banner;
+        img.classList.remove('hidden');
+        imgBg.classList.remove('hidden');
+        grad.classList.add('hidden'); grad.classList.remove('flex');
+    } else {
+        img.classList.add('hidden');
+        imgBg.classList.add('hidden');
+        img.src = '';
+        imgBg.src = '';
+        grad.classList.remove('hidden'); grad.classList.add('flex');
+        const isVirtual = d.modalidad === 'virtual';
+        grad.className = 'flex w-full h-full min-h-[240px] md:min-h-[450px] items-center justify-center bg-gradient-to-br ' +
+            (isVirtual ? 'from-blue-500 to-blue-700' : 'from-[#F58830] to-[#D97520]');
+        gradIcon.className = 'fa-solid ' + (isVirtual ? 'fa-video' : 'fa-calendar-check') + ' text-white/50 text-8xl';
+    }
+
+    const statusBadge = document.getElementById('modal-status-badge');
+    if (d.isPast === '1') {
+        statusBadge.innerHTML = '<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-gray-800/90 text-white backdrop-blur-sm"><i class="fa-solid fa-flag-checkered"></i> Evento Finalizado</span>';
+    } else {
+        statusBadge.innerHTML = '<span class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-green-500/90 text-white backdrop-blur-sm"><i class="fa-solid fa-circle-check"></i> Próximo</span>';
+    }
+
+    const badges = [];
+    if (d.modalidad === 'virtual') {
+        badges.push('<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"><i class="fa-solid fa-video"></i> Virtual</span>');
+    } else {
+        badges.push('<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"><i class="fa-solid fa-building"></i> Presencial</span>');
+    }
+    if (d.soloLideres === '1') {
+        badges.push('<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"><i class="fa-solid fa-user-tie"></i> Solo Líderes</span>');
+    }
+    document.getElementById('modal-badges').innerHTML = badges.join('');
+
+    document.getElementById('modal-title').textContent = d.titulo;
+    const descEl = document.getElementById('modal-description');
+    if (d.descripcion) {
+        descEl.textContent = d.descripcion;
+        descEl.classList.remove('hidden');
+    } else {
+        descEl.classList.add('hidden');
+    }
+    document.getElementById('modal-fecha').textContent = d.diaSemana + ' ' + d.fechaFormat;
+    document.getElementById('modal-horario').textContent = d.horaInicio + ' – ' + d.horaFin;
+
+    const ubicRow = document.getElementById('modal-ubicacion-row');
+    const ubicLabel = document.getElementById('modal-ubicacion-label');
+    const ubicText = document.getElementById('modal-ubicacion');
+    const ubicIconWrap = document.getElementById('modal-ubicacion-icon-wrap');
+    const ubicIcon = document.getElementById('modal-ubicacion-icon');
+    const enlace = document.getElementById('modal-enlace');
+
+    if (d.modalidad === 'virtual') {
+        ubicRow.classList.remove('hidden');
+        ubicLabel.textContent = 'Modalidad Virtual';
+        ubicText.textContent = d.plataforma || 'Reunión virtual';
+        ubicIconWrap.className = 'w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0';
+        ubicIcon.className = 'fa-solid fa-video text-blue-500';
+        if (d.enlaceVirtual && d.isPast !== '1') {
+            enlace.href = d.enlaceVirtual;
+            enlace.textContent = d.enlaceVirtual;
+            enlace.classList.remove('hidden');
+        } else {
+            enlace.classList.add('hidden');
+        }
+    } else if (d.lugar) {
+        ubicRow.classList.remove('hidden');
+        ubicLabel.textContent = 'Lugar';
+        ubicText.textContent = d.lugar;
+        ubicIconWrap.className = 'w-10 h-10 rounded-xl bg-[#F58830]/10 flex items-center justify-center shrink-0';
+        ubicIcon.className = 'fa-solid fa-location-dot text-[#F58830]';
+        enlace.classList.add('hidden');
+    } else {
+        ubicRow.classList.add('hidden');
+    }
+
+    const cap = parseInt(d.capacidad);
+    const confirmados = parseInt(d.confirmados);
+    const capBar = document.getElementById('modal-cap-bar');
+    const capFill = document.getElementById('modal-cap-fill');
+    const capText = document.getElementById('modal-cap-text');
+    const cuposText = document.getElementById('modal-cupos');
+
+    if (cap === 0) {
+        cuposText.innerHTML = '<i class="fa-solid fa-infinity mr-1 text-green-500"></i> Ilimitados · ' + confirmados + ' inscritos';
+        capBar.classList.add('hidden');
+    } else {
+        const disponibles = Math.max(0, cap - confirmados);
+        cuposText.textContent = confirmados + ' / ' + cap + ' (' + disponibles + ' disponibles)';
+        capBar.classList.remove('hidden');
+        const pct = Math.min(100, (confirmados / cap) * 100);
+        capFill.style.width = pct + '%';
+        capFill.className = 'h-full rounded-full transition-all ' + (disponibles === 0 ? 'bg-red-500' : 'bg-[#F58830]');
+        capText.textContent = disponibles === 0 ? 'Sin cupos disponibles' : disponibles + ' cupos disponibles';
+    }
+
+    const cta = document.getElementById('modal-cta');
+    if (d.isPast === '1') {
+        cta.innerHTML = '<div class="w-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-bold py-3 rounded-xl text-center text-sm"><i class="fa-solid fa-flag-checkered mr-1"></i> Este evento ya finalizó</div>';
+    } else if (cap > 0 && confirmados >= cap) {
+        cta.innerHTML = '<button disabled class="w-full bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 font-bold py-3 rounded-xl cursor-not-allowed text-sm"><i class="fa-solid fa-lock mr-1"></i> Cupos agotados</button>';
+    } else {
+        const url = REGISTER_URL_BASE.replace('/0/', '/' + d.sesionId + '/');
+        cta.innerHTML = '<a href="' + url + '" class="block w-full bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3.5 rounded-xl transition-all text-center text-sm"><i class="fa-solid fa-user-plus mr-1"></i> Inscribirme en este evento</a>';
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEventModal(event) {
+    if (event && event.target.id !== 'eventModal') return;
+    const m = document.getElementById('eventModal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+function zoomModalImage() {
+    const src = document.getElementById('modal-img').src;
+    if (!src) return;
+    document.getElementById('lightbox-img').src = src;
+    const lb = document.getElementById('imageLightbox');
+    lb.classList.remove('hidden');
+    lb.classList.add('flex');
+}
+
+function closeImageLightbox(event) {
+    if (event && event.target.id !== 'imageLightbox') return;
+    const lb = document.getElementById('imageLightbox');
+    lb.classList.add('hidden');
+    lb.classList.remove('flex');
+    document.getElementById('lightbox-img').src = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (!document.getElementById('imageLightbox').classList.contains('hidden')) {
+            closeImageLightbox();
+        } else {
+            closeEventModal();
+        }
+    }
+});
+</script>
+{% endblock %}

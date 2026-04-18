@@ -58,12 +58,39 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for s in sesiones %}
         <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 overflow-hidden hover:shadow-xl transition-all group">
+            {% if s.imagen_banner %}
+            <div class="relative h-32 overflow-hidden bg-gray-100 dark:bg-[#0F163A]">
+                <img src="{{ s.imagen_banner.url }}" alt="Banner" class="w-full h-full object-cover">
+                <div class="absolute top-2 right-2">
+                    {% if s.es_virtual %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/90 text-white backdrop-blur-sm">
+                        <i class="fa-solid fa-video text-[10px]"></i> Virtual
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#F58830]/90 text-white backdrop-blur-sm">
+                        <i class="fa-solid fa-building text-[10px]"></i> Presencial
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
             <div class="p-6">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ s.activa|yesno:'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400,bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' }}">
                         <i class="fa-solid {{ s.activa|yesno:'fa-circle-check,fa-circle-xmark' }} text-[10px]"></i>
                         {{ s.activa|yesno:'Activa,Inactiva' }}
                     </span>
+                    {% if not s.imagen_banner %}
+                        {% if s.es_virtual %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                            <i class="fa-solid fa-video text-[10px]"></i> Virtual
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
+                            <i class="fa-solid fa-building text-[10px]"></i> Presencial
+                        </span>
+                        {% endif %}
+                    {% endif %}
                     {% if s.solo_lideres %}
                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
                         <i class="fa-solid fa-user-tie text-[10px]"></i> Líderes
@@ -86,7 +113,12 @@
                     <i class="fa-solid fa-clock mr-1 text-[#F58830]"></i>
                     {{ s.hora_inicio|time:"H:i" }} – {{ s.hora_fin|time:"H:i" }}
                 </p>
-                {% if s.lugar %}
+                {% if s.es_virtual and s.enlace_virtual %}
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
+                    <i class="fa-solid fa-link mr-1 text-[#F58830]"></i>
+                    <a href="{{ s.enlace_virtual }}" target="_blank" rel="noopener" class="hover:text-[#F58830] hover:underline">{{ s.plataforma_display_safe }}</a>
+                </p>
+                {% elif s.lugar %}
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     <i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i>
                     {{ s.lugar }}
@@ -166,15 +198,12 @@
                         <i class="fa-solid fa-link"></i> Link Registro
                     </button>
                     {% endif %}
-                    <a href="{% url 'panel:session_toggle' s.id %}" class="px-3 py-2 rounded-lg text-xs font-bold {{ s.activa|yesno:'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100,bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100' }} transition-all" title="{{ s.activa|yesno:'Desactivar,Activar' }}">
+                    <button type="button" onclick="toggleSession({{ s.id }})" class="px-3 py-2 rounded-lg text-xs font-bold {{ s.activa|yesno:'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100,bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100' }} transition-all" title="{{ s.activa|yesno:'Desactivar,Activar' }}">
                         <i class="fa-solid {{ s.activa|yesno:'fa-pause,fa-play' }}"></i>
-                    </a>
-                    <form id="delete-form-{{ s.id }}" method="POST" action="{% url 'panel:session_delete' s.id %}" class="inline">
-                        {% csrf_token %}
-                        <button type="button" onclick="showConfirm('Eliminar Sesión', '¿Estás seguro de que deseas eliminar esta sesión?', () => document.getElementById('delete-form-{{ s.id }}').submit())" class="px-3 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-400 dark:bg-gray-800/50 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 transition-all" title="Eliminar">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </form>
+                    </button>
+                    <button type="button" onclick="deleteSession({{ s.id }})" class="px-3 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-400 dark:bg-gray-800/50 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 transition-all" title="Eliminar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -202,8 +231,8 @@
                     Nuevo Evento
                 </h3>
             </div>
-            <form method="POST" action="{% url 'panel:session_create' %}" class="p-6 space-y-4">
-                {% csrf_token %}
+            <form id="create-session-form" class="p-6 space-y-4">
+                <div id="create-error-box" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"></div>
 
                 <div>
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Título</label>
@@ -213,7 +242,54 @@
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Descripción (opcional)</label>
                     <textarea name="descripcion" rows="2" placeholder="Descripción del evento..." class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] resize-none"></textarea>
                 </div>
+
+                <!-- Banner -->
                 <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1"><i class="fa-solid fa-image mr-1 text-[#F58830]"></i> Imagen de Banner (opcional)</label>
+                    <input type="file" name="imagen_banner" accept="image/*" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-[#F58830] file:text-white file:font-bold file:text-xs file:cursor-pointer">
+                    <p class="text-[0.65rem] text-gray-400 dark:text-gray-500 mt-1">Imagen promocional que verán los participantes en la página de registro.</p>
+                </div>
+
+                <!-- Modalidad -->
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2"><i class="fa-solid fa-globe mr-1 text-[#F58830]"></i> Modalidad</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="modalidad" value="presencial" checked class="peer sr-only" onchange="toggleModalidad('create')">
+                            <div class="p-3 rounded-xl border-2 border-gray-200 dark:border-blue-900/30 peer-checked:border-[#F58830] peer-checked:bg-[#F58830]/10 transition-all text-center">
+                                <i class="fa-solid fa-building text-lg text-gray-400 peer-checked:text-[#F58830] mb-1"></i>
+                                <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Presencial</p>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="modalidad" value="virtual" class="peer sr-only" onchange="toggleModalidad('create')">
+                            <div class="p-3 rounded-xl border-2 border-gray-200 dark:border-blue-900/30 peer-checked:border-[#F58830] peer-checked:bg-[#F58830]/10 transition-all text-center">
+                                <i class="fa-solid fa-video text-lg text-gray-400 peer-checked:text-[#F58830] mb-1"></i>
+                                <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Virtual</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Virtual fields (shown only when virtual) -->
+                <div id="create_virtual_fields" class="hidden space-y-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Plataforma</label>
+                        <select name="plataforma_virtual" class="w-full p-3 rounded-xl bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                            <option value="zoom">Zoom</option>
+                            <option value="meet">Google Meet</option>
+                            <option value="teams">Microsoft Teams</option>
+                            <option value="otro">Otra plataforma</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Enlace de la reunión <span class="text-red-500">*</span></label>
+                        <input type="url" name="enlace_virtual" placeholder="https://zoom.us/j/... o https://meet.google.com/..." class="w-full p-3 rounded-xl bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                    </div>
+                </div>
+
+                <!-- Lugar (solo presencial) -->
+                <div id="create_lugar_wrapper">
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Lugar</label>
                     <input type="text" name="lugar" placeholder="Ej: Auditorio Principal" class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
                 </div>
@@ -297,6 +373,21 @@
         }
     }
 
+    function toggleModalidad(prefix) {
+        const form = document.querySelector(prefix === 'create' ? '#createModal form' : 'form');
+        const selected = form.querySelector('input[name="modalidad"]:checked')?.value;
+        const virtualFields = document.getElementById(prefix + '_virtual_fields');
+        const lugarWrapper = document.getElementById(prefix + '_lugar_wrapper');
+        if (!virtualFields || !lugarWrapper) return;
+        if (selected === 'virtual') {
+            virtualFields.classList.remove('hidden');
+            lugarWrapper.classList.add('hidden');
+        } else {
+            virtualFields.classList.add('hidden');
+            lugarWrapper.classList.remove('hidden');
+        }
+    }
+
     function copyRegistroLink(sessionId) {
         const url = window.location.origin + '/sesion/' + sessionId + '/registro/';
         navigator.clipboard.writeText(url).then(() => {
@@ -311,6 +402,41 @@
             document.body.removeChild(input);
             showToast('Link de registro copiado', 'success');
         });
+    }
+
+    const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+    async function toggleSession(id) {
+        const res = await fetch(`/api/v1/admin/sessions/${id}/toggle/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': CSRF },
+        });
+        if (res.ok) location.reload();
+        else showToast && showToast('Error al cambiar estado', 'error');
+    }
+
+    function deleteSession(id) {
+        const doDelete = async () => {
+            const res = await fetch(`/api/v1/admin/sessions/${id}/`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': CSRF },
+            });
+            if (res.ok) {
+                location.reload();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                const msg = data.error || 'Error al eliminar';
+                if (typeof showToast === 'function') showToast(msg, 'error');
+                else alert(msg);
+            }
+        };
+        if (typeof showConfirm === 'function') {
+            showConfirm('Eliminar Sesión', '¿Estás seguro de que deseas eliminar esta sesión?', doDelete);
+        } else if (confirm('¿Eliminar sesión?')) {
+            doDelete();
+        }
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -336,14 +462,43 @@
             }
         });
 
-        // Handle form submission: inject capacidad=0 if ilimitada checked
-        const form = document.querySelector('#createModal form');
-        form.addEventListener('submit', function() {
-            const cb = document.getElementById('cap_ilimitada');
-            const input = document.getElementById('capacidad_input');
-            if (cb.checked) {
-                input.disabled = false;
-                input.value = '0';
+        // Create session form → /api/v1/admin/sessions/ via fetch multipart
+        const form = document.getElementById('create-session-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById('create-error-box');
+            errBox.classList.add('hidden');
+
+            // Inject capacidad=0 if ilimitada checked
+            const capCb = document.getElementById('cap_ilimitada');
+            const capInput = document.getElementById('capacidad_input');
+            if (capCb.checked) {
+                capInput.disabled = false;
+                capInput.value = '0';
+            }
+
+            const fd = new FormData(form);
+            if (!fd.get('solo_lideres')) fd.set('solo_lideres', 'false');
+
+            try {
+                const res = await fetch('/api/v1/admin/sessions/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': CSRF },
+                    body: fd,
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    errBox.innerHTML = Object.entries(data).map(([k, v]) =>
+                        `<p><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</p>`
+                    ).join('');
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+                location.reload();
+            } catch (err) {
+                errBox.textContent = 'Error de red: ' + err.message;
+                errBox.classList.remove('hidden');
             }
         });
     });

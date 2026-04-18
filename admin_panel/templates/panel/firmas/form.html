@@ -1,34 +1,29 @@
 {% extends "panel/base.html" %}
 
-{% block title %}{{ title }} - UNEMI{% endblock %}
-
-{% block page_title %}{{ title }}{% endblock %}
+{% block title %}{{ title|default:"Firma Institucional" }} - UNEMI{% endblock %}
+{% block page_title %}{{ title|default:"Firma Institucional" }}{% endblock %}
 
 {% block content %}
+{# Input class reutilizable — misma estética que StyledModelForm #}
+{% with css="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] transition-all duration-300" %}
 <div class="max-w-2xl mx-auto">
     <div class="bg-white dark:bg-[#0F163A]/50 rounded-2xl shadow-sm border border-gray-100 dark:border-blue-900/30 p-8 backdrop-blur-sm">
-        <form method="POST" enctype="multipart/form-data" class="space-y-6">
-            {% csrf_token %}
-            
-            {% if form.errors %}
-            <div class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm">
-                {{ form.errors }}
-            </div>
-            {% endif %}
+        <form id="firma-form" class="space-y-6">
+            <div id="error-box" class="hidden bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-sm"></div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre de Autoridad <span class="text-red-500">*</span></label>
-                {{ form.nombre }}
+                <input type="text" name="nombre" required value="{{ firma.nombre|default:'' }}" placeholder="Ej: Ph.D. Fabricio Guevara Viejó" class="{{ css }}">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cargo <span class="text-red-500">*</span></label>
-                {{ form.cargo }}
+                <input type="text" name="cargo" required value="{{ firma.cargo|default:'' }}" placeholder="Ej: RECTOR UNEMI" class="{{ css }}">
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Orden de aparición</label>
-                {{ form.orden }}
+                <input type="number" name="orden" min="0" value="{{ firma.orden|default:0 }}" placeholder="1, 2, 3..." class="{{ css }}">
                 <p class="mt-1 text-xs text-gray-500">Determina el orden por defecto al asignar firmas a un lote (1 = primero).</p>
             </div>
 
@@ -40,26 +35,95 @@
                     <img src="data:image/png;base64,{{ firma.imagen }}" alt="Firma Actual" class="h-16 object-contain bg-gray-50 dark:bg-gray-800 rounded p-2">
                 </div>
                 {% endif %}
-                <input type="file" name="imagen" accept="image/png, image/jpeg" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <input type="file" id="imagen-file" accept="image/png, image/jpeg" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                 <p class="mt-2 text-xs text-gray-500">Sube una nueva firma para reemplazar la actual. Se recomienda formato PNG sin fondo.</p>
             </div>
 
             <div class="flex items-center">
-                {{ form.activa }}
-                <label class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                    Firma activa y disponible para usar
-                </label>
+                <input type="checkbox" name="activa" id="activa" {% if firma.activa|default:True %}checked{% endif %} class="h-5 w-5 rounded text-[#F58830] focus:ring-[#F58830] border-gray-300">
+                <label for="activa" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">Firma activa y disponible para usar</label>
             </div>
 
             <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-blue-900/30">
-                <a href="{% url 'panel:firma_list' %}" class="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-medium">
-                    Cancelar
-                </a>
-                <button type="submit" class="bg-[#F58830] hover:bg-[#d9772a] text-white px-6 py-2.5 rounded-xl transition-colors font-medium">
-                    Guardar
-                </button>
+                <a href="{% url 'panel:firma_list' %}" class="px-6 py-2.5 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors font-medium">Cancelar</a>
+                <button type="submit" id="submit-btn" class="bg-[#F58830] hover:bg-[#d9772a] text-white px-6 py-2.5 rounded-xl transition-colors font-medium">Guardar</button>
             </div>
         </form>
     </div>
 </div>
+{% endwith %}
+
+<script>
+const FIRMA_ID = {{ firma.id|default:"null" }};
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+// Convierte File → base64 (sin el prefijo data:image/...)
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result.split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+}
+
+document.getElementById('firma-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errBox = document.getElementById('error-box');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+    errBox.classList.add('hidden');
+
+    const fd = new FormData(e.target);
+    const payload = {
+        nombre: fd.get('nombre'),
+        cargo: fd.get('cargo'),
+        orden: parseInt(fd.get('orden') || '0'),
+        activa: fd.get('activa') === 'on',
+    };
+
+    // Imagen → base64 si el user eligió un archivo
+    const fileInput = document.getElementById('imagen-file');
+    if (fileInput.files.length > 0) {
+        try {
+            payload.imagen = await fileToBase64(fileInput.files[0]);
+        } catch (err) {
+            errBox.textContent = 'No se pudo leer la imagen.';
+            errBox.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            return;
+        }
+    }
+
+    const url = FIRMA_ID
+        ? `/api/v1/admin/firmas/${FIRMA_ID}/`
+        : '/api/v1/admin/firmas/';
+    const method = FIRMA_ID ? 'PATCH' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            errBox.textContent = JSON.stringify(data);
+            errBox.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            return;
+        }
+        window.location.href = "{% url 'panel:firma_list' %}";
+    } catch (err) {
+        errBox.textContent = 'Error de red: ' + err.message;
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Guardar';
+    }
+});
+</script>
 {% endblock %}

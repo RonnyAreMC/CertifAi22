@@ -475,10 +475,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     order.push({ id: parseInt(card.dataset.id), orden: i });
                 });
                 // Save order
-                fetch('{% url "panel:landing_reorder" %}', {
+                fetch('/api/v1/admin/landing/blocks/reorder/', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(order),
+                    body: JSON.stringify({ items: order }),
                 });
             }
         });
@@ -507,13 +508,11 @@ function toggleBlock(id, btn) {
     const isActive = card.classList.contains('opacity-50');
     const newState = isActive ? 'true' : 'false';
 
-    const formData = new FormData();
-    formData.append('activo', newState);
-
-    fetch(`/panel/landing/${id}/update/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': CSRF },
-        body: formData,
+    fetch(`/api/v1/admin/landing/blocks/${id}/`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: newState === 'true' }),
     }).then(() => location.reload());
 }
 
@@ -571,8 +570,9 @@ function saveBlock(form) {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Guardando...';
     btn.disabled = true;
 
-    fetch(`/panel/landing/${id}/update/`, {
-        method: 'POST',
+    fetch(`/api/v1/admin/landing/blocks/${id}/`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
         headers: { 'X-CSRFToken': CSRF },
         body: formData,
     })
@@ -600,8 +600,9 @@ function deleteBlock(id, btn) {
         message: '¿Estás seguro de eliminar este bloque del landing?',
         type: 'danger',
         callback: () => {
-            fetch(`/panel/landing/${id}/delete/`, {
-                method: 'POST',
+            fetch(`/api/v1/admin/landing/blocks/${id}/`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
                 headers: { 'X-CSRFToken': CSRF },
             }).then(() => location.reload());
         }
@@ -679,14 +680,15 @@ function addBlock() {
     formData.append('estilo', estilo);
     formData.append('titulo', titulo);
 
-    fetch('{% url "panel:landing_add_block" %}', {
+    fetch('/api/v1/admin/landing/blocks/', {
         method: 'POST',
-        headers: { 'X-CSRFToken': CSRF },
-        body: formData,
+        credentials: 'same-origin',
+        headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, estilo, titulo }),
     })
     .then(r => r.json())
     .then(data => {
-        if (data.ok) location.reload();
+        if (data.id) location.reload();
     });
 }
 </script>

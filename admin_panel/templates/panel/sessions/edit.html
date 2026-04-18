@@ -1,53 +1,106 @@
 {% extends 'panel/base.html' %}
 
 {% block content %}
+{% with css="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] transition-all duration-300" %}
 <div class="max-w-2xl mx-auto space-y-8">
-    <!-- Header -->
     <div>
         <a href="{% url 'panel:session_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#F58830] transition-all mb-4">
             <i class="fa-solid fa-arrow-left"></i> Volver a eventos
         </a>
         <h1 class="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
-            <i class="fa-solid fa-pen text-[#F58830] mr-2"></i>
-            Editar Evento
+            <i class="fa-solid fa-pen text-[#F58830] mr-2"></i> Editar Evento
         </h1>
         <p class="text-gray-500 dark:text-gray-400 mt-1">Modifica los datos de la sesión #{{ sesion.id }}.</p>
     </div>
 
     <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-8">
-        <form method="POST" class="space-y-5">
-            {% csrf_token %}
+        <form id="session-form" class="space-y-5">
+            <div id="error-box" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm"></div>
 
             <div>
                 <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Título</label>
-                {{ form.titulo }}
+                <input type="text" name="titulo" value="{{ sesion.titulo|default:'' }}" placeholder="Ej: Seminario de IA" class="{{ css }}">
             </div>
             <div>
                 <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Descripción</label>
-                {{ form.descripcion }}
+                <textarea name="descripcion" rows="3" placeholder="Descripción del evento (opcional)" class="{{ css }}">{{ sesion.descripcion|default:'' }}</textarea>
             </div>
+
+            <!-- Banner -->
             <div>
-                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Lugar</label>
-                {{ form.lugar }}
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1"><i class="fa-solid fa-image mr-1 text-[#F58830]"></i> Imagen de Banner</label>
+                {% if sesion.imagen_banner %}
+                <div class="mb-2 rounded-xl overflow-hidden border border-gray-200 dark:border-blue-900/30 max-h-40">
+                    <img src="{{ sesion.imagen_banner.url }}" alt="Banner actual" class="w-full max-h-40 object-cover">
+                </div>
+                {% endif %}
+                <input type="file" name="imagen_banner" accept="image/*" class="{{ css }}">
+                <p class="text-[0.65rem] text-gray-400 dark:text-gray-500 mt-1">Imagen promocional que verán los participantes en la página de registro.</p>
             </div>
+
+            <!-- Modalidad -->
+            <div>
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2"><i class="fa-solid fa-globe mr-1 text-[#F58830]"></i> Modalidad</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="modalidad" value="presencial" {% if sesion.modalidad == 'presencial' %}checked{% endif %} class="peer sr-only" onchange="toggleModalidad()">
+                        <div class="p-3 rounded-xl border-2 border-gray-200 dark:border-blue-900/30 peer-checked:border-[#F58830] peer-checked:bg-[#F58830]/10 transition-all text-center">
+                            <i class="fa-solid fa-building text-lg text-gray-400 peer-checked:text-[#F58830] mb-1"></i>
+                            <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Presencial</p>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="modalidad" value="virtual" {% if sesion.modalidad == 'virtual' %}checked{% endif %} class="peer sr-only" onchange="toggleModalidad()">
+                        <div class="p-3 rounded-xl border-2 border-gray-200 dark:border-blue-900/30 peer-checked:border-[#F58830] peer-checked:bg-[#F58830]/10 transition-all text-center">
+                            <i class="fa-solid fa-video text-lg text-gray-400 peer-checked:text-[#F58830] mb-1"></i>
+                            <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Virtual</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div id="virtual-fields" class="{% if sesion.modalidad != 'virtual' %}hidden{% endif %} space-y-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Plataforma</label>
+                    <select name="plataforma_virtual" class="{{ css }}">
+                        {% for val, lbl in sesion.PLATAFORMAS_VIRTUALES %}
+                        <option value="{{ val }}" {% if sesion.plataforma_virtual == val %}selected{% endif %}>{{ lbl }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Enlace de la reunión <span class="text-red-500">*</span></label>
+                    <input type="url" name="enlace_virtual" value="{{ sesion.enlace_virtual|default:'' }}" placeholder="https://zoom.us/j/... o https://meet.google.com/..." class="{{ css }}">
+                </div>
+            </div>
+
+            <div id="lugar-wrapper" class="{% if sesion.modalidad == 'virtual' %}hidden{% endif %}">
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Lugar</label>
+                <input type="text" name="lugar" value="{{ sesion.lugar|default:'' }}" placeholder="Ej: Auditorio Principal" class="{{ css }}">
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Fecha</label>
-                    {{ form.fecha }}
+                    <input type="date" name="fecha" value="{{ sesion.fecha|date:'Y-m-d' }}" required class="{{ css }}">
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Día</label>
-                    {{ form.dia_semana }}
+                    <select name="dia_semana" required class="{{ css }}">
+                        {% for val, lbl in sesion.DIAS_SEMANA %}
+                        <option value="{{ val }}" {% if sesion.dia_semana == val %}selected{% endif %}>{{ lbl }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Hora Inicio</label>
-                    {{ form.hora_inicio }}
+                    <input type="time" name="hora_inicio" value="{{ sesion.hora_inicio|time:'H:i' }}" required class="{{ css }}">
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Hora Fin</label>
-                    {{ form.hora_fin }}
+                    <input type="time" name="hora_fin" value="{{ sesion.hora_fin|time:'H:i' }}" required class="{{ css }}">
                 </div>
             </div>
 
@@ -55,37 +108,24 @@
             <div>
                 <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Capacidad</label>
                 <div class="flex items-center gap-4">
-                    <div class="flex-1" id="cap_field_wrapper">
-                        {{ form.capacidad }}
-                    </div>
+                    <input type="number" id="cap-input" name="capacidad" min="1" value="{% if sesion.capacidad > 0 %}{{ sesion.capacidad }}{% endif %}" {% if sesion.capacidad == 0 %}disabled{% endif %} placeholder="Ej: 100" class="flex-1 {{ css }}">
                     <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" id="edit_cap_ilimitada" name="capacidad_ilimitada" {% if sesion.capacidad == 0 %}checked{% endif %} onchange="toggleEditCapacidad()" class="h-5 w-5 rounded text-[#F58830] focus:ring-[#F58830] border-gray-300">
+                        <input type="checkbox" id="cap-ilimitada" {% if sesion.capacidad == 0 %}checked{% endif %} onchange="toggleCapacidad()" class="h-5 w-5 rounded text-[#F58830] focus:ring-[#F58830] border-gray-300">
                         <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Ilimitada</span>
                     </label>
                 </div>
             </div>
 
-            <!-- Solo Líderes -->
             <div class="flex items-center gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30">
-                {{ form.solo_lideres }}
-                <label for="id_solo_lideres" class="flex-1 cursor-pointer">
+                <input type="checkbox" name="solo_lideres" id="solo-lideres-cb" {% if sesion.solo_lideres %}checked{% endif %} class="h-5 w-5 rounded text-purple-600 focus:ring-purple-500 border-gray-300">
+                <label for="solo-lideres-cb" class="flex-1 cursor-pointer">
                     <span class="text-sm font-bold text-gray-700 dark:text-gray-200"><i class="fa-solid fa-user-tie mr-1 text-purple-600"></i> Solo Líderes Académicos</span>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Solo personas registradas como líderes podrán inscribirse</p>
                 </label>
             </div>
 
-            {% if form.errors %}
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm">
-                {% for field, errors in form.errors.items %}
-                    {% for error in errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                {% endfor %}
-            </div>
-            {% endif %}
-
             <div class="flex gap-3 pt-4">
-                <button type="submit" class="flex-1 bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3 rounded-xl transition-all">
+                <button type="submit" id="submit-btn" class="flex-1 bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3 rounded-xl transition-all">
                     <i class="fa-solid fa-check mr-1"></i> Guardar Cambios
                 </button>
                 <a href="{% url 'panel:session_list' %}" class="px-6 py-3 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-[#0F163A]/50 transition-all text-center">
@@ -95,34 +135,62 @@
         </form>
     </div>
 </div>
+{% endwith %}
 
 <script>
-    function toggleEditCapacidad() {
-        const cb = document.getElementById('edit_cap_ilimitada');
-        const input = document.querySelector('#cap_field_wrapper input');
-        if (cb.checked) {
-            input.disabled = true;
-            input.value = '';
-        } else {
-            input.disabled = false;
-            input.focus();
-        }
-    }
+const SESION_ID = {{ sesion.id }};
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Init state
-        toggleEditCapacidad();
+function toggleCapacidad() {
+    const cb = document.getElementById('cap-ilimitada');
+    const input = document.getElementById('cap-input');
+    input.disabled = cb.checked;
+    if (cb.checked) input.value = '';
+    else input.focus();
+}
 
-        // Handle form submit
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function() {
-            const cb = document.getElementById('edit_cap_ilimitada');
-            const input = document.querySelector('#cap_field_wrapper input');
-            if (cb.checked) {
-                input.disabled = false;
-                input.value = '0';
-            }
+function toggleModalidad() {
+    const selected = document.querySelector('input[name="modalidad"]:checked')?.value;
+    document.getElementById('virtual-fields').classList.toggle('hidden', selected !== 'virtual');
+    document.getElementById('lugar-wrapper').classList.toggle('hidden', selected === 'virtual');
+}
+
+document.getElementById('session-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errBox = document.getElementById('error-box');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Guardando...';
+    errBox.classList.add('hidden');
+
+    // FormData maneja el file upload del banner automáticamente
+    const fd = new FormData(e.target);
+    // Checkboxes que no estén marcados no aparecen en FormData — forzar valor
+    if (!fd.get('solo_lideres')) fd.set('solo_lideres', 'false');
+    if (document.getElementById('cap-ilimitada').checked) fd.set('capacidad', '0');
+
+    try {
+        const res = await fetch(`/api/v1/admin/sessions/${SESION_ID}/`, {
+            method: 'PATCH',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': CSRF },
+            body: fd,
         });
-    });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            errBox.innerHTML = Object.entries(data).map(([k, v]) => `<p><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</p>`).join('');
+            errBox.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Guardar Cambios';
+            return;
+        }
+        window.location.href = "{% url 'panel:session_list' %}";
+    } catch (err) {
+        errBox.textContent = 'Error de red: ' + err.message;
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Guardar Cambios';
+    }
+});
 </script>
 {% endblock %}

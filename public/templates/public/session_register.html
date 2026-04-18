@@ -3,11 +3,18 @@
 {% block content %}
 <div class="max-w-xl mx-auto py-4 md:py-8">
 
+    <!-- Banner -->
+    {% if sesion.imagen_banner %}
+    <div class="rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-blue-900/30 mb-6 bg-white dark:bg-[#162054]">
+        <img src="{{ sesion.imagen_banner.url }}" alt="{{ sesion.titulo }}" class="w-full max-h-64 object-cover">
+    </div>
+    {% endif %}
+
     <!-- Session Info Header -->
     <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
         <div class="flex items-start gap-4">
-            <div class="bg-[#F58830]/10 rounded-xl w-14 h-14 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-calendar-check text-[#F58830] text-2xl"></i>
+            <div class="{% if sesion.es_virtual %}bg-blue-500/10{% else %}bg-[#F58830]/10{% endif %} rounded-xl w-14 h-14 flex items-center justify-center shrink-0">
+                <i class="fa-solid {% if sesion.es_virtual %}fa-video text-blue-500{% else %}fa-calendar-check text-[#F58830]{% endif %} text-2xl"></i>
             </div>
             <div class="flex-1 min-w-0">
                 <h1 class="text-2xl font-black text-gray-800 dark:text-white tracking-tight">
@@ -19,11 +26,22 @@
                 <div class="flex flex-wrap gap-3 mt-3 text-sm text-gray-500 dark:text-gray-400">
                     <span><i class="fa-solid fa-calendar-day mr-1 text-[#F58830]"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
                     <span><i class="fa-solid fa-clock mr-1 text-[#F58830]"></i>{{ sesion.hora_inicio|time:"H:i" }} – {{ sesion.hora_fin|time:"H:i" }}</span>
-                    {% if sesion.lugar %}
+                    {% if sesion.es_virtual %}
+                    <span><i class="fa-solid fa-video mr-1 text-blue-500"></i>{{ sesion.plataforma_display_safe }}</span>
+                    {% elif sesion.lugar %}
                     <span><i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i>{{ sesion.lugar }}</span>
                     {% endif %}
                 </div>
                 <div class="mt-2 flex flex-wrap gap-2">
+                    {% if sesion.es_virtual %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+                        <i class="fa-solid fa-video text-[10px]"></i> Evento Virtual
+                    </span>
+                    {% else %}
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
+                        <i class="fa-solid fa-building text-[10px]"></i> Evento Presencial
+                    </span>
+                    {% endif %}
                     {% if sesion.solo_lideres %}
                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
                         <i class="fa-solid fa-user-tie text-[10px]"></i> Solo Líderes Académicos
@@ -222,13 +240,31 @@
                 <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-day mr-2 text-[#F58830]"></i><span id="success-fecha"></span></p>
                 <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-clock mr-2 text-[#F58830]"></i><span id="success-horario"></span></p>
                 <p class="text-sm text-gray-600 dark:text-gray-300" id="success-lugar-row"><i class="fa-solid fa-location-dot mr-2 text-[#F58830]"></i><span id="success-lugar"></span></p>
+                <p class="text-sm text-gray-600 dark:text-gray-300" id="success-plataforma-row"><i class="fa-solid fa-video mr-2 text-blue-500"></i><span id="success-plataforma"></span></p>
+            </div>
+
+            <!-- Virtual link banner (visible only if virtual) -->
+            <div id="success-virtual-link" class="hidden bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-700 rounded-xl p-5 mb-4 text-left">
+                <p class="font-black text-blue-700 dark:text-blue-300 mb-2">
+                    <i class="fa-solid fa-link mr-1"></i> Enlace para unirte al evento
+                </p>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mb-3">Guarda este enlace. Úsalo el día del evento en el horario indicado.</p>
+                <a id="success-virtual-link-url" href="#" target="_blank" rel="noopener"
+                    class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-center transition-all break-all">
+                    <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>
+                    <span id="success-virtual-link-text">Abrir enlace</span>
+                </a>
+                <button onclick="copyVirtualLink()" class="mt-2 w-full text-center text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold">
+                    <i class="fa-solid fa-copy mr-1"></i> Copiar enlace
+                </button>
             </div>
 
             <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-blue-700 dark:text-blue-300 text-sm text-left">
                 <p class="font-bold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> Recuerda:</p>
-                <ul class="list-disc list-inside space-y-1 text-xs">
+                <ul id="success-tips" class="list-disc list-inside space-y-1 text-xs">
                     <li>Asiste puntualmente a la sesión</li>
-                    <li>Al llegar, escanea el código QR para confirmar tu asistencia</li>
+                    <li class="success-tip-presencial">Al llegar, escanea el código QR para confirmar tu asistencia</li>
+                    <li class="success-tip-virtual hidden">Ingresa al enlace 5 minutos antes del inicio</li>
                     <li>Si no asistes, tu cuenta podría quedar bloqueada para eventos futuros</li>
                 </ul>
             </div>
@@ -258,7 +294,7 @@ if (searchInput) {
         document.getElementById('search-spinner').classList.remove('hidden');
 
         searchTimeout = setTimeout(() => {
-            fetch(`/sesion/${SESSION_ID}/registro/buscar/?q=${encodeURIComponent(q)}`)
+            fetch(`/api/v1/public/sessions/${SESSION_ID}/search-participant/?q=${encodeURIComponent(q)}`)
                 .then(r => r.json())
                 .then(data => {
                     document.getElementById('search-spinner').classList.add('hidden');
@@ -409,7 +445,7 @@ function confirmExisting() {
     formData.append('nombres', nombres);
     formData.append('apellidos', apellidos);
 
-    fetch(`/sesion/${SESSION_ID}/registro/confirmar/`, {
+    fetch(`/api/v1/public/sessions/${SESSION_ID}/confirm-participant/`, {
         method: 'POST',
         headers: { 'X-CSRFToken': CSRF },
         body: formData,
@@ -491,7 +527,7 @@ if (newForm) {
         formData.append('email', email);
         formData.append('celular', celular);
 
-        fetch(`/sesion/${SESSION_ID}/registro/nuevo/`, {
+        fetch(`/api/v1/public/sessions/${SESSION_ID}/register-participant/`, {
             method: 'POST',
             headers: { 'X-CSRFToken': CSRF },
             body: formData,
@@ -534,15 +570,49 @@ function showSuccess(data) {
         document.getElementById('success-titulo').textContent = data.sesion.titulo;
         document.getElementById('success-fecha').textContent = data.sesion.fecha;
         document.getElementById('success-horario').textContent = data.sesion.horario;
-        if (data.sesion.lugar) {
-            document.getElementById('success-lugar').textContent = data.sesion.lugar;
+
+        const esVirtual = data.sesion.modalidad === 'virtual';
+        const lugarRow = document.getElementById('success-lugar-row');
+        const plataformaRow = document.getElementById('success-plataforma-row');
+        const virtualBlock = document.getElementById('success-virtual-link');
+
+        if (esVirtual) {
+            lugarRow.classList.add('hidden');
+            plataformaRow.classList.remove('hidden');
+            document.getElementById('success-plataforma').textContent = data.sesion.plataforma || 'Reunión virtual';
+
+            if (data.sesion.enlace_virtual) {
+                virtualBlock.classList.remove('hidden');
+                const urlA = document.getElementById('success-virtual-link-url');
+                urlA.href = data.sesion.enlace_virtual;
+                document.getElementById('success-virtual-link-text').textContent = data.sesion.enlace_virtual;
+            }
+
+            // Adjust tips
+            document.querySelectorAll('.success-tip-presencial').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.success-tip-virtual').forEach(el => el.classList.remove('hidden'));
         } else {
-            document.getElementById('success-lugar-row').classList.add('hidden');
+            plataformaRow.classList.add('hidden');
+            virtualBlock.classList.add('hidden');
+            if (data.sesion.lugar) {
+                document.getElementById('success-lugar').textContent = data.sesion.lugar;
+            } else {
+                lugarRow.classList.add('hidden');
+            }
         }
     }
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyVirtualLink() {
+    const url = document.getElementById('success-virtual-link-url').href;
+    navigator.clipboard.writeText(url).then(() => {
+        if (typeof showToast === 'function') {
+            showToast('Enlace copiado al portapapeles', 'success');
+        }
+    }).catch(() => {});
 }
 </script>
 {% endblock %}

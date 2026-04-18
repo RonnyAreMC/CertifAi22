@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <!-- Header with Stats -->
     <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3 tracking-tight">
@@ -19,26 +18,23 @@
         <div class="flex gap-3">
             <div class="px-5 py-2.5 bg-white dark:bg-[#1a2b4d] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm flex items-center gap-3">
                 <span class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Total Registrados</span>
-                <span class="text-xl font-black text-unemi-blue dark:text-white">{{ total }}</span>
+                <span id="stat-total" class="text-xl font-black text-unemi-blue dark:text-white">—</span>
             </div>
         </div>
     </div>
 
     <!-- Buscador -->
     <div class="mb-6">
-        <form method="get" class="relative group">
+        <div class="relative group">
             <div class="absolute inset-y-0 left-0 flex items-center pl-5 pointer-events-none">
                 <i class="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-unemi-orange transition-colors"></i>
             </div>
-            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre, cédula o correo..."
-                class="w-full pl-12 pr-5 py-4 bg-white dark:bg-[#1a2b4d] border border-gray-100 dark:border-white/10 rounded-2xl text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:ring-4 focus:ring-unemi-orange/10 focus:border-unemi-orange transition-all shadow-sm font-medium">
-            
-            {% if q %}
-            <a href="{% url 'panel:participantes_list' %}" class="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-400 hover:text-red-500 transition-colors">
+            <input id="search-input" type="text" placeholder="Buscar por nombre, cédula o correo..."
+                class="w-full pl-12 pr-12 py-4 bg-white dark:bg-[#1a2b4d] border border-gray-100 dark:border-white/10 rounded-2xl text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:ring-4 focus:ring-unemi-orange/10 focus:border-unemi-orange transition-all shadow-sm font-medium">
+            <button id="clear-btn" class="hidden absolute inset-y-0 right-0 items-center pr-5 text-gray-400 hover:text-red-500 transition-colors">
                 <i class="fa-solid fa-circle-xmark"></i>
-            </a>
-            {% endif %}
-        </form>
+            </button>
+        </div>
     </div>
 
     <!-- Tabla -->
@@ -54,81 +50,146 @@
                         <th class="px-6 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-50 dark:divide-white/5">
-                    {% for p in participantes %}
-                    <tr class="hover:bg-gray-50/30 dark:hover:bg-white/5 transition-all group">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-4">
-                                <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-unemi-blue to-blue-900 text-white flex items-center justify-center font-black text-xs flex-shrink-0 shadow-sm transition-transform group-hover:scale-105">
-                                    {{ p.nombres|first|upper }}{{ p.apellidos|first|upper }}
-                                </div>
-                                <div class="min-w-0">
-                                    <p class="text-sm font-black text-gray-900 dark:text-white truncate tracking-tight">{{ p.nombres }} {{ p.apellidos }}</p>
-                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5">ID: #{{ p.id }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 font-mono">
-                                {{ p.cedula|default:"—" }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="space-y-1">
-                                <p class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                                    <i class="fa-solid fa-envelope text-[10px] text-gray-400"></i>
-                                    {{ p.email }}
-                                </p>
-                                {% if p.celular %}
-                                <p class="text-xs text-gray-500 flex items-center gap-2">
-                                    <i class="fa-solid fa-phone text-[10px] text-gray-400"></i>
-                                    {{ p.celular }}
-                                </p>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            {% if p.es_lider %}
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 uppercase tracking-widest">
-                                <i class="fa-solid fa-star text-[8px]"></i> LÍDER
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 uppercase tracking-widest">
-                                NORMAL
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <button onclick="showConfirm({
-                                    title: 'Eliminar Participante',
-                                    message: '¿Estás seguro de eliminar a {{ p.nombres|escapejs }} {{ p.apellidos|escapejs }}? Se eliminará su historial del sistema.',
-                                    type: 'error',
-                                    confirmText: 'Sí, eliminar',
-                                    callback: () => document.getElementById('delete-form-{{ p.id }}').submit()
-                                })" class="p-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 text-red-500 rounded-xl transition-all" title="Eliminar">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                                <form id="delete-form-{{ p.id }}" method="post" action="{% url 'panel:participante_delete' p.id %}" class="hidden">
-                                    {% csrf_token %}
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="px-6 py-20 text-center">
-                            <div class="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                                <i class="fa-solid fa-user-slash text-3xl text-gray-300"></i>
-                            </div>
-                            <h3 class="text-lg font-black text-gray-800 dark:text-white">Sin resultados</h3>
-                            <p class="text-gray-500 text-sm mt-1">No se encontraron participantes con el criterio de búsqueda.</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="participants-tbody" class="divide-y divide-gray-50 dark:divide-white/5">
+                    <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando participantes…
+                    </td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderRow(p) {
+    const initials = ((p.nombres?.[0] || '') + (p.apellidos?.[0] || '')).toUpperCase() || '?';
+    const estado = p.es_lider
+        ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 uppercase tracking-widest">
+             <i class="fa-solid fa-star text-[8px]"></i> LÍDER
+           </span>`
+        : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400 uppercase tracking-widest">NORMAL</span>`;
+
+    const celular = p.celular ? `<p class="text-xs text-gray-500 flex items-center gap-2"><i class="fa-solid fa-phone text-[10px] text-gray-400"></i>${esc(p.celular)}</p>` : '';
+
+    return `
+    <tr class="hover:bg-gray-50/30 dark:hover:bg-white/5 transition-all group">
+        <td class="px-6 py-4">
+            <div class="flex items-center gap-4">
+                <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-unemi-blue to-blue-900 text-white flex items-center justify-center font-black text-xs flex-shrink-0 shadow-sm transition-transform group-hover:scale-105">
+                    ${esc(initials)}
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-black text-gray-900 dark:text-white truncate tracking-tight">${esc(p.nombres)} ${esc(p.apellidos)}</p>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5">ID: #${p.id}</p>
+                </div>
+            </div>
+        </td>
+        <td class="px-6 py-4">
+            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 font-mono">${esc(p.cedula) || '—'}</span>
+        </td>
+        <td class="px-6 py-4">
+            <div class="space-y-1">
+                <p class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                    <i class="fa-solid fa-envelope text-[10px] text-gray-400"></i>
+                    ${esc(p.email)}
+                </p>
+                ${celular}
+            </div>
+        </td>
+        <td class="px-6 py-4 text-center">${estado}</td>
+        <td class="px-6 py-4 text-right">
+            <div class="flex items-center justify-end gap-2">
+                <button onclick="confirmDelete(${p.id}, '${esc(p.nombres + ' ' + p.apellidos).replace(/'/g, '&apos;')}')" class="p-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:hover:bg-red-900/20 text-red-500 rounded-xl transition-all" title="Eliminar">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+async function loadParticipants(query = '') {
+    const tbody = document.getElementById('participants-tbody');
+    try {
+        const url = '/api/v1/admin/participants/' + (query ? `?search=${encodeURIComponent(query)}` : '');
+        const res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const list = data.results || data;
+        document.getElementById('stat-total').textContent = data.count ?? list.length;
+
+        if (list.length === 0) {
+            tbody.innerHTML = `
+                <tr><td colspan="5" class="px-6 py-20 text-center">
+                    <div class="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-user-slash text-3xl text-gray-300"></i>
+                    </div>
+                    <h3 class="text-lg font-black text-gray-800 dark:text-white">Sin resultados</h3>
+                    <p class="text-gray-500 text-sm mt-1">No se encontraron participantes con el criterio de búsqueda.</p>
+                </td></tr>`;
+            return;
+        }
+        tbody.innerHTML = list.map(renderRow).join('');
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-red-500">Error al cargar participantes</td></tr>`;
+    }
+}
+
+async function deleteParticipant(id) {
+    const res = await fetch(`/api/v1/admin/participants/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': CSRF },
+        credentials: 'same-origin',
+    });
+    return res.ok;
+}
+
+function confirmDelete(id, name) {
+    const doDelete = async () => {
+        const ok = await deleteParticipant(id);
+        if (ok) {
+            if (typeof showToast === 'function') showToast(`${name} eliminado`, 'success');
+            loadParticipants(document.getElementById('search-input').value.trim());
+        } else if (typeof showToast === 'function') {
+            showToast('Error al eliminar', 'error');
+        }
+    };
+    if (typeof showConfirm === 'function') {
+        showConfirm({
+            title: 'Eliminar Participante',
+            message: `¿Estás seguro de eliminar a ${name}? Se eliminará su historial del sistema.`,
+            type: 'error',
+            confirmText: 'Sí, eliminar',
+            callback: doDelete,
+        });
+    } else if (confirm(`¿Eliminar a ${name}?`)) {
+        doDelete();
+    }
+}
+
+let searchTimer;
+const searchInput = document.getElementById('search-input');
+const clearBtn = document.getElementById('clear-btn');
+searchInput.addEventListener('input', e => {
+    clearTimeout(searchTimer);
+    const val = e.target.value.trim();
+    clearBtn.classList.toggle('hidden', !val);
+    clearBtn.classList.toggle('flex', !!val);
+    searchTimer = setTimeout(() => loadParticipants(val), 300);
+});
+clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearBtn.classList.add('hidden');
+    loadParticipants();
+});
+
+loadParticipants();
+</script>
 {% endblock %}

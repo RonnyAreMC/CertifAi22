@@ -30,31 +30,16 @@
                 <!-- Decorative Glow (Subtle) -->
                 <div class="absolute top-0 right-0 w-64 h-64 bg-unemi-orange/5 dark:bg-unemi-orange/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
-                <form method="post" enctype="multipart/form-data" class="space-y-6 relative z-10">
-                    {% csrf_token %}
-                    
-                    {% if form.errors %}
-                    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl flex items-start gap-3">
-                        <i class="fa-solid fa-circle-exclamation mt-1 text-red-500"></i>
-                        <div>
-                            <p class="font-bold">Por favor corrige los siguientes errores:</p>
-                            <ul class="list-disc list-inside text-sm mt-1">
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                        <li>{{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    {% endif %}
+                {% with css="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-unemi-orange focus:border-transparent transition-all duration-300" %}
+                <form id="batch-form" class="space-y-6 relative z-10">
+                    <div id="error-box" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl"></div>
 
                     <!-- Nombre del Lote -->
                     <div class="group">
-                        <label for="{{ form.nombre_lote.id_for_label }}" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
+                        <label for="id_nombre_lote" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
                             <i class="fa-solid fa-tag mr-2 text-gray-400 dark:text-gray-500"></i>Nombre del Evento
                         </label>
-                        {{ form.nombre_lote }}
+                        <input type="text" id="id_nombre_lote" name="nombre_lote" required placeholder="Ej: NORMAS ISO" class="{{ css }}">
                         <div class="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-dashed border-gray-300 dark:border-blue-900/30">
                             <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">
                                 <i class="fa-solid fa-eye mr-1"></i> Así se verá en el certificado:
@@ -67,10 +52,14 @@
 
                     <!-- Facultad -->
                     <div class="group">
-                        <label for="{{ form.facultad.id_for_label }}" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
+                        <label for="id_facultad" class="block text-sm font-bold text-gray-700 dark:text-gray-200 mb-2 group-focus-within:text-unemi-orange transition-colors">
                             <i class="fa-solid fa-building-columns mr-2 text-gray-400 dark:text-gray-500"></i>Facultad Organizadora
                         </label>
-                        {{ form.facultad }}
+                        <select id="id_facultad" name="facultad" required class="{{ css }}">
+                            {% for val, lbl in facultades_choices %}
+                            <option value="{{ val }}">{{ lbl }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <!-- Excel Upload (Drag & Drop) -->
@@ -79,11 +68,14 @@
                             <i class="fa-solid fa-file-excel mr-2 text-green-600 dark:text-green-400"></i>Archivo de Participantes (.xlsx)
                         </label>
                         
-                        <div id="drop-zone" 
+                        <div id="drop-zone"
                              class="relative group cursor-pointer active:scale-[0.99] transition-all">
-                             
+
                             <!-- Hidden Input -->
-                            {{ form.archivo_excel }}
+                            <input type="file" name="archivo_excel" id="file-upload" required
+                                accept=".xlsx, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                                class="hidden">
+
                             
                             <!-- Visual Drop Zone -->
                             <div class="h-64 rounded-2xl border-2 border-dashed border-gray-300 dark:border-blue-900 bg-gray-50 dark:bg-[#0F163A]/50 hover:bg-green-50 dark:hover:bg-green-900/10 hover:border-green-400 dark:hover:border-green-500/50 transition-all duration-300 flex flex-col justify-center items-center text-center p-6 relative overflow-hidden"
@@ -213,12 +205,13 @@
                     </script>
                     
                     <!-- Action Button -->
-                    <button type="submit" class="w-full bg-unemi-orange hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex justify-center items-center gap-3 text-lg">
+                    <button type="submit" id="submit-btn" class="w-full bg-unemi-orange hover:bg-orange-600 text-white font-bold py-4 px-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex justify-center items-center gap-3 text-lg">
                         <i class="fa-solid fa-rocket"></i>
                         Procesar y Generar Certificados
                     </button>
 
                 </form>
+                {% endwith %}
             </div>
         </div>
 
@@ -267,7 +260,7 @@
 </div>
 <script>
     // Live preview of how the name will appear on the certificate
-    const nameInput = document.getElementById('{{ form.nombre_lote.id_for_label }}');
+    const nameInput = document.getElementById('id_nombre_lote');
     const previewEl = document.getElementById('lotePreviewText');
     if (nameInput && previewEl) {
         function updatePreview() {
@@ -277,5 +270,46 @@
         nameInput.addEventListener('input', updatePreview);
         updatePreview();
     }
+
+    // Submit via fetch multipart → /api/v1/admin/batches/
+    const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+    document.getElementById('batch-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submit-btn');
+        const errBox = document.getElementById('error-box');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+        errBox.classList.add('hidden');
+
+        const fd = new FormData(e.target);
+
+        try {
+            const res = await fetch('/api/v1/admin/batches/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': CSRF },
+                body: fd,
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                errBox.innerHTML = '<p class="font-bold"><i class="fa-solid fa-circle-exclamation"></i> Corrige los errores:</p><ul class="list-disc list-inside text-sm mt-1">' +
+                    Object.entries(data).map(([k, v]) =>
+                        `<li><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</li>`
+                    ).join('') + '</ul>';
+                errBox.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Procesar y Generar Certificados';
+                return;
+            }
+            const lote = await res.json();
+            // Redirect al mapping page
+            window.location.href = `/panel/batches/${lote.id}/process-mapping/`;
+        } catch (err) {
+            errBox.textContent = 'Error de red: ' + err.message;
+            errBox.classList.remove('hidden');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Procesar y Generar Certificados';
+        }
+    });
 </script>
 {% endblock %}

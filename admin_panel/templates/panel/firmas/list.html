@@ -1,7 +1,6 @@
 {% extends "panel/base.html" %}
 
 {% block title %}Firmas Institucionales - UNEMI{% endblock %}
-
 {% block page_title %}Firmas Institucionales{% endblock %}
 
 {% block page_actions %}
@@ -13,7 +12,6 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
@@ -29,7 +27,6 @@
         </a>
     </div>
 
-    <!-- Table -->
     <div class="bg-white dark:bg-[#1a2b4d] rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -41,68 +38,113 @@
                         <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-widest text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-                    {% for firma in firmas %}
-                    <tr class="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
-                        <td class="px-6 py-4">
-                            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ firma.nombre }}</p>
-                            <p class="text-xs text-gray-500 mt-0.5">{{ firma.cargo }}</p>
-                        </td>
-                        <td class="px-6 py-4 text-center">
-                            {% if firma.imagen %}
-                                <div class="bg-white p-1 rounded border border-gray-100 inline-block">
-                                    <img src="data:image/png;base64,{{ firma.imagen }}" alt="Firma" class="h-8 mx-auto object-contain">
-                                </div>
-                            {% else %}
-                                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Sin imagen</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4">
-                            {% if firma.activa %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/30">
-                                ACTIVA
-                            </span>
-                            {% else %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-                                INACTIVA
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center justify-end gap-2">
-                                <a href="{% url 'panel:firma_edit' firma.id %}" class="p-2 text-gray-400 hover:text-unemi-blue hover:bg-unemi-blue/5 rounded-lg transition-all" title="Editar">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>
-                                <form action="{% url 'panel:firma_delete' firma.id %}" method="POST" class="inline-block">
-                                    {% csrf_token %}
-                                    <button type="button" 
-                                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" 
-                                        title="Eliminar"
-                                        onclick="showConfirm({
-                                            title: 'Eliminar Firma',
-                                            message: '¿Estás seguro de que deseas eliminar esta firma?',
-                                            type: 'danger',
-                                            callback: () => this.closest('form').submit()
-                                        })">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="px-6 py-12 text-center">
-                            <div class="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i class="fa-solid fa-signature text-2xl text-gray-300"></i>
-                            </div>
-                            <p class="text-gray-500 font-medium">No hay firmas registradas</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="firmas-tbody" class="divide-y divide-gray-100 dark:divide-white/5">
+                    <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando firmas…
+                    </td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+const EDIT_URL_TEMPLATE = "{% url 'panel:firma_edit' 0 %}";
+
+function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderRow(f) {
+    const editUrl = EDIT_URL_TEMPLATE.replace('/0/', `/${f.id}/`);
+    const imagen = f.imagen
+        ? `<div class="bg-white p-1 rounded border border-gray-100 inline-block">
+             <img src="data:image/png;base64,${esc(f.imagen)}" alt="Firma" class="h-8 mx-auto object-contain">
+           </div>`
+        : `<span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Sin imagen</span>`;
+
+    const estado = f.activa
+        ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800/30">ACTIVA</span>`
+        : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700">INACTIVA</span>`;
+
+    return `
+    <tr class="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+        <td class="px-6 py-4">
+            <p class="text-sm font-bold text-gray-900 dark:text-white">${esc(f.nombre)}</p>
+            <p class="text-xs text-gray-500 mt-0.5">${esc(f.cargo)}</p>
+        </td>
+        <td class="px-6 py-4 text-center">${imagen}</td>
+        <td class="px-6 py-4">${estado}</td>
+        <td class="px-6 py-4 text-right">
+            <div class="flex items-center justify-end gap-2">
+                <a href="${editUrl}" class="p-2 text-gray-400 hover:text-unemi-blue hover:bg-unemi-blue/5 rounded-lg transition-all" title="Editar">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <button type="button" onclick="confirmDelete(${f.id}, '${esc(f.nombre).replace(/'/g, '&apos;')}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+async function loadFirmas() {
+    const tbody = document.getElementById('firmas-tbody');
+    try {
+        const res = await fetch('/api/v1/admin/firmas/?ordering=nombre', { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const list = data.results || data;
+        if (list.length === 0) {
+            tbody.innerHTML = `
+                <tr><td colspan="4" class="px-6 py-12 text-center">
+                    <div class="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fa-solid fa-signature text-2xl text-gray-300"></i>
+                    </div>
+                    <p class="text-gray-500 font-medium">No hay firmas registradas</p>
+                </td></tr>`;
+            return;
+        }
+        tbody.innerHTML = list.map(renderRow).join('');
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-12 text-center text-red-500">Error al cargar firmas</td></tr>`;
+    }
+}
+
+async function deleteFirma(id) {
+    const res = await fetch(`/api/v1/admin/firmas/${id}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': CSRF },
+        credentials: 'same-origin',
+    });
+    return res.ok;
+}
+
+function confirmDelete(id, name) {
+    const doDelete = async () => {
+        const ok = await deleteFirma(id);
+        if (ok) {
+            if (typeof showToast === 'function') showToast(`"${name}" eliminada`, 'success');
+            loadFirmas();
+        } else if (typeof showToast === 'function') {
+            showToast('Error al eliminar', 'error');
+        }
+    };
+    if (typeof showConfirm === 'function') {
+        showConfirm({
+            title: 'Eliminar Firma',
+            message: `¿Estás seguro de que deseas eliminar la firma "${name}"?`,
+            type: 'danger',
+            callback: doDelete,
+        });
+    } else if (confirm(`¿Eliminar firma "${name}"?`)) {
+        doDelete();
+    }
+}
+
+loadFirmas();
+</script>
 {% endblock %}

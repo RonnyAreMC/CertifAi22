@@ -4,6 +4,13 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
+from core.managers import (
+    CertificadoManager,
+    ParticipanteManager,
+    LoteManager,
+    SesionManager,
+)
+
 FACULTADES_CHOICES = [
     ('FACI', 'FACI - Ingeniería'),
     ('FACS', 'FACS - Salud'),
@@ -19,11 +26,12 @@ class Usuario(AbstractUser):
         ('admin', 'Administrador'),
     ]
     
-    rol = models.CharField(max_length=20, choices=ROLES, default='admin')
+    rol = models.CharField(max_length=20, choices=ROLES, default='admin', db_index=True)
     facultad = models.CharField(
-        max_length=20, 
-        choices=FACULTADES_CHOICES, 
-        blank=True
+        max_length=20,
+        choices=FACULTADES_CHOICES,
+        blank=True,
+        db_index=True,
     )
     telefono = models.CharField(max_length=20, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -192,6 +200,8 @@ class LoteCertificados(models.Model):
         help_text='Distancia desde el borde inferior. Mayor = más arriba.'
     )
 
+    objects = LoteManager()
+
     def __str__(self):
         return self.nombre_lote
 
@@ -225,6 +235,8 @@ class Participante(models.Model):
             models.Index(fields=['email']),
             models.Index(fields=['cedula']),
         ]
+
+    objects = ParticipanteManager()
 
     def clean(self):
         if not self.cedula and not self.email:
@@ -263,6 +275,8 @@ class Certificado(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = CertificadoManager()
+
     def __str__(self):
         return f"{self.cedula} - {self.curso}"
 
@@ -293,6 +307,18 @@ class SesionAsistencia(models.Model):
         ('Domingo', 'Domingo'),
     ]
 
+    MODALIDADES = [
+        ('presencial', 'Presencial'),
+        ('virtual', 'Virtual'),
+    ]
+
+    PLATAFORMAS_VIRTUALES = [
+        ('zoom', 'Zoom'),
+        ('meet', 'Google Meet'),
+        ('teams', 'Microsoft Teams'),
+        ('otro', 'Otra plataforma'),
+    ]
+
     lote = models.ForeignKey(
         LoteCertificados, on_delete=models.CASCADE,
         related_name='sesiones', verbose_name='Seminario',
@@ -303,6 +329,25 @@ class SesionAsistencia(models.Model):
         help_text='Título descriptivo (ej: "Sesión Mañana - Lunes")'
     )
     descripcion = models.TextField(blank=True, default='', verbose_name='Descripción')
+    imagen_banner = models.ImageField(
+        upload_to='sesiones_banners/', null=True, blank=True,
+        verbose_name='Imagen de banner',
+        help_text='Imagen promocional que se muestra en la página de registro'
+    )
+    modalidad = models.CharField(
+        max_length=15, choices=MODALIDADES, default='presencial',
+        verbose_name='Modalidad'
+    )
+    plataforma_virtual = models.CharField(
+        max_length=15, choices=PLATAFORMAS_VIRTUALES, blank=True, default='',
+        verbose_name='Plataforma',
+        help_text='Solo aplica si la modalidad es virtual'
+    )
+    enlace_virtual = models.URLField(
+        max_length=500, blank=True, default='',
+        verbose_name='Enlace de reunión',
+        help_text='URL de Zoom/Meet/Teams u otra plataforma (solo si es virtual)'
+    )
     lugar = models.CharField(max_length=300, blank=True, default='', verbose_name='Lugar')
     fecha = models.DateField(verbose_name='Fecha de la Sesión')
     dia_semana = models.CharField(
@@ -324,6 +369,8 @@ class SesionAsistencia(models.Model):
     )
     activa = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = SesionManager()
 
     class Meta:
         ordering = ['fecha', 'hora_inicio']
@@ -363,6 +410,23 @@ class SesionAsistencia(models.Model):
         if self.capacidad_ilimitada:
             return False
         return self.confirmados_count >= self.capacidad
+
+    @property
+    def es_virtual(self):
+        return self.modalidad == 'virtual'
+
+    @property
+    def plataforma_display_safe(self):
+        if self.plataforma_virtual:
+            return self.get_plataforma_virtual_display()
+        return 'Reunión virtual'
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.modalidad == 'virtual' and not self.enlace_virtual:
+            raise ValidationError({
+                'enlace_virtual': 'Debes proporcionar un enlace para eventos virtuales.'
+            })
 
 
 class RegistroAsistencia(models.Model):

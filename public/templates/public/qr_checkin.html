@@ -12,9 +12,9 @@
         <h1 class="text-3xl md:text-4xl font-black text-[#162054] dark:text-white tracking-tight mb-2">
             Check-in de <span class="text-[#F58830]">Asistencia</span>
         </h1>
-        <div class="inline-flex items-center gap-2 bg-white dark:bg-[#162054] px-5 py-2.5 rounded-full shadow-md border border-gray-100 dark:border-blue-900/30 text-sm font-bold text-gray-600 dark:text-gray-300 mt-2">
+        <div id="sesion-label" class="inline-flex items-center gap-2 bg-white dark:bg-[#162054] px-5 py-2.5 rounded-full shadow-md border border-gray-100 dark:border-blue-900/30 text-sm font-bold text-gray-600 dark:text-gray-300 mt-2">
             <i class="fa-solid fa-calendar-day text-[#F58830]"></i>
-            {{ sesion.dia_semana }} — {{ sesion.label }}
+            <span id="sesion-label-text">Cargando sesión…</span>
         </div>
         <p class="text-gray-500 dark:text-gray-400 mt-4 text-sm font-medium">Busca tu nombre para registrar tu asistencia</p>
     </div>
@@ -143,7 +143,22 @@
 </style>
 
 <script>
-const codigoQR = '{{ codigo_qr }}';
+// Extraer codigo_qr de la URL: /checkin/<codigo_qr>/
+const codigoQR = window.location.pathname.split('/').filter(Boolean).pop();
+
+// Cargar info de la sesión desde la API
+(async function loadSesion() {
+    try {
+        const res = await fetch(`/api/v1/public/checkin/${codigoQR}/session/`);
+        if (!res.ok) throw new Error('Sesión no encontrada');
+        const s = await res.json();
+        const label = `${s.dia_semana} — ${s.hora_inicio} – ${s.hora_fin}`;
+        document.getElementById('sesion-label-text').textContent = label;
+    } catch (err) {
+        document.getElementById('sesion-label-text').textContent = 'Sesión no disponible';
+        console.error(err);
+    }
+})();
 const csrfToken = '{{ csrf_token }}';
 let debounceTimer;
 
@@ -172,7 +187,7 @@ searchInput.addEventListener('input', function() {
 
 async function searchPeople(query) {
     try {
-        const res = await fetch(`/checkin/${codigoQR}/search/?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/v1/public/checkin/${codigoQR}/search/?q=${encodeURIComponent(query)}`);
         const data = await res.json();
         spinner.classList.add('hidden');
         
@@ -232,7 +247,7 @@ async function registerAttendance(certId, nombre, alreadyRegistered, isConfirmed
     spinner.classList.remove('hidden');
     
     try {
-        const res = await fetch(`/checkin/${codigoQR}/register/`, {
+        const res = await fetch(`/api/v1/public/checkin/${codigoQR}/register/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

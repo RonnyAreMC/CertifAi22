@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main, tesis]
+  pull_request:
+    branches: [main, tesis]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Django system check
+        env:
+          DEBUG: 'True'
+          SECRET_KEY: ci-only-not-secret
+          ALLOWED_HOSTS: localhost,127.0.0.1
+        run: python manage.py check
+
+      - name: Migrations up to date
+        env:
+          DEBUG: 'True'
+          SECRET_KEY: ci-only-not-secret
+          ALLOWED_HOSTS: localhost,127.0.0.1
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        env:
+          DEBUG: 'True'
+          SECRET_KEY: ci-only-not-secret
+          ALLOWED_HOSTS: localhost,127.0.0.1
+        run: pytest --tb=short
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install ruff
+      - name: Ruff
+        run: ruff check --output-format=github . || true
