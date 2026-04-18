@@ -77,7 +77,7 @@ def _draw_geometric_verification_page(c, certificado, width, height, pri, sec):
         import qrcode
         from io import BytesIO as QRBytesIO
         
-        base_url = getattr(settings, 'SITE_URL', 'https://muc-academy.up.railway.app')
+        base_url = getattr(settings, 'SITE_URL', 'https://certifai.up.railway.app')
         verify_url = f"{base_url}/verificar/{certificado.hash_verificacion}/"
         
         qr = qrcode.QRCode(
@@ -150,6 +150,6 @@ def _draw_geometric_verification_page(c, certificado, width, height, pri, sec):
     # Footer text
     c.setFont("Times-Italic", 9)
     c.setFillColor(HexColor('#888888'))
-    c.drawCentredString(center_x, 1.5*cm, "Documento generado electrónicamente — MUC Academy / Universidad Estatal de Milagro")
+    c.drawCentredString(center_x, 1.5*cm, "Documento generado electrónicamente — CertifAI / Universidad Estatal de Milagro")
 
 

@@ -31,6 +31,34 @@ class TestCertificadoManager:
         with django_assert_max_num_queries(2):
             list(Certificado.objects.with_relations())
 
+    def test_search_multi_token_is_AND_not_OR(self):
+        """'Adriana Carolina' NO debe matchear a 'Jacqueline Gonzalez' ni a 'Adriana Smith'."""
+        from core.models import Certificado
+        # Match exacto (ambas palabras)
+        match = CertificadoFactory(nombres='ADRIANA CAROLINA', apellidos='CORTEZ')
+        # Solo una palabra
+        only_adriana = CertificadoFactory(nombres='ADRIANA', apellidos='VILLACRES')
+        only_carolina = CertificadoFactory(nombres='CAROLINA', apellidos='LUCAS')
+        # Ninguna palabra
+        CertificadoFactory(nombres='JACQUELINE', apellidos='GONZALEZ')
+
+        results = list(Certificado.objects.search('Adriana Carolina'))
+        assert match in results
+        assert only_adriana not in results
+        assert only_carolina not in results
+        assert len(results) == 1
+
+    def test_search_dedupes_by_person_course(self):
+        """Dos certificados del mismo (cedula, curso) → solo uno aparece tras dedupe."""
+        from core.models import Certificado
+        CertificadoFactory(cedula='0912345678', curso='MATH', nombres='A')
+        dup = CertificadoFactory(cedula='0912345678', curso='MATH', nombres='A')
+        different = CertificadoFactory(cedula='0912345678', curso='FISICA', nombres='A')
+        ids = set(Certificado.objects.deduped_by_person_course().values_list('id', flat=True))
+        assert dup.id in ids  # el más reciente (mayor id) queda
+        assert different.id in ids  # distinto curso queda
+        assert len(ids) == 2
+
 
 @pytest.mark.django_db
 class TestParticipanteManager:

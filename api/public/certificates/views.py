@@ -26,9 +26,11 @@ class PublicCertificadoViewSet(viewsets.ReadOnlyModelViewSet):
         q = request.query_params.get('q', '').strip()
         if len(q) < 3:
             return Response({'count': 0, 'results': []})
-        qs = self.get_queryset().search(q)[:50]
+        # Search con AND entre tokens + dedupe por (cedula, curso)
+        ids = list(self.get_queryset().search(q).deduped_by_person_course().values_list('id', flat=True)[:50])
+        qs = self.get_queryset().filter(id__in=ids)
         return Response({
-            'count': qs.count(),
+            'count': len(ids),
             'results': self.get_serializer(qs, many=True).data,
         })
 

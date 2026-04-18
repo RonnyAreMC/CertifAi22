@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUC Academy - Certificados de Seminarios</title>
+    <title>CertifAI - Certificados de Seminarios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -53,6 +53,29 @@
         }
     </script>
     <style>
+        @font-face {
+            font-family: 'Comfortaa';
+            src: url('{% static "fonts/Comfortaa-Bold.ttf" %}') format('truetype');
+            font-weight: 700;
+            font-display: swap;
+        }
+        .brand-certif {
+            font-family: 'Comfortaa', 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: lowercase;
+            letter-spacing: -0.01em;
+        }
+        .brand-ai {
+            font-family: 'Comfortaa', 'Outfit', sans-serif;
+            font-weight: 700;
+            text-transform: lowercase;
+            letter-spacing: -0.01em;
+            background: linear-gradient(135deg, #F58830 0%, #ec4899 55%, #a855f7 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
         .dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
@@ -85,7 +108,7 @@
                         <i class="fa-solid fa-award"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="self-center text-2xl font-bold whitespace-nowrap text-white tracking-wide">MUC Academy</span>
+                        <span class="self-center text-2xl font-bold whitespace-nowrap text-white"><span class="brand-certif">CERTIF</span><span class="brand-ai">ai</span></span>
                         <span class="text-xs text-white opacity-80 uppercase tracking-widest" style="font-size: 0.65rem;">Seminarios y Certificados</span>
                     </div>
                 </div>
@@ -141,7 +164,7 @@
                     <div class="flex flex-col md:flex-row items-center gap-1 md:gap-2 text-xs">
                         <span>Desarrollado por <a href="https://wa.me/593967094252" target="_blank" class="text-unemi-orange hover:underline font-bold">Ronny Arellano</a></span>
                         <span class="hidden md:inline text-gray-400">|</span>
-                        <span>&copy; 2026 MUC Academy</span>
+                        <span>&copy; 2026 CertifAI</span>
                     </div>
                 </div>
             </div>

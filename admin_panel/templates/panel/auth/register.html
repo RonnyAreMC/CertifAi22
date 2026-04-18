@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitar acceso · MUC Academy</title>
+    <title>Solicitar acceso · CertifAI</title>
     <link rel="icon" type="image/png" href="{% static 'tiger_chase_loader.png' %}">
     <link rel="apple-touch-icon" href="{% static 'tiger_chase_loader.png' %}">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,6 +29,34 @@
         }
     </script>
     <style>
+        @font-face {
+            font-family: 'Pacifico';
+            src: url('{% static "fonts/Pacifico-Regular.ttf" %}') format('truetype');
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Quicksand';
+            src: url('{% static "fonts/Quicksand-Bold.ttf" %}') format('truetype');
+            font-weight: 700;
+            font-display: swap;
+        }
+        .brand-certif {
+            font-family: 'Quicksand', 'Inter', sans-serif;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+        .brand-ai {
+            font-family: 'Pacifico', cursive;
+            font-weight: 400;
+            font-size: 1.1em;
+            letter-spacing: 0;
+            background: linear-gradient(90deg, #a855f7 0%, #ec4899 50%, #F58830 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            margin-left: 0.05em;
+        }
         body { font-family: 'Inter', sans-serif; }
         @keyframes float-1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, -50px); } }
         @keyframes float-2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-50px, 40px); } }
@@ -86,7 +114,7 @@
                         <img src="{% static 'tiger_chase_loader.png' %}" alt="MUC" class="w-14 h-14 object-contain">
                     </div>
                     <div>
-                        <h1 class="text-2xl font-extrabold tracking-tight leading-tight">MUC Academy</h1>
+                        <h1 class="text-2xl font-extrabold leading-tight"><span class="brand-certif">CERTIF</span><span class="brand-ai">ai</span></h1>
                         <p class="text-xs text-blue-200 font-semibold tracking-widest uppercase">Universidad Estatal de Milagro</p>
                     </div>
                 </div>

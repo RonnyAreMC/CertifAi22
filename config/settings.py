@@ -249,7 +249,7 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CertifAI API',
-    'DESCRIPTION': 'API REST para el sistema de certificados UNEMI / MUC Academy.',
+    'DESCRIPTION': 'API REST para el sistema de certificados UNEMI / CertifAI.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
