@@ -1,6 +1,5 @@
 from django.db.models import Max
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, status
+from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -21,7 +20,6 @@ class LandingBloqueViewSet(AuditedModelViewSet):
     queryset = LandingBloque.objects.all().order_by('orden')
     serializer_class = LandingBloqueSerializer
     permission_classes = [IsSuperAdmin]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['tipo', 'estilo', 'activo']
     ordering_fields = ['orden', 'id']
     ordering = ['orden']

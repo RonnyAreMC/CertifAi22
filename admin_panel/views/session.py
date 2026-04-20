@@ -7,16 +7,14 @@
 - generate_batch: shell + fetch POST a generate-batch action
 """
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Count, F
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.models import ConfirmacionAsistencia, LoteCertificados, SesionAsistencia
-from ._shared import _is_admin
+from ._shared import admin_required
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def session_list(request):
     """Lista con filtros (el template renderiza cards server-side).
 
@@ -47,15 +45,13 @@ def session_list(request):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def session_create(request):
     """Legacy: el modal de create usa fetch directo al API. Solo redirige."""
     return redirect('panel:session_list')
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def session_edit(request, id):
     """Shell de edición: el submit va a PATCH /api/v1/admin/sessions/{id}/."""
     return render(request, 'panel/sessions/edit.html', {
@@ -63,8 +59,7 @@ def session_edit(request, id):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def session_qr_display(request, id):
     """Shell; URL de check-in y feed se cargan desde el API."""
     return render(request, 'panel/sessions/qr.html', {
@@ -72,8 +67,7 @@ def session_qr_display(request, id):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def session_generate_batch(request, id):
     """Shell para confirmar. El click del botón POSTea a /api/v1/admin/sessions/{id}/generate-batch/."""
     sesion = get_object_or_404(SesionAsistencia, id=id)

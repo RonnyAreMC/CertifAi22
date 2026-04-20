@@ -6,15 +6,13 @@ from datetime import datetime
 import uuid
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect
 
 from core.models import Certificado, LoteCertificados, Participante
-from ._shared import _is_admin, _log_audit
+from ._shared import admin_required, _log_audit
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def add_certificate(request, id):
     """POST form del batch_detail para agregar un certificado al lote."""
     lote = get_object_or_404(LoteCertificados, id=id)

@@ -1,5 +1,4 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions
+from rest_framework import permissions
 
 from core.models import Certificado
 from api.common.viewsets import AuditedModelViewSet
@@ -15,7 +14,6 @@ class CertificadoViewSet(AuditedModelViewSet):
     """CRUD admin de certificados. La parte pública está en api/public/."""
     queryset = Certificado.objects.with_relations()
     permission_classes = [permissions.IsAdminUser]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['lote', 'participante']
     search_fields = ['cedula', 'email', 'nombres', 'apellidos', 'curso', 'hash_verificacion']
     ordering_fields = ['created_at', 'descargas_count']

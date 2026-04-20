@@ -1,7 +1,66 @@
 import os
+import re
+
 import filetype  # Pure-Python, sin dependencias del sistema
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+
+
+def validar_cedula_ecuador(value):
+    """
+    Valida una cédula ecuatoriana (10 dígitos) con algoritmo de dígito verificador.
+
+    Reglas:
+      - 10 dígitos numéricos.
+      - Los 2 primeros = código de provincia (01-24).
+      - Tercer dígito < 6 (cédulas físicas).
+      - Último dígito = checksum módulo 10 sobre coeficientes 2,1,2,1,... de los primeros 9.
+
+    Vacío pasa (campos opcionales deciden obligatoriedad en otra capa).
+    """
+    if not value:
+        return
+    if not re.fullmatch(r'\d{10}', str(value)):
+        raise ValidationError(_('La cédula debe tener 10 dígitos numéricos.'))
+
+    provincia = int(value[:2])
+    if provincia < 1 or provincia > 24:
+        raise ValidationError(_('Código de provincia inválido en cédula.'))
+
+    tercer = int(value[2])
+    if tercer >= 6:
+        raise ValidationError(_('Tercer dígito de cédula inválido.'))
+
+    coef = [2, 1, 2, 1, 2, 1, 2, 1, 2]
+    total = 0
+    for i, c in enumerate(value[:9]):
+        prod = int(c) * coef[i]
+        total += prod if prod < 10 else prod - 9
+    verificador = (10 - (total % 10)) % 10
+    if verificador != int(value[9]):
+        raise ValidationError(_('Cédula inválida (dígito verificador).'))
+
+
+def validar_telefono_ecuador(value):
+    """
+    Valida un teléfono/celular ecuatoriano.
+
+    Acepta:
+      - Celular: 09xxxxxxxx (10 dígitos) o +5939xxxxxxxx.
+      - Fijo:    0Nxxxxxxx (9 dígitos, N=2-7) o +593Nxxxxxxx.
+
+    Normaliza espacios y guiones antes de validar.
+    """
+    if not value:
+        return
+    clean = re.sub(r'[\s\-()]', '', str(value))
+    patterns = (
+        r'^0\d{9}$',        # 0 + 9 dígitos (celular o fijo + ext)
+        r'^\+593\d{9}$',    # formato internacional
+        r'^0\d{8}$',        # fijo sin prefijo celular
+    )
+    if not any(re.fullmatch(p, clean) for p in patterns):
+        raise ValidationError(_('Formato de teléfono inválido. Usa 09xxxxxxxx o +593xxxxxxxxx.'))
 
 def validate_file_extension(value, allowed_extensions=None):
     if not allowed_extensions:

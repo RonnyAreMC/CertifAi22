@@ -1,6 +1,5 @@
 from django.db.models import Count
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions
+from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -18,7 +17,6 @@ from .serializers import (
 class ParticipanteViewSet(AuditedModelViewSet):
     queryset = Participante.objects.annotate(certificados_count=Count('certificados'))
     permission_classes = [permissions.IsAdminUser]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['es_lider']
     search_fields = ['cedula', 'email', 'nombres', 'apellidos']
     ordering_fields = ['created_at', 'nombres', 'apellidos']

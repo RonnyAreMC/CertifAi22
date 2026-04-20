@@ -1,14 +1,13 @@
 """Shell del builder. Las mutaciones van por /api/v1/admin/landing/blocks/."""
 from datetime import date
 
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render
 
 from core.models import LandingBloque, SesionAsistencia
+from ._shared import superadmin_required
 
 
-@login_required
-@user_passes_test(lambda u: u.rol == 'superadmin')
+@superadmin_required
 def landing_builder(request):
     return render(request, 'panel/landing/builder.html', {
         'bloques': LandingBloque.objects.all(),

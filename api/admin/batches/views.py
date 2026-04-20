@@ -5,8 +5,7 @@ from datetime import date
 from django.http import FileResponse, HttpResponse
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.utils.decorators import method_decorator
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, status
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -22,7 +21,6 @@ class LoteViewSet(AuditedModelViewSet):
     """CRUD de lotes de certificados."""
     queryset = LoteCertificados.objects.all().select_related('administrador')
     permission_classes = [permissions.IsAdminUser]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['activo', 'facultad', 'plantilla', 'personalizar_diseno']
     search_fields = ['nombre_lote']
     ordering_fields = ['fecha_creacion', 'nombre_lote']

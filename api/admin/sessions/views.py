@@ -8,8 +8,7 @@ from django.core.files import File
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, status
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -32,7 +31,6 @@ class SesionViewSet(AuditedModelViewSet):
     """CRUD admin de sesiones/eventos."""
     queryset = SesionAsistencia.objects.all()
     permission_classes = [permissions.IsAdminUser]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['activa', 'modalidad', 'solo_lideres', 'fecha', 'lote']
     search_fields = ['titulo', 'descripcion', 'lugar']
     ordering_fields = ['fecha', 'hora_inicio', 'created_at']

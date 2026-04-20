@@ -1,7 +1,7 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import serializers, filters, permissions, viewsets
+from rest_framework import serializers, permissions
 
 from core.models import Auditoria
+from api.common.viewsets import AuditedReadOnlyModelViewSet
 
 
 class AuditoriaSerializer(serializers.ModelSerializer):
@@ -18,12 +18,11 @@ class AuditoriaSerializer(serializers.ModelSerializer):
         return f'{u.first_name} {u.last_name}'.strip() if u else ''
 
 
-class AuditoriaViewSet(viewsets.ReadOnlyModelViewSet):
+class AuditoriaViewSet(AuditedReadOnlyModelViewSet):
     """Logs de auditoría (solo lectura, solo staff)."""
     queryset = Auditoria.objects.select_related('usuario')
     serializer_class = AuditoriaSerializer
     permission_classes = [permissions.IsAdminUser]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['accion', 'usuario']
     search_fields = ['accion', 'detalle', 'usuario__username']
     ordering_fields = ['fecha']

@@ -1,4 +1,4 @@
-from rest_framework import serializers, filters, permissions
+from rest_framework import serializers, permissions
 
 from core.models import FirmaInstitucional
 from api.common.viewsets import AuditedModelViewSet
@@ -15,7 +15,6 @@ class FirmaViewSet(AuditedModelViewSet):
     queryset = FirmaInstitucional.objects.all()
     serializer_class = FirmaSerializer
     permission_classes = [permissions.IsAdminUser]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['nombre', 'cargo']
     ordering_fields = ['orden', 'nombre']
     ordering = ['orden', 'nombre']

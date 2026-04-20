@@ -8,7 +8,6 @@ import uuid
 import pandas as pd
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.shortcuts import redirect, render
@@ -17,11 +16,10 @@ from django.views.decorators.http import require_http_methods
 from core.models import Participante
 from core.services.excel_service import analyze_excel_file
 from core.validators import sanitize_text
-from ._shared import _is_admin, _log_audit
+from ._shared import admin_required, _log_audit
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def lideres_list(request):
     """Lista de líderes con búsqueda (render con context)."""
     q = request.GET.get('q', '').strip()
@@ -38,8 +36,7 @@ def lideres_list(request):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 @require_http_methods(['POST'])
 def lideres_add_manual(request):
     """Registrar un líder manualmente (form POST)."""
@@ -87,8 +84,7 @@ def lideres_add_manual(request):
     return redirect('panel:lideres_list')
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 @require_http_methods(['POST'])
 def lideres_upload_excel(request):
     """Step 1: upload Excel → guardar temp → mostrar UI de mapping."""
@@ -114,8 +110,7 @@ def lideres_upload_excel(request):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 @require_http_methods(['POST'])
 def lideres_process_mapping(request):
     """Step 2: procesar Excel con el mapping confirmado."""

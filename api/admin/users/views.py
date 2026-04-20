@@ -1,5 +1,4 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, permissions, status
+from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -19,7 +18,6 @@ class UsuarioViewSet(AuditedModelViewSet):
     """Gestión de usuarios admin. Solo superadmin."""
     queryset = Usuario.objects.all()
     permission_classes = [IsSuperAdmin]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['rol', 'facultad', 'is_active', 'activo']
     search_fields = ['username', 'email', 'first_name', 'last_name']
     ordering_fields = ['date_joined', 'username']

@@ -1,12 +1,12 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from core.models import SolicitudAcceso, Usuario
-from ._shared import _is_admin, _is_superadmin, _log_audit  # noqa: F401
+from ._shared import superadmin_required, _log_audit
 
 class CustomLoginView(DjangoLoginView):
     """Custom login view that checks for pending access requests"""
@@ -122,8 +122,7 @@ def mi_estado(request):
     return render(request, 'panel/auth/mi_estado.html', context)
 
 
-@login_required
-@user_passes_test(lambda user: user.rol == 'superadmin')
+@superadmin_required
 def solicitudes_pendientes(request):
     """Admin view: lista de solicitudes de acceso pendientes"""
     estado_filter = request.GET.get('estado', 'pendiente')
@@ -151,8 +150,7 @@ def solicitudes_pendientes(request):
     return render(request, 'panel/solicitudes/pendientes.html', context)
 
 
-@login_required
-@user_passes_test(lambda user: user.rol == 'superadmin')
+@superadmin_required
 @require_http_methods(["POST"])
 def aprobar_solicitud(request, id):
     """Admin action: aprobar una solicitud de acceso - activa el usuario existente"""
@@ -213,8 +211,7 @@ def aprobar_solicitud(request, id):
     return redirect('panel:solicitudes_pendientes')
 
 
-@login_required
-@user_passes_test(lambda user: user.rol == 'superadmin')
+@superadmin_required
 @require_http_methods(["GET", "POST"])
 def rechazar_solicitud(request, id):
     """Admin action: rechazar una solicitud de acceso"""

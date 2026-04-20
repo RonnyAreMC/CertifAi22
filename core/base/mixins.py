@@ -1,10 +1,9 @@
-from core.models import Auditoria
-
-
 def log_audit(user, action: str, detail: str) -> None:
     """Crea un registro de auditoría. Seguro si user es None o anónimo."""
     if user is None or not getattr(user, 'is_authenticated', False):
         return
+    # Import lazy para evitar circular imports con core.models
+    from core.models import Auditoria
     Auditoria.objects.create(usuario=user, accion=action, detalle=detail)
 
 

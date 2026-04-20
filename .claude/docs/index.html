@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arbol de Problemas — CertifAI</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;overflow-x:hidden}
+
+/* Nav */
+.nav{background:#fff;border-bottom:1px solid #e2e8f0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.nav-l{display:flex;align-items:center;gap:10px}
+.nav-l .logo{width:28px;height:28px;background:linear-gradient(135deg,#F58830,#e07020);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nav-l .logo svg{width:16px;height:16px;fill:#fff}
+.nav-l h2{font-size:14px;font-weight:800;color:#0f172a;letter-spacing:-.02em}
+.nav-l .pipe{width:1px;height:16px;background:#e2e8f0}
+.nav-l .sub{font-size:11px;color:#94a3b8;font-weight:500}
+.nav button{font-size:11px;font-weight:600;color:#64748b;border:1px solid #e2e8f0;padding:6px 16px;border-radius:8px;background:#fff;cursor:pointer;transition:all .15s}
+.nav button:hover{border-color:#cbd5e1;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* Header */
+.hdr{text-align:center;padding:32px 20px 0}
+.hdr .badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(245,136,48,.08),rgba(245,136,48,.04));border:1px solid rgba(245,136,48,.2);border-radius:20px;padding:4px 14px;font-size:10px;font-weight:600;color:#F58830;margin-bottom:10px}
+.hdr .badge i{width:5px;height:5px;background:#F58830;border-radius:50%;display:inline-block}
+.hdr h1{font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-.03em}
+.hdr p{font-size:13px;color:#64748b;margin-top:4px}
+
+/* Legend */
+.legend{display:flex;justify-content:center;gap:6px;padding:16px 16px 8px;flex-wrap:wrap}
+.legend .chip{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px}
+.legend .chip i{width:8px;height:8px;border-radius:3px;display:inline-block}
+
+/* Tree container */
+#tree-container{width:100%;overflow:hidden;padding:0 0 50px}
+#tree-container svg{display:block;width:100%;height:auto}
+
+/* Tooltip */
+.tip{
+  position:fixed;background:#fff;
+  border:1px solid #e2e8f0;border-radius:14px;
+  padding:18px 20px;max-width:320px;width:320px;
+  box-shadow:0 20px 50px -12px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.03);
+  z-index:100;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;
+  transform:translateY(4px);
+}
+.tip.show{opacity:1;transform:translateY(0)}
+.tip .tg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.tip .tg.ef{background:#fef2f2;color:#dc2626}
+.tip .tg.ca{background:#eff6ff;color:#2563eb}
+.tip h4{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px;line-height:1.3}
+.tip p{font-size:12px;line-height:1.65;color:#64748b;margin:0}
+
+@media print{.nav,.legend,.tip{display:none!important}}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-l">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+    <h2>CertifAI</h2>
+    <div class="pipe"></div>
+    <span class="sub">Arbol de problemas</span>
+  </div>
+  <button onclick="window.print()">Exportar</button>
+</div>
+
+<div class="hdr">
+  <div class="badge"><i></i>Proyecto de grado</div>
+  <h1>Arbol de Problemas</h1>
+  <p>Plataforma web con IA para la emision y verificacion de certificados academicos</p>
+</div>
+
+<div class="legend">
+  <div class="chip"><i style="background:#f59e0b"></i>Efectos 2do orden</div>
+  <div class="chip"><i style="background:#ef4444"></i>Efectos 1er orden</div>
+  <div class="chip"><i style="background:#991b1b"></i>Problema central</div>
+  <div class="chip"><i style="background:#3b82f6"></i>Causas 1er orden</div>
+  <div class="chip"><i style="background:#14b8a6"></i>Causas 2do orden</div>
+</div>
+
+<div id="tree-container"></div>
+<div class="tip" id="tip"><div id="tip-body"></div></div>
+
+<script>
+const data = {
+  name:'Gestion manual, fragmentada e ineficiente\nde certificados academicos en instituciones\nde educacion superior', type:'central',
+  desc:'Problema identificado en instituciones que gestionan certificados con herramientas fragmentadas y procesos manuales.',
+  effects:[
+    {name:'Tiempo excesivo en\ntareas repetitivas', type:'e1',
+      desc:'Cada lote requiere entre 3 y 5 horas de trabajo manual: descarga, limpieza, carga en otra plataforma y envio individual.',
+      children:[
+        {name:'Sobrecarga del personal\nadministrativo', type:'e2', desc:'El personal destina horas en tareas automatizables: limpiar datos, coordinar firmas, enviar correos uno a uno.'},
+        {name:'Retraso sistematico\nen entregas', type:'e2', desc:'La cadena de pasos manuales acumula retrasos de semanas en la entrega de certificados a los participantes.'}
+      ]},
+    {name:'Errores frecuentes\nen certificados', type:'e1',
+      desc:'Campos cruzados por mapeo incorrecto de columnas, nombres con formatos inconsistentes, datos desplazados durante limpieza.',
+      children:[
+        {name:'Perdida de credibilidad\ninstitucional', type:'e2', desc:'Certificados con datos cruzados comprometen la confianza de empleadores y otras instituciones academicas.'},
+        {name:'Datos inconsistentes\ny no confiables', type:'e2', desc:'La misma persona aparece multiples veces con variaciones menores, impidiendo obtener estadisticas confiables.'}
+      ]},
+    {name:'Participantes\nduplicados', type:'e1',
+      desc:'Sin entidad centralizada con logica de deduplicacion, la misma persona aparece con variaciones menores en sus datos.',
+      children:[
+        {name:'Documentos no\nverificables', type:'e2', desc:'Sin codigos QR, hash criptografico ni portal de consulta, un tercero no puede confirmar la autenticidad del certificado.'}
+      ]},
+    {name:'Proceso no escalable\nante crecimiento', type:'e1',
+      desc:'Cada nuevo evento replica exactamente los mismos problemas sin aprendizaje ni reutilizacion de datos previamente validados.',
+      children:[
+        {name:'Experiencia negativa\ndel estudiante', type:'e2', desc:'El participante depende de que le envien su certificado por correo o debe retirarlo presencialmente. No hay autoservicio.'}
+      ]}
+  ],
+  causes:[
+    {name:'Herramientas separadas\nsin integracion', type:'c1',
+      desc:'Formularios web, hojas de calculo, plataforma externa y correo electronico operan de forma completamente aislada.',
+      children:[
+        {name:'Formularios de registro\ndesconectados', type:'c2', desc:'Los datos de asistencia se capturan en formularios cuyas respuestas no alimentan directamente el sistema de certificacion.'},
+        {name:'Plataforma externa\npara generar PDFs', type:'c2', desc:'La creacion de certificados PDF se realiza en un servicio web diferente, sin control sobre diseño ni vinculacion con participantes.'}
+      ]},
+    {name:'Limpieza y validacion\nmanual de datos', type:'c1',
+      desc:'La depuracion de datos depende del criterio individual del operador. No existe validacion automatica de identificaciones, correos ni formatos.',
+      children:[
+        {name:'Registros duplicados\ny datos inconsistentes', type:'c2', desc:'Identificaciones con y sin guiones, nombres en diferentes formatos de mayusculas, tildes presentes en unas filas y ausentes en otras.'},
+        {name:'Mapeo manual de\ncolumnas propenso\na errores', type:'c2', desc:'Asociar cada columna con su campo correspondiente se hace manualmente. Con encabezados no estandar, el mapeo falla silenciosamente.'}
+      ]},
+    {name:'Proceso de firmas\nineficiente', type:'c1',
+      desc:'Camino impreso: firma presencial uno a uno. Camino digital: envio individual por correo. Ambos dependen de disponibilidad multiple.',
+      children:[
+        {name:'Firma fisica uno a\nuno para impresos', type:'c2', desc:'Cada certificado impreso recibe la firma manuscrita de cada autoridad. 200 certificados con 3 firmantes = 600 firmas.'},
+        {name:'Envio individual\npor correo', type:'c2', desc:'Cada certificado se adjunta manualmente a un correo electronico. No existe distribucion masiva ni portal de autoservicio.'}
+      ]},
+    {name:'Ausencia de\nautomatizacion\ninteligente', type:'c1',
+      desc:'Ninguna de las herramientas actuales incorpora aprendizaje automatico ni asistencia por inteligencia artificial.',
+      children:[
+        {name:'Sin verificacion QR\nni hash', type:'c2', desc:'Los documentos emitidos no incluyen ningun mecanismo de verificacion digital que permita comprobar su legitimidad.'},
+        {name:'Sin recomendaciones\npersonalizadas', type:'c2', desc:'Los participantes no reciben sugerencias de eventos futuros basadas en su historial de asistencia ni en sus areas de interes.'}
+      ]}
+  ]
+};
+
+// Colors & styles per type
+const S = {
+  central:{fill:'#991b1b',stroke:'#dc2626',text:'#ffffff',tagFill:'#fca5a5',shadow:'rgba(153,27,27,.15)'},
+  e1:{fill:'#ffffff',stroke:'#fca5a5',text:'#991b1b',line:'#fca5a5',shadow:'rgba(239,68,68,.06)'},
+  e2:{fill:'#ffffff',stroke:'#fde68a',text:'#92400e',line:'#fcd34d',shadow:'rgba(245,158,11,.06)'},
+  c1:{fill:'#ffffff',stroke:'#93c5fd',text:'#1e40af',line:'#93c5fd',shadow:'rgba(59,130,246,.06)'},
+  c2:{fill:'#ffffff',stroke:'#5eead4',text:'#115e59',line:'#2dd4bf',shadow:'rgba(20,184,166,.06)'},
+};
+
+// Accent dots (small colored bar on top of card)
+const accent = {e1:'#ef4444',e2:'#f59e0b',c1:'#3b82f6',c2:'#14b8a6'};
+
+const nodeW=156, nodeH=58, nodeR=12, vGap=64, centralW=400, centralH=72;
+const tipEl=document.getElementById('tip'), tipBody=document.getElementById('tip-body');
+
+function render(){
+  const container=document.getElementById('tree-container');
+  container.innerHTML='';
+
+  // Build hierarchies
+  function buildH(items){return d3.hierarchy({children:items.map(i=>({...i,children:i.children||[]}))})}
+
+  const eH=buildH(data.effects);
+  const cH=buildH(data.causes);
+
+  const tree=d3.tree().nodeSize([nodeW+20, vGap+nodeH]).separation((a,b)=>a.parent===b.parent?1:1.12);
+  tree(eH); tree(cH);
+
+  // Flip effects upward
+  eH.each(d=>{d.y=-d.y});
+
+  const eNodes=eH.descendants().filter(d=>d.depth>0);
+  const cNodes=cH.descendants().filter(d=>d.depth>0);
+
+  const gap=46;
+  const eShift=-centralH/2-gap;
+  const cShift=centralH/2+gap;
+  eNodes.forEach(d=>{d.y+=eShift});
+  cNodes.forEach(d=>{d.y+=cShift});
+
+  // Bounds
+  const all=[...eNodes,...cNodes];
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  all.forEach(d=>{minX=Math.min(minX,d.x-nodeW/2);maxX=Math.max(maxX,d.x+nodeW/2);minY=Math.min(minY,d.y-nodeH/2);maxY=Math.max(maxY,d.y+nodeH/2)});
+  minX=Math.min(minX,-centralW/2);maxX=Math.max(maxX,centralW/2);
+  minY=Math.min(minY,-centralH/2);maxY=Math.max(maxY,centralH/2);
+
+  const pad=50;
+  const svgW=maxX-minX+pad*2, svgH=maxY-minY+pad*2;
+  const offX=-minX+pad, offY=-minY+pad;
+
+  const svg=d3.select(container).append('svg')
+    .attr('viewBox',`0 0 ${svgW} ${svgH}`)
+    .attr('preserveAspectRatio','xMidYMid meet');
+
+  // Defs for shadows
+  const defs=svg.append('defs');
+  ['e1','e2','c1','c2','central'].forEach(t=>{
+    const f=defs.append('filter').attr('id','sh-'+t).attr('x','-10%').attr('y','-10%').attr('width','120%').attr('height','130%');
+    f.append('feDropShadow').attr('dx',0).attr('dy',2).attr('stdDeviation',4).attr('flood-color',S[t].shadow||'rgba(0,0,0,.06)').attr('flood-opacity',1);
+  });
+
+  const g=svg.append('g').attr('transform',`translate(${offX},${offY})`);
+
+  // ── Draw links ──
+  function drawLink(sx,sy,tx,ty,color,fromBottom){
+    const startY=fromBottom?sy+nodeH/2:sy-nodeH/2;
+    const endY=fromBottom?ty-nodeH/2:ty+nodeH/2;
+    const midY=(startY+endY)/2;
+    g.append('path')
+      .attr('d',`M${sx},${startY} L${sx},${midY} L${tx},${midY} L${tx},${endY}`)
+      .attr('fill','none').attr('stroke',color).attr('stroke-width',2).attr('stroke-linecap','round').attr('stroke-linejoin','round');
+  }
+
+  // Central → effects (upward)
+  eNodes.filter(d=>d.depth===1).forEach(d=>{
+    drawLink(0,0,d.x,d.y,S.e1.line,false);
+  });
+  // Central → causes (downward)
+  cNodes.filter(d=>d.depth===1).forEach(d=>{
+    drawLink(0,0,d.x,d.y,S.c1.line,true);
+  });
+  // Internal effect links
+  eNodes.filter(d=>d.depth===2).forEach(d=>{
+    drawLink(d.parent.x,d.parent.y,d.x,d.y,S.e2.line,false);
+  });
+  // Internal cause links
+  cNodes.filter(d=>d.depth===2).forEach(d=>{
+    drawLink(d.parent.x,d.parent.y,d.x,d.y,S.c2.line,true);
+  });
+
+  // ── Labels ──
+  function addLabel(y,text,color){
+    const lg=g.append('g').attr('transform',`translate(0,${y})`);
+    lg.append('line').attr('x1',-100).attr('x2',-14).attr('y1',0).attr('y2',0).attr('stroke',color).attr('stroke-width',1).attr('stroke-dasharray','4,4').attr('opacity',.4);
+    lg.append('line').attr('x1',14).attr('x2',100).attr('y1',0).attr('y2',0).attr('stroke',color).attr('stroke-width',1).attr('stroke-dasharray','4,4').attr('opacity',.4);
+    lg.append('text').attr('x',0).attr('y',4).attr('text-anchor','middle').attr('font-size','9px').attr('font-weight','700').attr('letter-spacing','3px').attr('fill',color).text(text);
+  }
+  addLabel(-centralH/2-gap/2,'EFECTOS','#ef4444');
+  addLabel(centralH/2+gap/2,'CAUSAS','#3b82f6');
+
+  // ── Central node ──
+  const cg=g.append('g');
+  cg.append('rect').attr('x',-centralW/2).attr('y',-centralH/2).attr('width',centralW).attr('height',centralH)
+    .attr('rx',16).attr('fill',S.central.fill).attr('stroke',S.central.stroke).attr('stroke-width',2)
+    .attr('filter','url(#sh-central)');
+  cg.append('text').attr('x',0).attr('y',-centralH/2+16).attr('text-anchor','middle')
+    .attr('font-size','7px').attr('font-weight','700').attr('letter-spacing','2px').attr('fill',S.central.tagFill).text('PROBLEMA CENTRAL');
+  data.name.split('\n').forEach((l,i)=>{
+    cg.append('text').attr('x',0).attr('y',-4+i*15).attr('text-anchor','middle')
+      .attr('font-size','12px').attr('font-weight','700').attr('fill','#fff').text(l);
+  });
+
+  // ── Draw nodes ──
+  function drawNode(d){
+    const s=S[d.data.type];
+    const ac=accent[d.data.type];
+    const ng=g.append('g').attr('transform',`translate(${d.x},${d.y})`).style('cursor','pointer');
+
+    // Card background
+    ng.append('rect').attr('x',-nodeW/2).attr('y',-nodeH/2).attr('width',nodeW).attr('height',nodeH)
+      .attr('rx',nodeR).attr('fill',s.fill).attr('stroke',s.stroke).attr('stroke-width',1.5)
+      .attr('filter',`url(#sh-${d.data.type})`).attr('class','nr');
+
+    // Accent bar on top
+    ng.append('rect').attr('x',-nodeW/2+1).attr('y',-nodeH/2).attr('width',nodeW-2).attr('height',3)
+      .attr('rx',1).attr('fill',ac)
+      .attr('clip-path',`inset(0 0 0 0 round ${nodeR}px ${nodeR}px 0 0)`);
+    // Clip the accent bar to match rounded corners
+    ng.append('clipPath').attr('id','clip-'+d.x+'-'+d.y)
+      .append('rect').attr('x',-nodeW/2).attr('y',-nodeH/2).attr('width',nodeW).attr('height',nodeH).attr('rx',nodeR);
+    ng.select('rect:nth-child(2)').attr('clip-path',`url(#clip-${d.x}-${d.y})`);
+
+    // Text
+    const lines=d.data.name.split('\n');
+    const lh=13;
+    const startY=-((lines.length-1)*lh)/2+4;
+    lines.forEach((l,i)=>{
+      ng.append('text').attr('x',0).attr('y',startY+i*lh)
+        .attr('text-anchor','middle').attr('font-size','10.5px').attr('font-weight','600')
+        .attr('fill',s.text).text(l);
+    });
+
+    // Hover
+    ng.on('mouseenter',(event)=>{
+      ng.select('.nr').attr('stroke-width',2.5).attr('stroke',ac);
+      const isEf=d.data.type.startsWith('e');
+      tipBody.innerHTML=`<div class="tg ${isEf?'ef':'ca'}">${isEf?'Efecto':'Causa'}</div><h4>${d.data.name.replace(/\n/g,' ')}</h4><p>${d.data.desc}</p>`;
+      tipEl.classList.add('show');
+      const r=event.target.closest('g').getBoundingClientRect();
+      let left=r.left+r.width/2-160;
+      let top=r.top<300?r.bottom+12:r.top-(tipEl.offsetHeight||120)-12;
+      left=Math.max(10,Math.min(left,innerWidth-340));
+      top=Math.max(10,top);
+      tipEl.style.left=left+'px';tipEl.style.top=top+'px';
+    });
+    ng.on('mouseleave',()=>{
+      ng.select('.nr').attr('stroke-width',1.5).attr('stroke',s.stroke);
+      tipEl.classList.remove('show');
+    });
+  }
+
+  eNodes.forEach(drawNode);
+  cNodes.forEach(drawNode);
+}
+
+render();
+window.addEventListener('resize',render);
+</script>
+</body>
+</html>

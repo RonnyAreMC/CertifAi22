@@ -4,7 +4,6 @@ import uuid
 from datetime import date
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.clickjacking import xframe_options_exempt
@@ -12,10 +11,9 @@ from django.views.decorators.http import require_POST
 
 from core.models import Certificado, FirmaInstitucional, LoteCertificados
 from core.services.pdf_service import generate_certificate_pdf
-from ._shared import _is_superadmin, _log_audit
+from ._shared import superadmin_required, _log_audit
 
-@login_required
-@user_passes_test(_is_superadmin)
+@superadmin_required
 def design_global(request):
     """
     Configuración GLOBAL del diseño de certificados.
@@ -112,8 +110,7 @@ def design_global(request):
     })
 
 
-@login_required
-@user_passes_test(_is_superadmin)
+@superadmin_required
 @require_POST
 def design_save_firma_pos(request):
     """AJAX: Save per-signature position/scale from the visual editor."""
@@ -144,8 +141,7 @@ def design_save_firma_pos(request):
     return JsonResponse({'ok': True})
 
 
-@login_required
-@user_passes_test(_is_superadmin)
+@superadmin_required
 @xframe_options_exempt
 def design_global_preview(request):
     """Preview del diseño global con datos dummy."""

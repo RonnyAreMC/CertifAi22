@@ -1,4 +1,5 @@
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
 
 from core.base.mixins import AuditLogMixin
 
@@ -6,13 +7,19 @@ from core.base.mixins import AuditLogMixin
 class AuditedModelViewSet(AuditLogMixin, viewsets.ModelViewSet):
     """
     ModelViewSet que registra automáticamente en Auditoria las operaciones
-    de escritura (create / update / destroy).
+    de escritura (create / update / destroy) y aplica los filter_backends
+    estándar (Django filter, search, ordering).
 
-    Personaliza los mensajes usando:
+    Personaliza con:
         - audit_verbose_name (str): nombre legible del recurso, ej "sesión"
-        - audit_action_create / audit_action_update / audit_action_delete (str): códigos de acción
-        - audit_detail(instance, action) -> str: override para detalle custom
+        - audit_action_create / audit_action_update / audit_action_delete (str)
+        - audit_detail(instance, action) -> str para detalle custom
+        - filterset_fields / search_fields / ordering_fields: si necesitas filtrar.
+
+    Sobrescribe `filter_backends` si tu recurso no necesita alguno de ellos.
     """
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
     audit_verbose_name = 'recurso'
     audit_action_create = ''
     audit_action_update = ''
@@ -45,5 +52,8 @@ class AuditedModelViewSet(AuditLogMixin, viewsets.ModelViewSet):
 
 
 class AuditedReadOnlyModelViewSet(viewsets.ReadOnlyModelViewSet):
-    """ReadOnly sin auditoría (listados no se auditan por volumen)."""
-    pass
+    """ReadOnly sin auditoría (listados no se auditan por volumen).
+
+    También trae los filter_backends estándar para consistencia con AuditedModelViewSet.
+    """
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

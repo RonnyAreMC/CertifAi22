@@ -6,16 +6,14 @@ se quedan como Django views. El resto (list, delete, preview_pdf) va por API.
 import base64
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 
 from core.models import FirmaInstitucional, LoteCertificados
 from core.services.excel_service import analyze_headers, process_excel_batch
-from ._shared import _is_admin
+from ._shared import admin_required
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def list_batches(request):
     """Render con los lotes para el template de lista."""
     return render(request, 'panel/batch/list.html', {
@@ -23,8 +21,7 @@ def list_batches(request):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def create_batch(request):
     """Shell del form. Submit va a /api/v1/admin/batches/ via fetch+FormData."""
     from core.models import FACULTADES_CHOICES
@@ -33,8 +30,7 @@ def create_batch(request):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def process_batch_mapping(request, id):
     """UI de mapeo de columnas Excel tras crear el lote."""
     lote = get_object_or_404(LoteCertificados, id=id)
@@ -81,8 +77,7 @@ def process_batch_mapping(request, id):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def batch_detail(request, id):
     lote = get_object_or_404(LoteCertificados, id=id)
     return render(request, 'panel/batch/detail.html', {
@@ -91,8 +86,7 @@ def batch_detail(request, id):
     })
 
 
-@login_required
-@user_passes_test(_is_admin)
+@admin_required
 def configure_batch(request, id):
     """Form de diseño personalizado para un lote (colores, firmas, logos)."""
     lote = get_object_or_404(LoteCertificados, id=id)
