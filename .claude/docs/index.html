@@ -3,35 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arbol de Problemas — CertifAI</title>
+<title>Árbol de Problemas — CertifAI</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;min-height:100vh;overflow-x:hidden}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  color:#0f172a;min-height:100vh;overflow-x:hidden;
+  background:
+    radial-gradient(1200px 700px at 12% -10%,rgba(245,136,48,.10),transparent 60%),
+    radial-gradient(1000px 600px at 100% 20%,rgba(59,130,246,.08),transparent 60%),
+    radial-gradient(900px 500px at 50% 100%,rgba(20,184,166,.07),transparent 60%),
+    #f8fafc;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(circle at 1px 1px,rgba(15,23,42,.05) 1px,transparent 0);
+  background-size:22px 22px;
+  mask-image:radial-gradient(ellipse at center,#000 30%,transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 70%);
+}
+.nav,.hdr,.legend,#tree-container{position:relative;z-index:1}
 
 /* Nav */
-.nav{background:#fff;border-bottom:1px solid #e2e8f0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.nav{background:rgba(255,255,255,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(226,232,240,.8);height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
 .nav-l{display:flex;align-items:center;gap:10px}
-.nav-l .logo{width:28px;height:28px;background:linear-gradient(135deg,#F58830,#e07020);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nav-l .logo{width:30px;height:30px;background:linear-gradient(135deg,#F58830,#e07020);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(245,136,48,.3)}
 .nav-l .logo svg{width:16px;height:16px;fill:#fff}
 .nav-l h2{font-size:14px;font-weight:800;color:#0f172a;letter-spacing:-.02em}
 .nav-l .pipe{width:1px;height:16px;background:#e2e8f0}
 .nav-l .sub{font-size:11px;color:#94a3b8;font-weight:500}
-.nav button{font-size:11px;font-weight:600;color:#64748b;border:1px solid #e2e8f0;padding:6px 16px;border-radius:8px;background:#fff;cursor:pointer;transition:all .15s}
-.nav button:hover{border-color:#cbd5e1;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.nav-r{display:flex;align-items:center;gap:10px}
+.nav button{font-size:11px;font-weight:600;color:#64748b;border:1px solid #e2e8f0;padding:7px 16px;border-radius:8px;background:#fff;cursor:pointer;transition:all .15s}
+.nav button:hover{border-color:#cbd5e1;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,.06);transform:translateY(-1px)}
+
+/* Stack bar (nav) */
+.stack{display:none;align-items:center;gap:8px;padding-right:4px}
+.stack-lbl{font-size:9.5px;font-weight:800;color:#94a3b8;letter-spacing:.14em;text-transform:uppercase;margin-right:2px}
+.stack-row{display:flex;align-items:center;gap:7px}
+@media(min-width:900px){.stack{display:flex}}
+.ti{position:relative;width:34px;height:34px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;cursor:pointer;transition:all .18s;box-shadow:0 1px 3px rgba(15,23,42,.12);background:#fff;border:1px solid #e2e8f0}
+.ti svg{width:22px;height:22px;display:block}
+.ti:hover{transform:translateY(-2px) scale(1.08);box-shadow:0 8px 18px -4px rgba(15,23,42,.28);border-color:transparent}
+.ti::after{
+  content:attr(data-name) " · " attr(data-use);
+  position:absolute;top:calc(100% + 10px);right:0;
+  background:#0f172a;color:#fff;
+  font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;
+  padding:8px 12px;border-radius:8px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;
+  transform:translateY(-4px);z-index:100;
+  box-shadow:0 10px 30px -8px rgba(15,23,42,.35);
+}
+.ti::before{
+  content:'';position:absolute;top:calc(100% + 4px);right:12px;
+  border:6px solid transparent;border-bottom-color:#0f172a;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+}
+.ti:hover::after,.ti:hover::before{opacity:1;transform:translateY(0)}
+.ti.t-claude{background:#d97757;border-color:#c06848}
+.ti.t-gmeet{background:#fff;border-color:#e2e8f0}
+.ti.t-gcal{background:#fff;border-color:#e2e8f0}
+.ti.t-gdrive{background:#fff;border-color:#e2e8f0}
+.ti.t-django{background:#092e20;border-color:#0c4b33}
+.ti.t-rly{background:#0b0d0e;border-color:#2d2d2d}
+.stack-sep{width:1px;height:22px;background:#e2e8f0;margin:0 4px}
 
 /* Header */
-.hdr{text-align:center;padding:32px 20px 0}
-.hdr .badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(245,136,48,.08),rgba(245,136,48,.04));border:1px solid rgba(245,136,48,.2);border-radius:20px;padding:4px 14px;font-size:10px;font-weight:600;color:#F58830;margin-bottom:10px}
-.hdr .badge i{width:5px;height:5px;background:#F58830;border-radius:50%;display:inline-block}
-.hdr h1{font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-.03em}
-.hdr p{font-size:13px;color:#64748b;margin-top:4px}
+.hdr{text-align:center;padding:40px 20px 4px;max-width:820px;margin:0 auto}
+.hdr .badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(245,136,48,.12),rgba(245,136,48,.04));border:1px solid rgba(245,136,48,.25);border-radius:20px;padding:5px 14px;font-size:10px;font-weight:700;color:#c2540d;margin-bottom:14px;letter-spacing:.05em;text-transform:uppercase}
+.hdr .badge i{width:6px;height:6px;background:#F58830;border-radius:50%;display:inline-block;box-shadow:0 0 0 4px rgba(245,136,48,.2);animation:pulseDot 2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 4px rgba(245,136,48,.2)}50%{box-shadow:0 0 0 7px rgba(245,136,48,.05)}}
+.hdr h1{font-size:34px;font-weight:900;color:#0f172a;letter-spacing:-.035em;line-height:1.1;background:linear-gradient(135deg,#0f172a 0%,#334155 60%,#F58830 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hdr p{font-size:14px;color:#475569;margin-top:10px;line-height:1.5;max-width:620px;margin-left:auto;margin-right:auto}
+.hdr p b{color:#0f172a;font-weight:700}
+
+/* Stats */
+.stats{display:flex;justify-content:center;gap:10px;margin-top:16px;flex-wrap:wrap}
+.stats .st{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(226,232,240,.9);border-radius:10px;padding:8px 14px;font-size:11px;font-weight:600;color:#475569;box-shadow:0 1px 3px rgba(15,23,42,.04)}
+.stats .st b{font-size:15px;font-weight:800;color:#0f172a;font-variant-numeric:tabular-nums}
+.stats .st .sico{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+.stats .st.sef .sico{background:rgba(239,68,68,.12)}
+.stats .st.sca .sico{background:rgba(59,130,246,.12)}
+.stats .st svg{width:13px;height:13px}
 
 /* Legend */
-.legend{display:flex;justify-content:center;gap:6px;padding:16px 16px 8px;flex-wrap:wrap}
-.legend .chip{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:600;color:#475569;background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px}
+.legend{display:flex;justify-content:center;gap:6px;padding:18px 16px 8px;flex-wrap:wrap}
+.legend .chip{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#475569;background:rgba(255,255,255,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(226,232,240,.8);border-radius:7px;padding:5px 11px}
 .legend .chip i{width:8px;height:8px;border-radius:3px;display:inline-block}
+.legend .chip.new{border-color:rgba(16,185,129,.4);color:#065f46;background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.02))}
 
 /* Tree container */
 #tree-container{width:100%;overflow:hidden;padding:0 0 50px}
@@ -39,21 +101,28 @@ body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;m
 
 /* Tooltip */
 .tip{
-  position:fixed;background:#fff;
-  border:1px solid #e2e8f0;border-radius:14px;
+  position:fixed;background:rgba(255,255,255,.98);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(226,232,240,.9);border-radius:16px;
   padding:18px 20px;max-width:320px;width:320px;
-  box-shadow:0 20px 50px -12px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.03);
+  box-shadow:0 25px 60px -15px rgba(15,23,42,.18),0 0 0 1px rgba(0,0,0,.03);
   z-index:100;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;
   transform:translateY(4px);
 }
 .tip.show{opacity:1;transform:translateY(0)}
-.tip .tg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.tip .tg{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
 .tip .tg.ef{background:#fef2f2;color:#dc2626}
 .tip .tg.ca{background:#eff6ff;color:#2563eb}
-.tip h4{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px;line-height:1.3}
-.tip p{font-size:12px;line-height:1.65;color:#64748b;margin:0}
+.tip .tg.new{background:#ecfdf5;color:#065f46}
+.tip .tg i{width:5px;height:5px;border-radius:50%;display:inline-block;background:currentColor}
+.tip h4{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:6px;line-height:1.35;letter-spacing:-.01em}
+.tip p{font-size:12px;line-height:1.65;color:#475569;margin:0}
 
-@media print{.nav,.legend,.tip{display:none!important}}
+/* Footer tag */
+.foot{text-align:center;padding:8px 20px 40px;font-size:10.5px;color:#94a3b8;font-weight:500;position:relative;z-index:1}
+.foot b{color:#475569;font-weight:700}
+
+@media print{.nav,.legend,.tip,.foot,.stats{display:none!important}body::before{display:none}body{background:#fff}}
+@media (max-width:640px){.hdr h1{font-size:24px}.hdr p{font-size:12.5px}}
 </style>
 </head>
 <body>
@@ -63,80 +132,142 @@ body{font-family:'Inter',system-ui,sans-serif;background:#f8fafc;color:#1e293b;m
     <div class="logo"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
     <h2>CertifAI</h2>
     <div class="pipe"></div>
-    <span class="sub">Arbol de problemas</span>
+    <span class="sub">Árbol de problemas</span>
   </div>
-  <button onclick="window.print()">Exportar</button>
+  <div class="nav-r">
+    <div class="stack">
+      <span class="stack-lbl">Stack:</span>
+      <div class="stack-row">
+        <a class="ti t-claude" href="https://docs.anthropic.com/en/docs/about-claude/models/overview" target="_blank" rel="noopener"
+           data-name="Claude Haiku 4.5" data-use="IA para textos, copiloto y resúmenes de Meet">
+          <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M17.304 3.541h-3.672l6.696 16.918H24L17.304 3.541ZM6.696 3.541L0 20.459h3.744l1.37-3.553h7.005l1.369 3.553h3.744L10.536 3.541H6.696Zm-.371 10.223L8.616 7.82l2.291 5.944H6.325Z"/></svg>
+        </a>
+        <a class="ti t-gmeet" href="https://developers.google.com/meet/api/guides/overview" target="_blank" rel="noopener"
+           data-name="Google Meet API" data-use="Reuniones virtuales con grabación y transcripción">
+          <svg viewBox="0 0 87 72" aria-hidden="true">
+            <path fill="#00832d" d="M49.5 36l8.53 9.75 11.47 7.33 2-17.02-2-16.64-11.69 6.44z"/>
+            <path fill="#0066da" d="M0 51.5v15c0 3.04 2.46 5.5 5.5 5.5h15l3.1-11.32-3.1-9.68-10.09-3.1z"/>
+            <path fill="#e94235" d="M20.5 0L0 20.5l10.41 3.1 10.09-3.1 3.05-9.56z"/>
+            <path fill="#2684fc" d="M20.5 20.5H0v31h20.5z"/>
+            <path fill="#00ac47" d="M82.6 8.16L69.5 18.92v34.16l13.16 10.81C84.63 65.42 87 64 87 61.57V10.32c0-2.46-2.48-3.86-4.4-2.16zM49.5 36v15.5H20.5V72h43.5c3.04 0 5.5-2.46 5.5-5.5V53.08z"/>
+            <path fill="#ffba00" d="M64 0H20.5v20.5h29V36l20-.04V5.5C69.5 2.46 67.04 0 64 0z"/>
+          </svg>
+        </a>
+        <a class="ti t-gcal" href="https://developers.google.com/calendar/api/guides/overview" target="_blank" rel="noopener"
+           data-name="Google Calendar API" data-use="Crear eventos y generar links de Meet automáticamente">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="16" rx="2.5" fill="#fff" stroke="#dadce0" stroke-width="1"/>
+            <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5V9H3z" fill="#1a73e8"/>
+            <rect x="6" y="2.5" width="2" height="4.5" rx="1" fill="#1a73e8"/>
+            <rect x="16" y="2.5" width="2" height="4.5" rx="1" fill="#1a73e8"/>
+            <text x="12" y="18.5" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="7.5" font-weight="800" fill="#1a73e8" letter-spacing="-.3">31</text>
+          </svg>
+        </a>
+        <a class="ti t-gdrive" href="https://developers.google.com/drive/api/guides/about-sdk" target="_blank" rel="noopener"
+           data-name="Google Drive API" data-use="Descargar transcripts y grabaciones para procesarlos con IA">
+          <svg viewBox="0 0 87 76" aria-hidden="true">
+            <path fill="#0066da" d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L27.5 53H0c0 1.55.4 3.1 1.2 4.5z"/>
+            <path fill="#00ac47" d="M43.65 25L29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3L1.2 48.5C.4 49.9 0 51.45 0 53h27.5z"/>
+            <path fill="#ea4335" d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.95l5.85 11.5z"/>
+            <path fill="#00832d" d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z"/>
+            <path fill="#2684fc" d="M59.95 53h-32.6L13.55 76.8c1.35.8 2.9 1.2 4.5 1.2h51c1.6 0 3.15-.45 4.5-1.2z"/>
+            <path fill="#ffba00" d="M73.4 26.5L60.65 4.5c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.3 28h27.45c0-1.55-.4-3.1-1.2-4.5z"/>
+          </svg>
+        </a>
+        <a class="ti t-django" href="https://www.djangoproject.com/" target="_blank" rel="noopener"
+           data-name="Django 5 + DRF" data-use="Backend monolítico modular y API REST para móvil">
+          <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M11.146 0h3.924v18.166c-2.013.382-3.491.535-5.096.535-4.791 0-7.288-2.166-7.288-6.32 0-4.001 2.65-6.6 6.753-6.6.637 0 1.121.051 1.707.204V0zm0 9.143a3.894 3.894 0 0 0-1.325-.204c-1.988 0-3.134 1.223-3.134 3.364 0 2.089 1.096 3.236 3.109 3.236.433 0 .79-.025 1.35-.102V9.143zM21.314 6.06v9.098c0 3.134-.229 4.638-.917 5.937-.637 1.249-1.478 2.039-3.211 2.905l-3.644-1.733c1.733-.815 2.574-1.529 3.109-2.625.561-1.121.739-2.421.739-5.835V6.06h3.924zM17.39.025h3.924V4.05H17.39V.025z"/></svg>
+        </a>
+        <a class="ti t-rly" href="https://railway.app/" target="_blank" rel="noopener"
+           data-name="Railway" data-use="Deploy continuo con PostgreSQL gestionado">
+          <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+            <path d="M6.8 3h6.7c3 0 5 1.8 5 4.6 0 2-1.1 3.5-3 4.3L19.5 21h-3.7l-3.5-8.4h-2v8.4H6.8V3zm3.5 3v3.8h3.1c1.3 0 2.1-.7 2.1-1.9s-.8-1.9-2.1-1.9h-3.1z"/>
+          </svg>
+        </a>
+      </div>
+      <div class="stack-sep"></div>
+    </div>
+    <button onclick="window.print()">Exportar</button>
+  </div>
 </div>
 
 <div class="hdr">
-  <div class="badge"><i></i>Proyecto de grado</div>
-  <h1>Arbol de Problemas</h1>
-  <p>Plataforma web con IA para la emision y verificacion de certificados academicos</p>
+  <div class="badge"><i></i>Capacitación continua · IA aplicada</div>
+  <h1>Árbol de Problemas</h1>
+  <p>Plataforma con IA para <b>instituciones y empresas</b> que ofrecen <b>capacitación continua</b>: emisión verificable de certificados, automatización de eventos virtuales y reutilización del contenido educativo.</p>
+  <div class="stats">
+    <div class="st sef"><span class="sico"><svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span><b>4</b>efectos</div>
+    <div class="st sca"><span class="sico"><svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></span><b>4</b>causas</div>
+  </div>
 </div>
 
 <div class="legend">
-  <div class="chip"><i style="background:#f59e0b"></i>Efectos 2do orden</div>
+  <div class="chip"><i style="background:#f59e0b"></i>Efectos 2º orden</div>
   <div class="chip"><i style="background:#ef4444"></i>Efectos 1er orden</div>
   <div class="chip"><i style="background:#991b1b"></i>Problema central</div>
   <div class="chip"><i style="background:#3b82f6"></i>Causas 1er orden</div>
-  <div class="chip"><i style="background:#14b8a6"></i>Causas 2do orden</div>
+  <div class="chip"><i style="background:#14b8a6"></i>Causas 2º orden</div>
 </div>
 
 <div id="tree-container"></div>
+<div class="foot">Pasa el cursor sobre cada nodo para ver el detalle · Pasa el cursor sobre los iconos del stack arriba para ver su uso</div>
 <div class="tip" id="tip"><div id="tip-body"></div></div>
 
 <script>
 const data = {
-  name:'Gestion manual, fragmentada e ineficiente\nde certificados academicos en instituciones\nde educacion superior', type:'central',
-  desc:'Problema identificado en instituciones que gestionan certificados con herramientas fragmentadas y procesos manuales.',
+  name:'Gestión manual, fragmentada e ineficiente\nde certificados y contenido educativo en instituciones\ny empresas que ofrecen capacitación continua', type:'central',
+  desc:'Problema identificado en universidades, academias corporativas y empresas de capacitación que gestionan certificados y eventos educativos con herramientas fragmentadas, procesos manuales y sin aprovechamiento del contenido generado.',
   effects:[
     {name:'Tiempo excesivo en\ntareas repetitivas', type:'e1',
-      desc:'Cada lote requiere entre 3 y 5 horas de trabajo manual: descarga, limpieza, carga en otra plataforma y envio individual.',
+      desc:'Cada lote requiere entre 3 y 5 horas de trabajo manual: descarga, limpieza, carga en otra plataforma y envío individual.',
       children:[
         {name:'Sobrecarga del personal\nadministrativo', type:'e2', desc:'El personal destina horas en tareas automatizables: limpiar datos, coordinar firmas, enviar correos uno a uno.'},
-        {name:'Retraso sistematico\nen entregas', type:'e2', desc:'La cadena de pasos manuales acumula retrasos de semanas en la entrega de certificados a los participantes.'}
+        {name:'Retraso sistemático\nen entregas', type:'e2', desc:'La cadena de pasos manuales acumula retrasos de semanas en la entrega de certificados a los participantes.'}
       ]},
     {name:'Errores frecuentes\nen certificados', type:'e1',
       desc:'Campos cruzados por mapeo incorrecto de columnas, nombres con formatos inconsistentes, datos desplazados durante limpieza.',
       children:[
-        {name:'Perdida de credibilidad\ninstitucional', type:'e2', desc:'Certificados con datos cruzados comprometen la confianza de empleadores y otras instituciones academicas.'},
-        {name:'Datos inconsistentes\ny no confiables', type:'e2', desc:'La misma persona aparece multiples veces con variaciones menores, impidiendo obtener estadisticas confiables.'}
+        {name:'Pérdida de credibilidad\ninstitucional', type:'e2', desc:'Certificados con datos cruzados comprometen la confianza de empleadores y otras instituciones académicas.'},
+        {name:'Datos inconsistentes\ny no confiables', type:'e2', desc:'La misma persona aparece múltiples veces con variaciones menores, impidiendo obtener estadísticas confiables.'}
       ]},
-    {name:'Participantes\nduplicados', type:'e1',
-      desc:'Sin entidad centralizada con logica de deduplicacion, la misma persona aparece con variaciones menores en sus datos.',
+    {name:'Contenido educativo\nse pierde tras el evento', type:'e1', meet:true,
+      desc:'Las sesiones virtuales grabadas en Meet terminan archivadas sin procesar. El conocimiento transmitido no se convierte en material reutilizable para la institución ni para los participantes.',
       children:[
-        {name:'Documentos no\nverificables', type:'e2', desc:'Sin codigos QR, hash criptografico ni portal de consulta, un tercero no puede confirmar la autenticidad del certificado.'}
+        {name:'Conocimiento no\nreutilizable', type:'e2', meet:true, desc:'Sin resúmenes, timelines ni Q&A automáticos, el valor de cada sesión expira al cerrar la reunión. No hay memoria institucional del evento.'},
+        {name:'Participantes ausentes\nsin acceso al material', type:'e2', meet:true, desc:'Quien no pudo asistir en vivo depende de ver la grabación completa de 2 horas. Sin resumen ejecutivo ni highlights navegables.'}
       ]},
     {name:'Proceso no escalable\nante crecimiento', type:'e1',
-      desc:'Cada nuevo evento replica exactamente los mismos problemas sin aprendizaje ni reutilizacion de datos previamente validados.',
+      desc:'Cada nuevo evento replica exactamente los mismos problemas sin aprendizaje ni reutilización de datos previamente validados.',
       children:[
-        {name:'Experiencia negativa\ndel estudiante', type:'e2', desc:'El participante depende de que le envien su certificado por correo o debe retirarlo presencialmente. No hay autoservicio.'}
+        {name:'Experiencia negativa\ndel participante', type:'e2', desc:'El participante depende de que le envíen su certificado por correo o debe retirarlo presencialmente. No hay autoservicio.'},
+        {name:'Documentos no\nverificables', type:'e2', desc:'Sin códigos QR, hash criptográfico ni portal de consulta, un tercero no puede confirmar la autenticidad del certificado.'}
       ]}
   ],
   causes:[
-    {name:'Herramientas separadas\nsin integracion', type:'c1',
-      desc:'Formularios web, hojas de calculo, plataforma externa y correo electronico operan de forma completamente aislada.',
+    {name:'Herramientas separadas\nsin integración', type:'c1',
+      desc:'Formularios web, hojas de cálculo, plataforma externa de PDFs, Meet y correo electrónico operan de forma completamente aislada.',
       children:[
-        {name:'Formularios de registro\ndesconectados', type:'c2', desc:'Los datos de asistencia se capturan en formularios cuyas respuestas no alimentan directamente el sistema de certificacion.'},
-        {name:'Plataforma externa\npara generar PDFs', type:'c2', desc:'La creacion de certificados PDF se realiza en un servicio web diferente, sin control sobre diseño ni vinculacion con participantes.'}
+        {name:'Formularios de registro\ndesconectados', type:'c2', desc:'Los datos de asistencia se capturan en formularios cuyas respuestas no alimentan directamente el sistema de certificación.'},
+        {name:'Plataforma externa\npara generar PDFs', type:'c2', desc:'La creación de certificados PDF se realiza en un servicio web diferente, sin control sobre diseño ni vinculación con participantes.'}
       ]},
-    {name:'Limpieza y validacion\nmanual de datos', type:'c1',
-      desc:'La depuracion de datos depende del criterio individual del operador. No existe validacion automatica de identificaciones, correos ni formatos.',
+    {name:'Limpieza y validación\nmanual de datos', type:'c1',
+      desc:'La depuración de datos depende del criterio individual del operador. No existe validación automática de identificaciones, correos ni formatos.',
       children:[
-        {name:'Registros duplicados\ny datos inconsistentes', type:'c2', desc:'Identificaciones con y sin guiones, nombres en diferentes formatos de mayusculas, tildes presentes en unas filas y ausentes en otras.'},
-        {name:'Mapeo manual de\ncolumnas propenso\na errores', type:'c2', desc:'Asociar cada columna con su campo correspondiente se hace manualmente. Con encabezados no estandar, el mapeo falla silenciosamente.'}
+        {name:'Registros duplicados\ny datos inconsistentes', type:'c2', desc:'Identificaciones con y sin guiones, nombres en diferentes formatos de mayúsculas, tildes presentes en unas filas y ausentes en otras.'},
+        {name:'Mapeo manual de\ncolumnas propenso\na errores', type:'c2', desc:'Asociar cada columna con su campo correspondiente se hace manualmente. Con encabezados no estándar, el mapeo falla silenciosamente.'}
       ]},
-    {name:'Proceso de firmas\nineficiente', type:'c1',
-      desc:'Camino impreso: firma presencial uno a uno. Camino digital: envio individual por correo. Ambos dependen de disponibilidad multiple.',
+    {name:'Eventos virtuales sin\nprocesamiento post-sesión', type:'c1', meet:true,
+      desc:'Las reuniones de Google Meet generan grabación y transcripción automática, pero esos artefactos quedan sueltos en Drive sin vincularse a la sesión ni al sistema de certificación.',
       children:[
-        {name:'Firma fisica uno a\nuno para impresos', type:'c2', desc:'Cada certificado impreso recibe la firma manuscrita de cada autoridad. 200 certificados con 3 firmantes = 600 firmas.'},
-        {name:'Envio individual\npor correo', type:'c2', desc:'Cada certificado se adjunta manualmente a un correo electronico. No existe distribucion masiva ni portal de autoservicio.'}
+        {name:'Transcripts de Meet\nsin aprovechar', type:'c2', meet:true, desc:'Google deposita automáticamente el transcript en Drive tras cada reunión, pero nadie lo procesa. Se pierde la oportunidad de resumir, indexar y publicar el contenido.'},
+        {name:'Sin resúmenes IA\nni timeline automático', type:'c2', meet:true, desc:'No existe un pipeline que convierta el transcript en resumen ejecutivo, Q&A y highlights navegables. El contenido permanece crudo e inaccesible.'}
       ]},
-    {name:'Ausencia de\nautomatizacion\ninteligente', type:'c1',
-      desc:'Ninguna de las herramientas actuales incorpora aprendizaje automatico ni asistencia por inteligencia artificial.',
+    {name:'Ausencia de\nautomatización inteligente', type:'c1',
+      desc:'Ninguna de las herramientas actuales incorpora asistencia por IA para redacción de textos, verificación documental ni firmas digitales masivas.',
       children:[
-        {name:'Sin verificacion QR\nni hash', type:'c2', desc:'Los documentos emitidos no incluyen ningun mecanismo de verificacion digital que permita comprobar su legitimidad.'},
-        {name:'Sin recomendaciones\npersonalizadas', type:'c2', desc:'Los participantes no reciben sugerencias de eventos futuros basadas en su historial de asistencia ni en sus areas de interes.'}
+        {name:'Firmas y envíos\nuno a uno', type:'c2', desc:'Firma manuscrita en impresos y envío individual por correo en digitales. 200 certificados con 3 firmantes = 600 firmas manuales.'},
+        {name:'Sin asistente IA para\nredacción de textos', type:'c2', desc:'El cuerpo de cada certificado se redacta manualmente. No hay un copiloto que sugiera textos según el tipo de evento, duración y tono institucional.'},
+        {name:'Sin verificación QR\nni hash criptográfico', type:'c2', desc:'Los documentos emitidos no incluyen ningún mecanismo de verificación digital que permita a terceros comprobar su autenticidad.'}
       ]}
   ]
 };
@@ -158,6 +289,8 @@ const tipEl=document.getElementById('tip'), tipBody=document.getElementById('tip
 
 function render(){
   const container=document.getElementById('tree-container');
+  // Cerrar tooltip antes de redibujar (evita "fantasma" al hacer resize)
+  tipEl.classList.remove('show');
   container.innerHTML='';
 
   // Build hierarchies
@@ -244,35 +377,52 @@ function render(){
 
   // ── Central node ──
   const cg=g.append('g');
+
+  // Central gradient
+  const cgrad=defs.append('linearGradient').attr('id','centralGrad').attr('x1','0%').attr('y1','0%').attr('x2','100%').attr('y2','100%');
+  cgrad.append('stop').attr('offset','0%').attr('stop-color','#b91c1c');
+  cgrad.append('stop').attr('offset','100%').attr('stop-color','#7f1d1d');
+
+  // Outer glow ring (pulsing)
+  const ringW=centralW+30, ringH=centralH+22;
+  cg.append('rect').attr('x',-ringW/2).attr('y',-ringH/2).attr('width',ringW).attr('height',ringH)
+    .attr('rx',22).attr('fill','none').attr('stroke','rgba(220,38,38,.18)').attr('stroke-width',1.5).attr('stroke-dasharray','3,5')
+    .append('animate').attr('attributeName','stroke-dashoffset').attr('from','0').attr('to','-16').attr('dur','2.4s').attr('repeatCount','indefinite');
+
   cg.append('rect').attr('x',-centralW/2).attr('y',-centralH/2).attr('width',centralW).attr('height',centralH)
-    .attr('rx',16).attr('fill',S.central.fill).attr('stroke',S.central.stroke).attr('stroke-width',2)
+    .attr('rx',16).attr('fill','url(#centralGrad)').attr('stroke','#dc2626').attr('stroke-width',2)
     .attr('filter','url(#sh-central)');
+
+  // Subtle top highlight
+  cg.append('rect').attr('x',-centralW/2+1).attr('y',-centralH/2+1).attr('width',centralW-2).attr('height',14)
+    .attr('rx',15).attr('fill','rgba(255,255,255,.1)').attr('pointer-events','none');
+
   cg.append('text').attr('x',0).attr('y',-centralH/2+16).attr('text-anchor','middle')
-    .attr('font-size','7px').attr('font-weight','700').attr('letter-spacing','2px').attr('fill',S.central.tagFill).text('PROBLEMA CENTRAL');
+    .attr('font-size','8px').attr('font-weight','800').attr('letter-spacing','3px').attr('fill',S.central.tagFill).text('◆  PROBLEMA CENTRAL  ◆');
   data.name.split('\n').forEach((l,i)=>{
-    cg.append('text').attr('x',0).attr('y',-4+i*15).attr('text-anchor','middle')
-      .attr('font-size','12px').attr('font-weight','700').attr('fill','#fff').text(l);
+    cg.append('text').attr('x',0).attr('y',-2+i*14).attr('text-anchor','middle')
+      .attr('font-size','11.5px').attr('font-weight','700').attr('fill','#fff').attr('letter-spacing','-.005em').text(l);
   });
 
   // ── Draw nodes ──
   function drawNode(d){
     const s=S[d.data.type];
     const ac=accent[d.data.type];
-    const ng=g.append('g').attr('transform',`translate(${d.x},${d.y})`).style('cursor','pointer');
+    const ng=g.append('g').attr('transform',`translate(${d.x},${d.y})`).attr('class','ncard').style('cursor','pointer');
 
     // Card background
     ng.append('rect').attr('x',-nodeW/2).attr('y',-nodeH/2).attr('width',nodeW).attr('height',nodeH)
       .attr('rx',nodeR).attr('fill',s.fill).attr('stroke',s.stroke).attr('stroke-width',1.5)
       .attr('filter',`url(#sh-${d.data.type})`).attr('class','nr');
 
-    // Accent bar on top
-    ng.append('rect').attr('x',-nodeW/2+1).attr('y',-nodeH/2).attr('width',nodeW-2).attr('height',3)
-      .attr('rx',1).attr('fill',ac)
-      .attr('clip-path',`inset(0 0 0 0 round ${nodeR}px ${nodeR}px 0 0)`);
-    // Clip the accent bar to match rounded corners
-    ng.append('clipPath').attr('id','clip-'+d.x+'-'+d.y)
+    // Clip for accent bar
+    const clipId='clip-'+Math.round(d.x*100)+'-'+Math.round(d.y*100);
+    ng.append('clipPath').attr('id',clipId)
       .append('rect').attr('x',-nodeW/2).attr('y',-nodeH/2).attr('width',nodeW).attr('height',nodeH).attr('rx',nodeR);
-    ng.select('rect:nth-child(2)').attr('clip-path',`url(#clip-${d.x}-${d.y})`);
+
+    // Accent bar on top
+    ng.append('rect').attr('x',-nodeW/2).attr('y',-nodeH/2).attr('width',nodeW).attr('height',3)
+      .attr('fill',ac).attr('clip-path',`url(#${clipId})`);
 
     // Text
     const lines=d.data.name.split('\n');
@@ -288,7 +438,7 @@ function render(){
     ng.on('mouseenter',(event)=>{
       ng.select('.nr').attr('stroke-width',2.5).attr('stroke',ac);
       const isEf=d.data.type.startsWith('e');
-      tipBody.innerHTML=`<div class="tg ${isEf?'ef':'ca'}">${isEf?'Efecto':'Causa'}</div><h4>${d.data.name.replace(/\n/g,' ')}</h4><p>${d.data.desc}</p>`;
+      tipBody.innerHTML=`<div class="tg ${isEf?'ef':'ca'}"><i></i>${isEf?'Efecto':'Causa'}</div><h4>${d.data.name.replace(/\n/g,' ')}</h4><p>${d.data.desc}</p>`;
       tipEl.classList.add('show');
       const r=event.target.closest('g').getBoundingClientRect();
       let left=r.left+r.width/2-160;
@@ -308,7 +458,13 @@ function render(){
 }
 
 render();
-window.addEventListener('resize',render);
+
+// Debounce el resize para evitar redraws constantes (también evita flicker)
+let _rzTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_rzTimer);
+  _rzTimer=setTimeout(render,150);
+});
 </script>
 </body>
 </html>
