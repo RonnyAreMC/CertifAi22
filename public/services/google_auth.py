@@ -56,11 +56,16 @@ def fetch_userinfo_from_idtoken(id_token_str: str) -> dict:
 
     Devuelve dict con: email, given_name, family_name, picture, sub (Google user id).
     Lanza ValueError si el token no es válido.
+
+    `clock_skew_in_seconds=30` tolera drift entre el reloj local y los servidores
+    de Google (evita "Token used too early" cuando la PC está unos segundos
+    desfasada).
     """
     idinfo = google_id_token.verify_oauth2_token(
         id_token_str,
         google_requests.Request(),
         settings.GOOGLE_CLIENT_ID,
+        clock_skew_in_seconds=30,
     )
     return {
         'email': idinfo.get('email', ''),

@@ -230,8 +230,11 @@ def dashboard(request):
     meses_es = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
     # ── Actividad reciente (últimos 5 eventos: certificados + inscripciones + asistencias) ──
+    from datetime import date as _date_cls
     activity = []
     for c in certificados[:3]:
+        if not c.fecha_curso:
+            continue  # certificados sin fecha quedan fuera del feed
         activity.append({
             'tipo': 'certificado',
             'titulo': c.curso,
@@ -240,6 +243,8 @@ def dashboard(request):
             'color': 'success',
         })
     for s in eventos_proximos[:2]:
+        if not s.fecha:
+            continue
         activity.append({
             'tipo': 'inscrito',
             'titulo': s.titulo or s.dia_semana,
@@ -247,7 +252,7 @@ def dashboard(request):
             'icono': 'fa-bookmark',
             'color': 'brand',
         })
-    activity.sort(key=lambda x: x['fecha'], reverse=True)
+    activity.sort(key=lambda x: x['fecha'] or _date_cls.min, reverse=True)
     activity = activity[:5]
 
     # Día resaltado por deep-link desde correos: ?day=YYYY-MM-DD
