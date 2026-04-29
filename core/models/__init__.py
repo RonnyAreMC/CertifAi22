@@ -9,9 +9,10 @@ from .usuarios import Usuario, SolicitudAcceso
 from .firmas import FirmaInstitucional, DisenoGlobal
 from .participantes import Participante
 from .certificados import LoteCertificados, Certificado
-from .sesiones import SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia
+from .sesiones import SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia, Ponente
 from .auditoria import Auditoria
-from .landing import LandingBloque
+from .integrations import GoogleCredential, AIConfig, AIProvider, PROVIDER_MODELS
+from .design_system import UIDesignTokens
 
 __all__ = [
     'FACULTADES_CHOICES',
@@ -25,6 +26,11 @@ __all__ = [
     'SesionAsistencia',
     'RegistroAsistencia',
     'ConfirmacionAsistencia',
+    'Ponente',
     'Auditoria',
-    'LandingBloque',
+    'GoogleCredential',
+    'AIConfig',
+    'AIProvider',
+    'PROVIDER_MODELS',
+    'UIDesignTokens',
 ]

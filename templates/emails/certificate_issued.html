@@ -1,0 +1,129 @@
+{% extends 'emails/_base.html' %}
+{% block title %}Tu certificado de {{ sesion.titulo|default:sesion.dia_semana }} ya está listo{% endblock %}
+{% block preheader %}¡Felicitaciones, {{ p.nombres }}! Tu participación quedó certificada.{% endblock %}
+
+{% block content %}
+
+<!-- Eyebrow -->
+<p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#10B981;">
+    Certificado emitido
+</p>
+
+<!-- Headline -->
+<h1 class="h1" style="margin:0 0 14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:30px;line-height:36px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;">
+    Lo lograste, {{ p.nombres }}.
+</h1>
+
+<!-- Lede -->
+<p style="margin:0 0 28px;font-size:16px;line-height:1.6;color:#475569;">
+    Tu esfuerzo tiene un nuevo reconocimiento. Acabamos de emitir tu certificado por participar en
+    <strong style="color:#0f172a;font-weight:600;">{{ sesion.titulo|default:sesion.dia_semana }}</strong>.
+    Ya está disponible en tu cuenta para descargar y compartir cuando quieras.
+</p>
+
+<!-- Card del certificado -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 28px;border:1px solid #e2e8f0;border-radius:14px;background-color:#fafafa;">
+    <tr>
+        <td style="padding:24px 24px 18px;">
+            <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#94a3b8;">
+                Tu nuevo diploma
+            </p>
+            <h2 style="margin:0;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:18px;line-height:24px;font-weight:700;color:#0f172a;letter-spacing:-0.2px;">
+                {{ sesion.titulo|default:sesion.dia_semana }}
+            </h2>
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:0 24px 18px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid #e2e8f0;">
+                <tr>
+                    <td style="padding:14px 0;font-size:13px;color:#64748b;width:38%;border-bottom:1px solid #e2e8f0;">
+                        Fecha del evento
+                    </td>
+                    <td style="padding:14px 0;font-size:13px;color:#0f172a;font-weight:500;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        {{ sesion.fecha|date:"d \\d\\e F \\d\\e Y" }}
+                    </td>
+                </tr>
+                {% if cert_horas %}
+                <tr>
+                    <td style="padding:14px 0;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">
+                        Horas certificadas
+                    </td>
+                    <td style="padding:14px 0;font-size:13px;color:#0f172a;font-weight:500;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        {{ cert_horas }} horas
+                    </td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td style="padding:14px 0;font-size:13px;color:#64748b;">
+                        Código único
+                    </td>
+                    <td style="padding:14px 0;font-size:13px;color:#0f172a;font-weight:500;text-align:right;font-family:'SF Mono','Consolas','Courier New',monospace;">
+                        {{ cert_hash_short }}
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<!-- CTAs -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 32px;">
+    <tr>
+        <td style="background-color:#0f172a;border-radius:8px;">
+            <a href="{{ certs_url }}" style="display:inline-block;padding:13px 24px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.1px;">
+                Ver mis certificados
+            </a>
+        </td>
+        {% if download_url %}
+        <td style="width:8px;font-size:1px;line-height:1px;">&nbsp;</td>
+        <td style="border:1px solid #cbd5e1;border-radius:8px;">
+            <a href="{{ download_url }}" style="display:inline-block;padding:12px 22px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#0f172a;text-decoration:none;letter-spacing:0.1px;">
+                Descargar PDF
+            </a>
+        </td>
+        {% endif %}
+    </tr>
+</table>
+
+<!-- Línea -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 28px;">
+    <tr><td style="height:1px;background-color:#e2e8f0;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+</table>
+
+<!-- Qué puedes hacer -->
+<p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#94a3b8;">
+    Qué puedes hacer con él
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 28px;">
+    <tr>
+        <td style="padding:0 0 14px;font-size:14px;line-height:1.6;color:#475569;">
+            <strong style="color:#0f172a;font-weight:600;">Descargarlo en PDF</strong> y guardarlo donde quieras.
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:0 0 14px;font-size:14px;line-height:1.6;color:#475569;">
+            <strong style="color:#0f172a;font-weight:600;">Compartir el enlace público</strong> en LinkedIn, en tu CV o por correo. Cualquiera puede comprobar su autenticidad.
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:0;font-size:14px;line-height:1.6;color:#475569;">
+            <strong style="color:#0f172a;font-weight:600;">Sumar nuevas horas</strong> inscribiéndote en otros eventos disponibles en tu cuenta.
+        </td>
+    </tr>
+</table>
+
+<!-- Línea -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;">
+    <tr><td style="height:1px;background-color:#e2e8f0;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+</table>
+
+<p style="margin:0 0 4px;font-size:14px;line-height:1.6;color:#0f172a;font-weight:600;">
+    ¡Felicitaciones de nuevo!
+</p>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;">
+    El equipo de CertifAI
+</p>
+
+{% endblock %}

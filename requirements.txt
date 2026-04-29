@@ -19,3 +19,11 @@ django-cors-headers>=4.4,<5.0
 pytest>=8.0
 pytest-django>=4.9
 factory-boy>=3.3
+# Google OAuth (Meet + Calendar + Drive)
+google-auth>=2.25
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
+google-api-python-client>=2.100
+# AI providers (Claude / OpenAI / Groq via OpenAI-compatible API)
+anthropic>=0.40
+openai>=1.50

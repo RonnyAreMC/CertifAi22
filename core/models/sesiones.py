@@ -66,6 +66,16 @@ class SesionAsistencia(models.Model):
     activa = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Integración Google Meet (Fase 2)
+    google_calendar_event_id = models.CharField(
+        max_length=200, blank=True, default='', db_index=True,
+        help_text='ID del evento en Google Calendar (para actualizarlo o eliminarlo).'
+    )
+    transcripcion_habilitada = models.BooleanField(
+        default=True, verbose_name='Generar resumen IA del evento',
+        help_text='Si está activo, el transcript de Meet se procesa con IA tras la sesión.'
+    )
+
     objects = SesionManager()
 
     class Meta:
@@ -118,11 +128,57 @@ class SesionAsistencia(models.Model):
         return 'Reunión virtual'
 
     def clean(self):
+        """Una sesión virtual con plataforma=meet puede dejar el enlace vacío:
+        se rellena automáticamente al crear el evento en Google Calendar.
+        Para otras plataformas (Zoom/Teams) sigue siendo obligatorio.
+        """
         from django.core.exceptions import ValidationError
         if self.modalidad == Modalidad.VIRTUAL and not self.enlace_virtual:
-            raise ValidationError({
-                'enlace_virtual': 'Debes proporcionar un enlace para eventos virtuales.'
-            })
+            if self.plataforma_virtual != PlataformaVirtual.MEET:
+                raise ValidationError({
+                    'enlace_virtual': 'Debes proporcionar un enlace para eventos virtuales.'
+                })
+
+
+class Ponente(models.Model):
+    """Persona que dicta una sesión.
+
+    Una sesión puede tener 1 o varios ponentes. Si se elimina la sesión, se
+    eliminan sus ponentes (cascada). El campo `orden` controla el orden de
+    aparición en la página pública del evento.
+    """
+    sesion = models.ForeignKey(
+        SesionAsistencia, on_delete=models.CASCADE,
+        related_name='ponentes',
+    )
+    nombre = models.CharField(max_length=200, verbose_name='Nombre completo')
+    titulo = models.CharField(
+        max_length=100, blank=True, default='',
+        verbose_name='Título / Cargo',
+        help_text='Ej.: Dr., Mgs., Ing., PhD'
+    )
+    afiliacion = models.CharField(
+        max_length=200, blank=True, default='',
+        verbose_name='Afiliación / Institución',
+        help_text='Ej.: UNEMI, MIT, Stanford'
+    )
+    bio = models.TextField(blank=True, default='', verbose_name='Biografía corta')
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden', 'nombre']
+        verbose_name = 'Ponente'
+        verbose_name_plural = 'Ponentes'
+
+    def __str__(self):
+        prefix = f'{self.titulo} ' if self.titulo else ''
+        return f'{prefix}{self.nombre}'.strip()
+
+    @property
+    def display_name(self) -> str:
+        prefix = f'{self.titulo} ' if self.titulo else ''
+        sufijo = f' · {self.afiliacion}' if self.afiliacion else ''
+        return f'{prefix}{self.nombre}{sufijo}'.strip()
 
 
 class RegistroAsistencia(models.Model):

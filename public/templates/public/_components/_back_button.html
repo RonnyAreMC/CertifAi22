@@ -1,0 +1,16 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · BackButton — botón circular "volver" iOS-style.
+
+Args:
+    url   (str)  URL destino (obligatorio)
+    label (str)  tooltip/aria-label (default: 'Volver')
+
+Uso:
+    {% include 'public/_components/_back_button.html' with url='/' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+<a href="{{ url }}" aria-label="{{ label|default:'Volver' }}"
+   class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white dark:bg-[#162054] shadow-md border border-gray-200 dark:border-white/10 hover:scale-110 hover:border-[#F58830] hover:text-[#F58830] transition-all group mb-6">
+    <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+</a>

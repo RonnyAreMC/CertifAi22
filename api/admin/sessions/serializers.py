@@ -1,6 +1,14 @@
+import json
+
 from rest_framework import serializers
 
-from core.models import SesionAsistencia, ConfirmacionAsistencia, RegistroAsistencia
+from core.models import SesionAsistencia, ConfirmacionAsistencia, RegistroAsistencia, Ponente
+
+
+class PonenteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ponente
+        fields = ['id', 'nombre', 'titulo', 'afiliacion', 'bio', 'orden']
 
 
 class SesionListSerializer(serializers.ModelSerializer):
@@ -11,6 +19,7 @@ class SesionListSerializer(serializers.ModelSerializer):
     esta_llena = serializers.BooleanField(read_only=True)
     imagen_banner_url = serializers.SerializerMethodField()
     lote_nombre = serializers.CharField(source='lote.nombre_lote', read_only=True, allow_null=True)
+    ponentes = PonenteSerializer(many=True, read_only=True)
 
     class Meta:
         model = SesionAsistencia
@@ -20,7 +29,7 @@ class SesionListSerializer(serializers.ModelSerializer):
             'lugar', 'fecha', 'dia_semana', 'hora_inicio', 'hora_fin',
             'capacidad', 'solo_lideres', 'activa', 'codigo_qr',
             'confirmados_count', 'cupos_disponibles', 'esta_llena',
-            'es_virtual', 'lote', 'lote_nombre', 'created_at',
+            'es_virtual', 'lote', 'lote_nombre', 'ponentes', 'created_at',
         ]
         read_only_fields = ('codigo_qr', 'created_at')
 
@@ -38,6 +47,14 @@ class SesionDetailSerializer(SesionListSerializer):
 
 
 class SesionWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para sesiones. Soporta ponentes anidados.
+
+    El form HTML envía los ponentes como JSON serializado en el campo
+    `ponentes_json` (FormData no soporta listas anidadas). Internamente lo
+    parseamos y reemplazamos completamente la lista en cada save.
+    """
+    ponentes_json = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
     class Meta:
         model = SesionAsistencia
         fields = [
@@ -45,19 +62,71 @@ class SesionWriteSerializer(serializers.ModelSerializer):
             'modalidad', 'plataforma_virtual', 'enlace_virtual',
             'lugar', 'fecha', 'dia_semana', 'hora_inicio', 'hora_fin',
             'capacidad', 'solo_lideres', 'activa', 'lote',
+            'ponentes_json',
         ]
 
-    def validate(self, attrs):
-        modalidad = attrs.get('modalidad') or (self.instance and self.instance.modalidad)
-        enlace = attrs.get('enlace_virtual', '')
-        if modalidad == 'virtual' and not enlace and not (self.instance and self.instance.enlace_virtual):
-            raise serializers.ValidationError({
-                'enlace_virtual': 'Debes proporcionar un enlace para eventos virtuales.'
+    def validate_ponentes_json(self, value: str):
+        """Parsea el JSON y valida que sea lista de dicts con `nombre`."""
+        if not value:
+            return []
+        try:
+            data = json.loads(value)
+        except json.JSONDecodeError:
+            raise serializers.ValidationError('Formato JSON inválido en ponentes.')
+        if not isinstance(data, list):
+            raise serializers.ValidationError('Ponentes debe ser una lista.')
+        cleaned = []
+        for i, p in enumerate(data):
+            if not isinstance(p, dict):
+                continue
+            nombre = (p.get('nombre') or '').strip()
+            if not nombre:
+                continue  # silenciosamente saltamos los vacíos
+            cleaned.append({
+                'nombre': nombre,
+                'titulo': (p.get('titulo') or '').strip(),
+                'afiliacion': (p.get('afiliacion') or '').strip(),
+                'bio': (p.get('bio') or '').strip(),
+                'orden': i,
             })
-        if modalidad == 'presencial':
+        return cleaned
+
+    def validate(self, attrs):
+        """Sesiones virtuales = siempre Google Meet (auto-generado por Calendar API).
+
+        El admin no escoge plataforma ni enlace: ambos se llenan en el hook
+        `perform_create` del viewset. Para presenciales, limpiamos los dos.
+        """
+        modalidad = attrs.get('modalidad') or (self.instance and self.instance.modalidad)
+        if modalidad == 'virtual':
+            attrs['plataforma_virtual'] = 'meet'
+            # enlace lo rellena Calendar API (queda vacío hasta entonces)
+        elif modalidad == 'presencial':
             attrs['enlace_virtual'] = ''
             attrs['plataforma_virtual'] = ''
         return attrs
+
+    def _save_ponentes(self, sesion, ponentes_data):
+        """Reemplaza la lista de ponentes de la sesión."""
+        sesion.ponentes.all().delete()
+        Ponente.objects.bulk_create([
+            Ponente(sesion=sesion, **p) for p in ponentes_data
+        ])
+
+    def create(self, validated_data):
+        ponentes_data = validated_data.pop('ponentes_json', None)
+        sesion = super().create(validated_data)
+        if ponentes_data is not None:
+            self._save_ponentes(sesion, ponentes_data)
+        return sesion
+
+    def update(self, instance, validated_data):
+        ponentes_data = validated_data.pop('ponentes_json', None)
+        sesion = super().update(instance, validated_data)
+        # Solo actualizamos ponentes si vinieron en el payload (PATCH parcial)
+        if ponentes_data is not None:
+            self._save_ponentes(sesion, ponentes_data)
+        return sesion
 
 
 class ConfirmacionSerializer(serializers.ModelSerializer):

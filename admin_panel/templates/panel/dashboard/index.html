@@ -1,110 +1,185 @@
 {% extends 'panel/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="animate__animated animate__fadeIn">
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
-                Panel de Control
-            </h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">Resumen de actividad del sistema de certificados.</p>
+<div class="animate__animated animate__fadeIn space-y-5">
+
+    <!-- ═══════════ HERO + QUICK ACTIONS combinados ═══════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Hero (col-span-8) — Liquid Glass clear -->
+        <div class="lg:col-span-8 lg-card relative overflow-hidden rounded-3xl p-6 md:p-8 flex flex-col">
+            <div class="relative z-10">
+                <!-- Top: Saludo + CTAs -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-6">
+                    <div class="flex items-center gap-4">
+                        <img src="{% static 'img/certy.png' %}" alt="Certy" class="w-20 h-20 md:w-24 md:h-24 rounded-2xl shadow-xl ring-2 ring-white/60 dark:ring-white/15 bg-white/40 dark:bg-white/5">
+                        <div>
+                            <p id="greeting" class="text-sm md:text-base font-medium text-gray-500 dark:text-slate-300 mb-1">¡Hola!</p>
+                            <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white leading-tight tracking-tight">Hola, <span class="bg-gradient-to-r from-[#F58830] via-pink-500 to-purple-500 bg-clip-text text-transparent">{{ user.first_name|default:user.username }}</span></h1>
+                            <p class="text-gray-500 dark:text-slate-400 text-sm mt-1"><i class="fa-regular fa-calendar text-[#F58830] mr-1"></i><span id="today-label">—</span></p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% url 'panel:session_create' %}" class="lg-btn lg-btn-prominent">
+                            <i class="fa-solid fa-plus"></i> Nuevo evento
+                        </a>
+                        <a href="{% url 'panel:batch_create' %}" class="lg-btn">
+                            <i class="fa-solid fa-upload"></i> Subir lote
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bottom: Resumen del día -->
+                <div class="mt-auto">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-slate-400 mb-3"><i class="fa-solid fa-circle-info text-[#F58830] mr-1"></i> Tu día de un vistazo</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 dark:bg-white/5 ring-1 ring-inset ring-white/70 dark:ring-white/10 backdrop-blur-xl">
+                            <i class="fa-solid fa-calendar-day text-2xl text-[#F58830]"></i>
+                            <div>
+                                <p class="text-xl font-black text-gray-900 dark:text-white leading-none" id="hero-events-today">—</p>
+                                <p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 mt-0.5">eventos hoy</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 dark:bg-white/5 ring-1 ring-inset ring-white/70 dark:ring-white/10 backdrop-blur-xl">
+                            <i class="fa-solid fa-user-check text-2xl text-emerald-600 dark:text-emerald-400"></i>
+                            <div>
+                                <p class="text-xl font-black text-gray-900 dark:text-white leading-none" id="hero-inscritos-week">—</p>
+                                <p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 mt-0.5">inscritos esta semana</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 dark:bg-white/5 ring-1 ring-inset ring-white/70 dark:ring-white/10 backdrop-blur-xl">
+                            <i class="fa-solid fa-certificate text-2xl text-blue-600 dark:text-blue-400"></i>
+                            <div>
+                                <p class="text-xl font-black text-gray-900 dark:text-white leading-none" id="hero-certs-week">—</p>
+                                <p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 mt-0.5">emitidos esta semana</p>
+                            </div>
+                        </div>
+                        {% if pendientes_count > 0 %}
+                        <a href="{% url 'panel:solicitudes_pendientes' %}" class="flex items-center gap-3 p-3 rounded-2xl bg-red-500/15 ring-1 ring-inset ring-red-500/40 backdrop-blur-xl hover:bg-red-500/25 transition-colors animate-pulse">
+                            <i class="fa-solid fa-bell text-2xl text-red-600 dark:text-red-300"></i>
+                            <div>
+                                <p class="text-xl font-black text-gray-900 dark:text-white leading-none">{{ pendientes_count }}</p>
+                                <p class="text-[10px] font-medium text-red-700 dark:text-red-200 mt-0.5">solicitud{{ pendientes_count|pluralize:"es" }} pendiente{{ pendientes_count|pluralize:"s" }}</p>
+                            </div>
+                        </a>
+                        {% else %}
+                        <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/50 dark:bg-white/5 ring-1 ring-inset ring-white/70 dark:ring-white/10 backdrop-blur-xl">
+                            <i class="fa-solid fa-microphone-lines text-2xl text-purple-600 dark:text-purple-400"></i>
+                            <div>
+                                <p class="text-xl font-black text-gray-900 dark:text-white leading-none" id="hero-ponentes">—</p>
+                                <p class="text-[10px] font-medium text-gray-500 dark:text-slate-400 mt-0.5">ponentes próx.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
-        <a href="{% url 'panel:session_list' %}" class="bg-[#F58830] hover:bg-[#D97520] text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center gap-2">
-            <i class="fa-solid fa-calendar-days"></i>
-            Ver Eventos Disponibles
-        </a>
+
+        <!-- Quick actions verticales (col-span-4) — Liquid Glass -->
+        <div class="lg:col-span-4 lg-card relative overflow-hidden rounded-3xl p-5">
+            <div class="relative z-10">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-bolt text-[#F58830]"></i> Acciones rápidas</p>
+            <div class="grid grid-cols-3 gap-3">
+                {% include 'panel/includes/_quick_pill.html' with url='panel:session_create' icon='fa-calendar-plus' label='Evento' color='brand' %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:batch_create' icon='fa-upload' label='Lote' color='info' %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:session_list' icon='fa-calendar-days' label='Eventos' color='success' %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:participantes_list' icon='fa-user-graduate' label='Personas' color='accent' %}
+                {% if user.rol == 'superadmin' %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:solicitudes_pendientes' icon='fa-user-clock' label='Solicit.' color='warning' badge=pendientes_count %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:ai_config' icon='fa-microchip' label='IA' color='danger' %}
+                {% else %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:lideres_list' icon='fa-user-tie' label='Líderes' color='warning' %}
+                {% include 'panel/includes/_quick_pill.html' with url='panel:firma_list' icon='fa-signature' label='Firmas' color='danger' %}
+                {% endif %}
+            </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Stats Row -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-            <div class="flex items-center gap-4 relative z-10">
-                <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-unemi-blue dark:text-blue-400 text-xl font-bold">
-                    <i class="fa-solid fa-certificate"></i>
-                </div>
+    <!-- ═══════════ STATS CON SPARKLINES ═══════════ -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {% include 'panel/includes/_stat_spark.html' with id='stat-certificados' spark_id='spark-cert' icon='fa-certificate' label='Certificados emitidos' color='blue' %}
+        {% include 'panel/includes/_stat_spark.html' with id='stat-descargas' spark_id='spark-desc' icon='fa-download' label='Descargas' color='orange' %}
+        {% include 'panel/includes/_stat_spark.html' with id='stat-eventos' spark_id='spark-event' icon='fa-calendar-days' label='Eventos activos' color='emerald' %}
+        {% include 'panel/includes/_stat_spark.html' with id='stat-inscripciones' spark_id='spark-insc' icon='fa-user-check' label='Inscripciones' color='purple' %}
+    </div>
+
+    <!-- ═══════════ CHART PRINCIPAL + UPCOMING ═══════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- Chart trend grande (col-span-8) -->
+        <div class="lg:col-span-8 lg-card rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 id="stat-certificados" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
-                    <p class="text-sm font-medium text-gray-500 dark:text-blue-300">Total Emitidos</p>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center"><i class="fa-solid fa-chart-area text-xs"></i></span>
+                        Emisión de certificados
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Últimos 14 días · Tendencia diaria</p>
+                </div>
+                <div class="flex gap-1 p-1 bg-gray-100 dark:bg-[#0F163A]/50 rounded-lg text-[10px] font-bold">
+                    <span class="px-2.5 py-1 rounded bg-white dark:bg-[#162054] text-gray-900 dark:text-white shadow-sm">14d</span>
+                    <span class="px-2.5 py-1 text-gray-500 dark:text-gray-400">30d</span>
+                    <span class="px-2.5 py-1 text-gray-500 dark:text-gray-400">90d</span>
                 </div>
             </div>
-            <div class="absolute right-0 top-0 w-32 h-32 bg-blue-50 dark:bg-blue-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+            <div id="chartTrend" class="w-full h-[280px]"></div>
         </div>
 
-        <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-             <div class="flex items-center gap-4 relative z-10">
-                <div class="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center text-unemi-orange dark:text-orange-400 text-xl font-bold">
-                    <i class="fa-solid fa-download"></i>
-                </div>
+        <!-- Próximos eventos (col-span-4) -->
+        <div class="lg:col-span-4 lg-card rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-gray-100 dark:border-blue-900/30 flex items-center justify-between">
                 <div>
-                     <h3 id="stat-descargas" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
-                    <p class="text-sm font-medium text-gray-500 dark:text-orange-300">Total Descargas</p>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-[#F58830]/15 text-[#F58830] flex items-center justify-center"><i class="fa-solid fa-calendar-day text-xs"></i></span>
+                        Próximos eventos
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Próximos 7 días</p>
                 </div>
+                <a href="{% url 'panel:session_list' %}" class="text-[11px] font-bold text-[#F58830] hover:underline">Ver todos →</a>
             </div>
-            <div class="absolute right-0 top-0 w-32 h-32 bg-orange-50 dark:bg-orange-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-        </div>
-
-        <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-             <div class="flex items-center gap-4 relative z-10">
-                <div class="w-12 h-12 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center text-purple-600 dark:text-purple-400 text-xl font-bold">
-                    <i class="fa-solid fa-magnifying-glass-chart"></i>
-                </div>
-                <div>
-                     <h3 id="stat-busquedas" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
-                    <p class="text-sm font-medium text-gray-500 dark:text-purple-300">Búsquedas</p>
-                </div>
+            <div id="upcoming-list" class="divide-y divide-gray-100 dark:divide-blue-900/30 max-h-[280px] overflow-y-auto">
+                <p class="text-sm text-gray-400 text-center py-12">Cargando…</p>
             </div>
-            <div class="absolute right-0 top-0 w-32 h-32 bg-purple-50 dark:bg-purple-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-        </div>
-
-        <div class="bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
-             <div class="flex items-center gap-4 relative z-10">
-                <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 dark:text-green-400 text-xl font-bold">
-                    <i class="fa-solid fa-layer-group"></i>
-                </div>
-                <div>
-                    <h3 id="stat-lotes" class="text-3xl font-bold text-gray-900 dark:text-white">—</h3>
-                    <p class="text-sm font-medium text-gray-500 dark:text-green-300">Lotes Activos</p>
-                </div>
-            </div>
-            <div class="absolute right-0 top-0 w-32 h-32 bg-green-50 dark:bg-green-500/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
         </div>
     </div>
 
-    <!-- Trend + Donut -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div class="lg:col-span-2 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-chart-area text-purple-500"></i>
-                Tendencia de Emisión (Últimos 14 días)
-            </h3>
-            <div id="chartTrend" class="w-full h-80"></div>
-        </div>
-        <div class="lg:col-span-1 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-chart-pie text-unemi-blue"></i>
-                Distribución por Facultad
-            </h3>
-            <div id="chartFacultades" class="w-full h-80"></div>
-        </div>
-    </div>
+    <!-- ═══════════ DONUT + TOP LOTES + ACTIVIDAD ═══════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-    <!-- Top Lotes + Audit -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div class="lg:col-span-2 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-chart-simple text-unemi-orange"></i>
-                Lotes Más Populares (Descargas)
+        <!-- Donut (col-span-4) -->
+        <div class="lg:col-span-4 lg-card rounded-2xl p-5">
+            <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-7 h-7 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center"><i class="fa-solid fa-chart-pie text-xs"></i></span>
+                Por facultad
             </h3>
-            <div id="chartTopLotes" class="w-full h-80"></div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Distribución de certificados</p>
+            <div id="chartFacultades" class="w-full h-[260px]"></div>
         </div>
-        <div class="lg:col-span-1 bg-white dark:bg-[#162054] p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/50 overflow-hidden">
-             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-clock-rotate-left text-unemi-orange"></i>
-                Actividad Reciente
+
+        <!-- Top lotes (col-span-4) -->
+        <div class="lg:col-span-4 lg-card rounded-2xl p-5">
+            <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2 mb-1">
+                <span class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center"><i class="fa-solid fa-trophy text-xs"></i></span>
+                Top 5 lotes
             </h3>
-            <div id="audit-list" class="space-y-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                <p class="text-sm text-gray-500 text-center py-4">Cargando…</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Más descargados</p>
+            <div id="chartTopLotes" class="w-full h-[260px]"></div>
+        </div>
+
+        <!-- Actividad (col-span-4) -->
+        <div class="lg:col-span-4 lg-card rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-gray-100 dark:border-blue-900/30">
+                <h3 class="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left text-xs"></i></span>
+                    Actividad
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Últimas 10 acciones</p>
+            </div>
+            <div id="audit-list" class="max-h-[260px] overflow-y-auto">
+                <p class="text-sm text-gray-400 text-center py-12">Cargando…</p>
             </div>
         </div>
     </div>
@@ -116,20 +191,31 @@ function esc(s) {
     if (s == null) return '';
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-
 function timeAgo(iso) {
-    const d = new Date(iso);
-    const s = Math.floor((Date.now() - d.getTime()) / 1000);
-    if (s < 60) return `${s} seg`;
-    if (s < 3600) return `${Math.floor(s / 60)} min`;
-    if (s < 86400) return `${Math.floor(s / 3600)} h`;
-    return `${Math.floor(s / 86400)} d`;
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h`;
+    return `${Math.floor(s / 86400)}d`;
 }
+
+// Saludo y fecha
+(function setGreeting() {
+    const now = new Date();
+    const h = now.getHours();
+    const greet = h < 6 ? 'Buenas noches' : h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+    document.getElementById('greeting').textContent = greet + ' 👋';
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    document.getElementById('today-label').textContent =
+        `${dias[now.getDay()]} ${now.getDate()} de ${meses[now.getMonth()]}`;
+})();
 
 (async function loadDashboard() {
     const isDark = document.documentElement.classList.contains('dark');
     const themeMode = isDark ? 'dark' : 'light';
-    const textColor = isDark ? '#fff' : '#374151';
+    const textColor = isDark ? '#cbd5e1' : '#64748b';
+    const gridColor = isDark ? '#1e293b' : '#f1f5f9';
 
     let data;
     try {
@@ -138,85 +224,238 @@ function timeAgo(iso) {
         data = await res.json();
     } catch (err) {
         console.error('Dashboard API error:', err);
-        document.getElementById('audit-list').innerHTML =
-            '<p class="text-sm text-red-500 text-center py-4">Error al cargar datos</p>';
+        document.getElementById('audit-list').innerHTML = '<p class="text-sm text-red-500 text-center py-4">Error</p>';
+        document.getElementById('upcoming-list').innerHTML = '<p class="text-sm text-red-500 text-center py-4">Error</p>';
         return;
     }
 
-    // Totals
-    document.getElementById('stat-certificados').textContent = data.totals.certificados.toLocaleString('es-EC');
-    document.getElementById('stat-descargas').textContent = data.totals.descargas.toLocaleString('es-EC');
-    document.getElementById('stat-busquedas').textContent = data.totals.busquedas.toLocaleString('es-EC');
-    document.getElementById('stat-lotes').textContent = data.recent_lotes.length;
+    // Totales (safe access — fallback a 0 si falta algún campo)
+    const fmt = (n) => (n || 0).toLocaleString('es-EC');
+    const T = data.totals || {};
+    document.getElementById('stat-certificados').textContent = fmt(T.certificados);
+    document.getElementById('stat-descargas').textContent = fmt(T.descargas);
+    document.getElementById('stat-eventos').textContent = fmt(T.eventos_activos);
+    document.getElementById('stat-inscripciones').textContent = fmt(T.inscripciones);
 
-    // Audit list
+    // Hero mini-stats — calculados desde upcoming_sessions y series diarias
+    const upcoming = data.upcoming_sessions || [];
+    const eventsToday = upcoming.filter(s => s.es_hoy).length;
+    document.getElementById('hero-events-today').textContent = eventsToday;
+
+    // "Esta semana" = últimos 7 días (índices 7-13 de la serie de 14 días)
+    const sumLast7 = (arr) => (arr || []).slice(-7).reduce((a, b) => a + (b || 0), 0);
+    const inscWeek = sumLast7((data.charts || {}).daily_inscripciones);
+    const certsWeek = sumLast7((data.charts || {}).daily && data.charts.daily.data);
+    const heroInsc = document.getElementById('hero-inscritos-week');
+    const heroCerts = document.getElementById('hero-certs-week');
+    if (heroInsc) heroInsc.textContent = fmt(inscWeek);
+    if (heroCerts) heroCerts.textContent = fmt(certsWeek);
+
+    // Ponentes únicos en próximos eventos
+    const heroPonentes = document.getElementById('hero-ponentes');
+    if (heroPonentes) heroPonentes.textContent = upcoming.length;
+
+    // ── Sparklines con datos REALES (series diarias últimos 14 días)
+    const sparkBase = (color, dataArr) => ({
+        series: [{ data: (dataArr && dataArr.length) ? dataArr : [0] }],
+        chart: { type: 'area', height: 50, sparkline: { enabled: true }, animations: { speed: 600 } },
+        stroke: { curve: 'smooth', width: 2 },
+        colors: [color],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.05 } },
+        tooltip: { theme: themeMode, x: { show: false }, y: { title: { formatter: () => '' } } },
+    });
+    const C = data.charts || {};
+    const dailyCert = (C.daily && C.daily.data) || [];
+    const dailyInsc = C.daily_inscripciones || [];
+    const dailyEv = C.daily_eventos || [];
+
+    // Suma helper para chequear si la serie tiene movimiento
+    const hasMovement = (arr) => arr.some(v => v > 0);
+
+    function renderSpark(elId, color, series, emptyText) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (!series.length || !hasMovement(series)) {
+            el.innerHTML = `<p class="text-[10px] text-gray-400 dark:text-gray-500 italic mt-3">${emptyText}</p>`;
+            return;
+        }
+        try {
+            new ApexCharts(el, sparkBase(color, series)).render();
+        } catch (e) { console.warn(elId + ' failed:', e); }
+    }
+
+    renderSpark('spark-cert', '#3B82F6', dailyCert, 'Sin emisiones en 14 días');
+    renderSpark('spark-event', '#10B981', dailyEv, 'Sin nuevos eventos en 14 días');
+    renderSpark('spark-insc', '#A855F7', dailyInsc, 'Sin inscripciones en 14 días');
+    // Descargas no tiene log diario en la DB, dejamos un mensaje útil
+    const descEl = document.getElementById('spark-desc');
+    if (descEl) descEl.innerHTML = `<p class="text-[10px] text-gray-400 dark:text-gray-500 italic mt-3">Total acumulado · sin histórico diario</p>`;
+
+    // ── Próximos eventos
+    const upcomingEl = document.getElementById('upcoming-list');
+    if (!data.upcoming_sessions || data.upcoming_sessions.length === 0) {
+        upcomingEl.innerHTML = `
+            <div class="text-center py-12 px-4">
+                <i class="fa-solid fa-calendar-xmark text-gray-300 dark:text-gray-600 text-3xl mb-2"></i>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Sin eventos en los próximos 7 días</p>
+                <a href="{% url 'panel:session_create' %}" class="inline-block mt-3 text-xs font-bold text-[#F58830] hover:underline">+ Crear uno</a>
+            </div>`;
+    } else {
+        upcomingEl.innerHTML = data.upcoming_sessions.map(s => {
+            const cap = s.capacidad === 0 ? `∞ · ${s.inscritos} inscritos` : `${s.inscritos}/${s.capacidad}`;
+            const todayBadge = s.es_hoy ? '<span class="inline-flex px-1.5 py-0.5 rounded text-[8px] font-black bg-red-500 text-white">HOY</span>' : '';
+            const modIcon = s.modalidad === 'virtual' ? 'fa-video text-blue-500' : 'fa-building text-[#F58830]';
+            return `
+                <a href="/panel/sessions/${s.id}/edit/" class="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-[#0F163A]/30 transition-colors">
+                    <div class="flex flex-col items-center justify-center w-11 h-11 rounded-lg bg-gradient-to-br from-[#F58830]/15 to-[#F58830]/5 text-[#F58830] flex-shrink-0 border border-[#F58830]/20">
+                        <span class="text-[8px] font-bold uppercase leading-none">${esc(s.dia_semana.slice(0,3))}</span>
+                        <span class="text-base font-black leading-tight">${esc(s.fecha_display.split('/')[0])}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <p class="text-xs font-bold text-gray-900 dark:text-white truncate">${esc(s.titulo)}</p>
+                            ${todayBadge}
+                        </div>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                            <i class="fa-solid ${modIcon} text-[8px]"></i> ${esc(s.hora_inicio)}–${esc(s.hora_fin)}
+                            <span class="text-gray-300">·</span> ${cap}
+                        </p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-300 dark:text-gray-600 text-[10px]"></i>
+                </a>`;
+        }).join('');
+    }
+
+    // ── Actividad reciente
     const auditList = document.getElementById('audit-list');
     if (data.auditoria.length === 0) {
-        auditList.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Sin actividad.</p>';
+        auditList.innerHTML = '<p class="text-sm text-gray-400 text-center py-12">Sin actividad</p>';
     } else {
         auditList.innerHTML = data.auditoria.map(a => `
-            <div class="flex gap-3 items-start pb-3 border-b border-gray-100 dark:border-blue-900/30 last:border-0 last:pb-0">
-                <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center bg-gray-100 dark:bg-blue-900/30 text-[10px] font-bold text-gray-600 dark:text-blue-200">
+            <div class="flex gap-2.5 items-start p-3 border-b border-gray-100 dark:border-blue-900/30 last:border-0 hover:bg-gray-50 dark:hover:bg-[#0F163A]/30 transition-colors">
+                <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-[#F58830] to-[#D97520] text-[10px] font-black text-white shadow-sm">
                     ${esc((a.usuario_username || '?').charAt(0).toUpperCase())}
                 </div>
-                <div>
-                    <p class="text-xs font-bold text-gray-800 dark:text-gray-200">${esc(a.accion)}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words max-w-[180px]">${esc(a.detalle)}</p>
-                    <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1">${timeAgo(a.fecha)} hace</p>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-bold text-gray-800 dark:text-gray-200 truncate">${esc(a.accion)}</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">${esc(a.detalle)}</p>
                 </div>
+                <span class="text-[9px] text-gray-400 font-mono whitespace-nowrap">${timeAgo(a.fecha)}</span>
             </div>
         `).join('');
     }
 
-    // Chart: Emission Trend
-    new ApexCharts(document.querySelector('#chartTrend'), {
-        series: [{ name: 'Certificados Emitidos', data: data.charts.daily.data }],
-        chart: { type: 'area', height: 320, fontFamily: 'Inter, sans-serif', background: 'transparent',
-                 toolbar: { show: false }, animations: { enabled: true, easing: 'easeinout', speed: 800 } },
-        colors: ['#6366F1'],
-        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.1, stops: [0, 90, 100] } },
-        dataLabels: { enabled: false },
+    // ── Charts grandes (cada uno en try independiente)
+    const baseChartConfig = {
+        chart: { fontFamily: 'Outfit, Inter, sans-serif', background: 'transparent', toolbar: { show: false } },
+        grid: { borderColor: gridColor, strokeDashArray: 4, padding: { top: 0, right: 8, bottom: 0, left: 8 } },
+        theme: { mode: themeMode },
+    };
+    const dailyData = (data.charts && data.charts.daily && data.charts.daily.data) || [];
+
+    try { new ApexCharts(document.querySelector('#chartTrend'), {
+        ...baseChartConfig,
+        series: [{ name: 'Certificados', data: dailyData }],
+        chart: { ...baseChartConfig.chart, type: 'area', height: 280, animations: { speed: 600 } },
+        colors: ['#8b5cf6'],
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.02, stops: [0, 95, 100] } },
         stroke: { curve: 'smooth', width: 3 },
-        xaxis: { categories: data.charts.daily.labels, labels: { style: { colors: textColor } },
-                 axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { colors: textColor } } },
-        grid: { borderColor: isDark ? '#1e293b' : '#e2e8f0', strokeDashArray: 4 },
-        theme: { mode: themeMode }
-    }).render();
-
-    // Chart: Faculty Donut
-    new ApexCharts(document.querySelector('#chartFacultades'), {
-        series: data.charts.facultad.data,
-        chart: { type: 'donut', height: 320, fontFamily: 'Inter, sans-serif', background: 'transparent' },
-        labels: data.charts.facultad.labels,
-        colors: ['#0071CE', '#FF9100', '#10B981', '#EC4899', '#8B5CF6'],
-        plotOptions: { pie: { donut: { size: '75%', labels: {
-            show: true, name: { color: textColor },
-            value: { color: isDark ? '#fff' : '#111827', fontSize: '24px', fontWeight: 700 },
-            total: { show: true, label: 'Total', color: '#9CA3AF',
-                     formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0) }
-        } } } },
         dataLabels: { enabled: false },
-        stroke: { show: false },
-        legend: { position: 'bottom', labels: { colors: textColor } },
-        theme: { mode: themeMode }
-    }).render();
+        markers: { size: 0, hover: { size: 5, sizeOffset: 2 } },
+        xaxis: { categories: (data.charts && data.charts.daily && data.charts.daily.labels) || [], labels: { style: { colors: textColor, fontSize: '10px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { colors: textColor, fontSize: '10px' } } },
+        tooltip: { theme: themeMode, marker: { show: false } },
+    }).render(); } catch (e) { console.warn('Trend chart failed:', e); }
 
-    // Chart: Top Lotes Bar
-    new ApexCharts(document.querySelector('#chartTopLotes'), {
-        series: [{ name: 'Descargas', data: data.charts.top_lotes.data }],
-        chart: { type: 'bar', height: 320, fontFamily: 'Inter, sans-serif', background: 'transparent', toolbar: { show: false } },
-        plotOptions: { bar: { borderRadius: 6, horizontal: true, barHeight: '50%', distributed: true,
-                              dataLabels: { position: 'bottom' } } },
-        colors: ['#0071CE', '#FF9100', '#10B981', '#EC4899', '#8B5CF6'],
-        dataLabels: { enabled: false },
-        xaxis: { categories: data.charts.top_lotes.labels, labels: { style: { colors: textColor } },
-                 axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { colors: textColor } } },
-        grid: { borderColor: isDark ? '#1e293b' : '#e2e8f0', strokeDashArray: 4 },
-        legend: { show: false },
-        theme: { mode: themeMode }
-    }).render();
+    try {
+        const facData = (data.charts && data.charts.facultad && data.charts.facultad.data) || [];
+        const facLabels = (data.charts && data.charts.facultad && data.charts.facultad.labels) || [];
+        if (facData.length > 0) {
+            new ApexCharts(document.querySelector('#chartFacultades'), {
+                ...baseChartConfig,
+                series: facData,
+                chart: { ...baseChartConfig.chart, type: 'donut', height: 260 },
+                labels: facLabels,
+                colors: ['#F58830', '#3B82F6', '#10B981', '#EC4899', '#8B5CF6'],
+                plotOptions: { pie: { donut: { size: '68%', labels: {
+                    show: true,
+                    name: { show: true, color: textColor, fontSize: '11px', fontWeight: 600, offsetY: 12 },
+                    value: { show: true, color: isDark ? '#fff' : '#0f172a', fontSize: '22px', fontWeight: 800, offsetY: -16, formatter: v => parseInt(v).toLocaleString('es-EC') },
+                    total: {
+                        show: true,
+                        showAlways: true,
+                        label: 'Total',
+                        color: textColor,
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString('es-EC'),
+                    },
+                } } } },
+                dataLabels: { enabled: false },
+                stroke: { show: false },
+                legend: {
+                    position: 'bottom',
+                    horizontalAlign: 'center',
+                    labels: { colors: textColor },
+                    fontSize: '11px',
+                    itemMargin: { horizontal: 8, vertical: 4 },
+                    markers: { width: 10, height: 10, radius: 10, offsetX: -4 },
+                },
+                tooltip: { theme: themeMode, y: { formatter: v => v.toLocaleString('es-EC') + ' certificados' } },
+            }).render();
+        } else {
+            document.querySelector('#chartFacultades').innerHTML = '<p class="text-center text-sm text-gray-400 italic mt-12">Sin datos por facultad</p>';
+        }
+    } catch (e) { console.warn('Facultad chart failed:', e); }
+
+    try {
+        const lotesData = (data.charts && data.charts.top_lotes && data.charts.top_lotes.data) || [];
+        const lotesLabels = (data.charts && data.charts.top_lotes && data.charts.top_lotes.labels) || [];
+        // Filtrar valores 0 y truncar labels largos
+        const items = lotesData.map((v, i) => ({ v: v || 0, l: (lotesLabels[i] || '').slice(0, 30) }))
+            .filter(x => x.v > 0);
+
+        if (items.length > 0) {
+            new ApexCharts(document.querySelector('#chartTopLotes'), {
+                ...baseChartConfig,
+                series: [{ name: 'Descargas', data: items.map(x => x.v) }],
+                chart: { ...baseChartConfig.chart, type: 'bar', height: 260 },
+                plotOptions: { bar: {
+                    borderRadius: 4,
+                    borderRadiusApplication: 'end',
+                    horizontal: true,
+                    barHeight: '55%',
+                    distributed: true,
+                    dataLabels: { position: 'top' },
+                } },
+                colors: ['#F58830', '#3B82F6', '#10B981', '#EC4899', '#8B5CF6'],
+                dataLabels: {
+                    enabled: true,
+                    textAnchor: 'start',
+                    offsetX: 6,
+                    style: { colors: [textColor], fontSize: '11px', fontWeight: 700 },
+                    formatter: v => v.toLocaleString('es-EC'),
+                },
+                xaxis: {
+                    categories: items.map(x => x.l),
+                    labels: { show: false },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                },
+                yaxis: {
+                    labels: {
+                        style: { colors: textColor, fontSize: '11px', fontWeight: 600 },
+                        maxWidth: 140,
+                    },
+                },
+                grid: { show: false },
+                legend: { show: false },
+                tooltip: { theme: themeMode, y: { formatter: v => v.toLocaleString('es-EC') + ' descargas' } },
+            }).render();
+        } else {
+            document.querySelector('#chartTopLotes').innerHTML = '<p class="text-center text-sm text-gray-400 italic mt-12">Sin descargas registradas</p>';
+        }
+    } catch (e) { console.warn('Top lotes chart failed:', e); }
 })();
 </script>
 {% endblock %}

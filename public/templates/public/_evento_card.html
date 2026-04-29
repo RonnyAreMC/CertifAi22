@@ -15,7 +15,7 @@
     data-lugar="{{ s.lugar|default:'' }}"
     data-capacidad="{{ s.capacidad }}"
     data-confirmados="{{ s.confirmados_count }}"
-    data-solo-lideres="{% if s.solo_lideres %}1{% else %}0{% endif %}"
+    data-fecha-iso="{{ s.fecha|date:'Y-m-d' }}"
     data-is-past="{% if is_past %}1{% else %}0{% endif %}"
     {% if s.imagen_banner %}data-banner="{{ s.imagen_banner.url }}"{% endif %}>
 
@@ -58,12 +58,6 @@
     {% endif %}
 
     <div class="{% if is_past %}p-5{% else %}p-6{% endif %}">
-        {% if s.solo_lideres and not is_past %}
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 mb-2">
-            <i class="fa-solid fa-user-tie text-[10px]"></i> Solo Líderes Académicos
-        </span>
-        {% endif %}
-
         <h3 class="font-black {% if is_past %}text-base{% else %}text-xl{% endif %} text-gray-800 dark:text-white mb-2 line-clamp-2">
             {{ s.titulo|default:s.dia_semana }}
         </h3>

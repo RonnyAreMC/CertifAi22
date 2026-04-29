@@ -26,7 +26,7 @@ from .design import (  # noqa: F401
     design_save_firma_pos,
     design_global_preview,
 )
-from .landing import landing_builder  # noqa: F401
+from .design_system import design_system_edit, design_system_reset  # noqa: F401
 from .leaders import (  # noqa: F401
     lideres_list,
     lideres_add_manual,

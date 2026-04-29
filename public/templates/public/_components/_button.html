@@ -1,0 +1,62 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · Button — botón o link estandarizado.
+
+Args:
+    label    (str)  obligatorio
+    variant  (str)  'primary'|'secondary'|'ghost'|'danger'|'success'  default 'primary'
+    size     (str)  'sm'|'md'|'lg'  default 'md'
+    icon     (str)  FA class opcional (sin "fa-solid"), ej 'fa-plus'
+    icon_right (bool)  si True, el icono va a la derecha
+    url      (str)  si se da → renderiza <a href>; si no → <button type="button">
+    type     (str)  para <button>: 'submit'|'button'  default 'button'
+    full     (bool) si True ocupa el ancho completo
+    target   (str)  '_blank' opcional para <a>
+    extra    (str)  classes Tailwind extra opcionales
+    onclick  (str)  handler JS opcional
+    id       (str)  id HTML del elemento (útil para hacer toggle desde JS)
+
+Uso:
+    {% include 'public/_components/_button.html' with
+        variant='primary' icon='fa-user-plus' label='Inscribirme' url='/sesion/5/registro/' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+{% with v=variant|default:'primary' s=size|default:'md' %}
+{% with css="inline-flex items-center justify-center gap-2 font-bold rounded-xl transition-all"|add:" " %}
+{% with size_cls="px-3 py-1.5 text-xs"|stringformat:"s" %}{% if s == 'md' %}{% with size_cls="px-4 py-2.5 text-sm" %}{% endwith %}{% endif %}{% endwith %}
+
+{% if url %}
+<a href="{{ url }}"{% if id %} id="{{ id }}"{% endif %}{% if target %} target="{{ target }}" rel="noopener"{% endif %}{% if onclick %} onclick="{{ onclick }}"{% endif %} class="
+    inline-flex items-center justify-center gap-2 font-bold rounded-xl transition-all
+    {% if s == 'sm' %}px-3 py-1.5 text-xs{% elif s == 'lg' %}px-6 py-3.5 text-base{% else %}px-4 py-2.5 text-sm{% endif %}
+    {% if full %}w-full{% endif %}
+    {% if v == 'primary'   %}bg-[#F58830] hover:bg-[#D97520] text-white shadow-md hover:shadow-lg hover:-translate-y-0.5
+    {% elif v == 'secondary' %}bg-white dark:bg-[#162054] text-gray-800 dark:text-white border-2 border-gray-200 dark:border-blue-900/30 hover:border-[#F58830] hover:text-[#F58830]
+    {% elif v == 'ghost'   %}text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5
+    {% elif v == 'danger'  %}bg-red-500 hover:bg-red-600 text-white shadow-md
+    {% elif v == 'success' %}bg-emerald-600 hover:bg-emerald-700 text-white shadow-md
+    {% endif %}
+    {{ extra|default:'' }}">
+    {% if icon and not icon_right %}<i class="fa-solid {{ icon }}"></i>{% endif %}
+    {{ label }}
+    {% if icon and icon_right %}<i class="fa-solid {{ icon }}"></i>{% endif %}
+</a>
+{% else %}
+<button type="{{ type|default:'button' }}"{% if id %} id="{{ id }}"{% endif %}{% if onclick %} onclick="{{ onclick }}"{% endif %} class="
+    inline-flex items-center justify-center gap-2 font-bold rounded-xl transition-all
+    {% if s == 'sm' %}px-3 py-1.5 text-xs{% elif s == 'lg' %}px-6 py-3.5 text-base{% else %}px-4 py-2.5 text-sm{% endif %}
+    {% if full %}w-full{% endif %}
+    {% if v == 'primary'   %}bg-[#F58830] hover:bg-[#D97520] text-white shadow-md hover:shadow-lg hover:-translate-y-0.5
+    {% elif v == 'secondary' %}bg-white dark:bg-[#162054] text-gray-800 dark:text-white border-2 border-gray-200 dark:border-blue-900/30 hover:border-[#F58830] hover:text-[#F58830]
+    {% elif v == 'ghost'   %}text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5
+    {% elif v == 'danger'  %}bg-red-500 hover:bg-red-600 text-white shadow-md
+    {% elif v == 'success' %}bg-emerald-600 hover:bg-emerald-700 text-white shadow-md
+    {% endif %}
+    {{ extra|default:'' }}">
+    {% if icon and not icon_right %}<i class="fa-solid {{ icon }}"></i>{% endif %}
+    {{ label }}
+    {% if icon and icon_right %}<i class="fa-solid {{ icon }}"></i>{% endif %}
+</button>
+{% endif %}
+{% endwith %}
+{% endwith %}

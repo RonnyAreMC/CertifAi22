@@ -40,6 +40,58 @@
         }
     </script>
     <style>
+        /* ═══════════════════════════════════════════════════════════════
+           DESIGN SYSTEM TOKENS — :root
+           Source-of-truth: core.UIDesignTokens (singleton, editable en
+           /panel/design-system/). El context_processor `design_tokens`
+           inyecta el objeto `design`; si está ausente caemos a defaults.
+           ═══════════════════════════════════════════════════════════════ */
+        :root {
+            /* Branding */
+            --ds-brand:       {{ design.color_brand|default:'#F58830' }};
+            --ds-brand-dark:  {{ design.color_brand_dark|default:'#D97520' }};
+            --ds-accent:      {{ design.color_accent|default:'#A855F7' }};
+
+            /* Superficie */
+            --ds-bg-dark:     {{ design.color_bg_dark|default:'#0A1535' }};
+            --ds-bg-light:    {{ design.color_bg_light|default:'#F8FAFC' }};
+            --ds-card-dark:   {{ design.color_card_dark|default:'#152448' }};
+            --ds-card-light:  {{ design.color_card_light|default:'#FFFFFF' }};
+
+            /* Texto */
+            --ds-text-dark:        {{ design.color_text_dark|default:'#E2E8F0' }};
+            --ds-text-light:       {{ design.color_text_light|default:'#0F172A' }};
+            --ds-text-muted-dark:  {{ design.color_text_muted_dark|default:'#94A3B8' }};
+            --ds-text-muted-light: {{ design.color_text_muted_light|default:'#64748B' }};
+
+            /* Estado */
+            --ds-success: {{ design.color_success|default:'#10B981' }};
+            --ds-danger:  {{ design.color_danger|default:'#EF4444' }};
+            --ds-warning: {{ design.color_warning|default:'#F59E0B' }};
+            --ds-info:    {{ design.color_info|default:'#3B82F6' }};
+
+            /* Tipografía */
+            --ds-font-sans:    {{ design.font_sans|default:"'Inter', system-ui, -apple-system, sans-serif"|safe }};
+            --ds-font-display: {{ design.font_display|default:"'Sora', 'Inter', sans-serif"|safe }};
+            --ds-font-mono:    {{ design.font_mono|default:"'JetBrains Mono', ui-monospace, monospace"|safe }};
+
+            /* Geometría */
+            --ds-radius-sm: {{ design.radius_sm|default:'0.5rem' }};
+            --ds-radius-md: {{ design.radius_md|default:'0.75rem' }};
+            --ds-radius-lg: {{ design.radius_lg|default:'1rem' }};
+            --ds-radius-xl: {{ design.radius_xl|default:'1.5rem' }};
+
+            /* Liquid Glass — botones */
+            --ds-btn-blur:                {{ design.btn_blur|default:'40px' }};
+            --ds-btn-saturate:            {{ design.btn_saturate|default:'180%' }};
+            --ds-btn-glass-opacity-dark:  {{ design.btn_glass_opacity_dark|default:'0.18' }};
+            --ds-btn-glass-opacity-light: {{ design.btn_glass_opacity_light|default:'0.92' }};
+
+            /* Sombras */
+            --ds-shadow-card:       {{ design.shadow_card|default:'0 8px 32px -4px rgba(0,0,0,0.35), 0 2px 8px -2px rgba(0,0,0,0.20)'|safe }};
+            --ds-shadow-card-light: {{ design.shadow_card_light|default:'0 4px 16px -4px rgba(15,23,42,0.08), 0 1px 4px -1px rgba(15,23,42,0.04)'|safe }};
+        }
+
         @font-face {
             font-family: 'Comfortaa';
             src: url('{% static "fonts/Comfortaa-Bold.ttf" %}') format('truetype');
@@ -57,12 +109,19 @@
             font-weight: 700;
             text-transform: lowercase;
             letter-spacing: -0.01em;
-            background: linear-gradient(135deg, #F58830 0%, #ec4899 55%, #a855f7 100%);
+            background: linear-gradient(135deg, var(--ds-brand) 0%, #ec4899 55%, var(--ds-accent) 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             color: transparent;
         }
+        /* Aplica tipografías y colores de superficie del Design System */
+        body { font-family: var(--ds-font-sans); }
+        .light body { background-color: var(--ds-bg-light); color: var(--ds-text-light); }
+        .dark body  { background-color: var(--ds-bg-dark);  color: var(--ds-text-dark); }
+        .ds-display { font-family: var(--ds-font-display); }
+        .ds-mono    { font-family: var(--ds-font-mono); }
+
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
         .dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
@@ -82,10 +141,578 @@
             from { transform: scaleX(1); }
             to { transform: scaleX(0); }
         }
+
+        /* ═══════ Liquid Glass system ═══════
+           Patrón Apple-style: orbes blureados de fondo + capas semi-transparentes
+           con backdrop-blur. Las clases .lg-* se pueden usar en cualquier card.
+        */
+        .lg-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .lg-bg::before, .lg-bg::after, .lg-bg > span {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.55;
+            animation: lg-float 18s ease-in-out infinite alternate;
+        }
+        .lg-bg::before {
+            width: 600px; height: 600px;
+            top: -10%; left: -8%;
+            background: radial-gradient(circle, var(--ds-brand) 0%, transparent 70%);
+        }
+        .lg-bg::after {
+            width: 700px; height: 700px;
+            bottom: -15%; right: -10%;
+            background: radial-gradient(circle, var(--ds-accent) 0%, transparent 70%);
+            animation-delay: -6s;
+        }
+        .lg-bg > span {
+            width: 500px; height: 500px;
+            top: 40%; left: 50%;
+            transform: translateX(-50%);
+            background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+            opacity: 0.35;
+            animation-delay: -12s;
+        }
+        @keyframes lg-float {
+            0%   { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(60px, -40px) scale(1.1); }
+        }
+        /* light mode → orbes pastel; dark mode → orbes saturados */
+        .light .lg-bg::before, .light .lg-bg::after, .light .lg-bg > span { opacity: 0.35; }
+        .dark .lg-bg::before { opacity: 0.30; }
+        .dark .lg-bg::after  { opacity: 0.30; }
+        .dark .lg-bg > span  { opacity: 0.20; }
+
+        /* Surface base (card glassy) — usada en components */
+        .lg-card {
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.7) inset,
+                0 8px 32px -4px rgba(15, 23, 42, 0.10),
+                0 2px 8px -2px rgba(15, 23, 42, 0.05);
+        }
+        .dark .lg-card {
+            background: rgba(22, 32, 84, 0.55);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow:
+                0 1px 0 rgba(255, 255, 255, 0.06) inset,
+                0 8px 32px -4px rgba(0, 0, 0, 0.35),
+                0 2px 8px -2px rgba(0, 0, 0, 0.20);
+        }
+
+        /* Nav glassy — variantes según tema */
+        .lg-nav {
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+        }
+        /* Light: nav blanco translúcido neutro (no deja saturar los orbs naranja) */
+        .light .lg-nav {
+            background: rgba(255, 255, 255, 0.78);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+        }
+        /* Dark: nav azul oscuro translúcido */
+        .dark .lg-nav {
+            background: rgba(10, 21, 53, 0.72);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        /* Texto/iconos del nav adaptan al tema */
+        .light .lg-nav { color: #0f172a; }
+        .dark .lg-nav  { color: #e2e8f0; }
+
+        /* Specular highlight: brillo sutil en la parte superior interna */
+        .lg-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 30%, transparent 100%);
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        .dark .lg-card::before {
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 30%, transparent 100%);
+            opacity: 0.4;
+        }
+
+        /* ───── Liquid Glass Button (iOS 26 Apple spec) ─────
+           Capsule translúcido con specular highlight + backdrop blur.
+           Variants: .lg-btn (regular), .lg-btn-prominent (tint), .lg-btn-clear (más sutil).
+        */
+        .lg-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 9999px;             /* capsule por defecto */
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: white;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.30);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+                0 4px 16px -4px rgba(15, 23, 42, 0.20);
+            transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+            cursor: pointer;
+        }
+        .lg-btn:hover {
+            background: rgba(255, 255, 255, 0.28);
+            transform: translateY(-1px);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.55),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+                0 8px 24px -6px rgba(15, 23, 42, 0.30);
+        }
+        .lg-btn:active { transform: translateY(0); }
+
+        /* Prominent tinted (acción primaria) */
+        .lg-btn-prominent {
+            background: linear-gradient(135deg, rgba(245, 136, 48, 0.95), rgba(217, 117, 32, 0.92));
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+                0 8px 24px -6px rgba(245, 136, 48, 0.45);
+        }
+        .lg-btn-prominent:hover {
+            background: linear-gradient(135deg, rgba(245, 136, 48, 1), rgba(217, 117, 32, 1));
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.55),
+                0 12px 32px -6px rgba(245, 136, 48, 0.60);
+        }
+
+        /* Clear (más sutil — para zonas con poco contraste) */
+        .lg-btn-clear {
+            background: rgba(255, 255, 255, 0.10);
+            border-color: rgba(255, 255, 255, 0.20);
+        }
+
+        /* Light mode: ajusta para fondos claros — más opaco para mejor contraste */
+        .light .lg-btn:not(.lg-btn-prominent) {
+            color: #1e293b;
+            background: rgba(255, 255, 255, 0.92);
+            border-color: rgba(15, 23, 42, 0.12);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.95),
+                inset 0 -1px 0 rgba(15, 23, 42, 0.06),
+                0 6px 18px -6px rgba(15, 23, 42, 0.18);
+        }
+        .light .lg-btn:not(.lg-btn-prominent):hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: rgba(245, 136, 48, 0.40);
+            color: #F58830;
+        }
+
+        /* ───── Quick Action tiles (dashboard) — hover liquid glass tintado ───── */
+        .qa-tile {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.55),
+                0 4px 14px -6px rgba(15, 23, 42, 0.12);
+        }
+        .dark .qa-tile {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                0 6px 20px -8px rgba(0, 0, 0, 0.45);
+        }
+        .qa-tile:hover {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                0 10px 28px -8px var(--qa-glow, rgba(15, 23, 42, 0.20));
+        }
+        .dark .qa-tile:hover {
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                0 14px 36px -10px var(--qa-glow, rgba(0, 0, 0, 0.6));
+        }
+
+        /* Tinte de fondo en hover (sólo el TILE, nunca el icono) */
+        .qa-orange:hover  { background: rgba(245, 136, 48, 0.14); border-color: rgba(245, 136, 48, 0.45); --qa-glow: rgba(245, 136, 48, 0.35); }
+        .qa-blue:hover    { background: rgba(59, 130, 246, 0.14); border-color: rgba(59, 130, 246, 0.45); --qa-glow: rgba(59, 130, 246, 0.35); }
+        .qa-emerald:hover { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.45); --qa-glow: rgba(16, 185, 129, 0.35); }
+        .qa-purple:hover  { background: rgba(168, 85, 247, 0.14); border-color: rgba(168, 85, 247, 0.45); --qa-glow: rgba(168, 85, 247, 0.35); }
+        .qa-red:hover     { background: rgba(239, 68, 68, 0.14);  border-color: rgba(239, 68, 68, 0.45);  --qa-glow: rgba(239, 68, 68, 0.35); }
+        .qa-pink:hover    { background: rgba(236, 72, 153, 0.14); border-color: rgba(236, 72, 153, 0.45); --qa-glow: rgba(236, 72, 153, 0.35); }
+
+        .dark .qa-orange:hover  { background: rgba(245, 136, 48, 0.18); }
+        .dark .qa-blue:hover    { background: rgba(59, 130, 246, 0.20); }
+        .dark .qa-emerald:hover { background: rgba(16, 185, 129, 0.20); }
+        .dark .qa-purple:hover  { background: rgba(168, 85, 247, 0.22); }
+        .dark .qa-red:hover     { background: rgba(239, 68, 68, 0.20); }
+        .dark .qa-pink:hover    { background: rgba(236, 72, 153, 0.20); }
+
+        /* ═══════════════════════════════════════════════════════
+           QUICK PILL · iOS Liquid Glass + Neuromorfismo
+           Solo paleta del Design System: brand, accent, success,
+           info, warning, danger. El icono y los hovers consumen
+           CSS vars del :root — cambiar el DS los actualiza todos.
+           ═══════════════════════════════════════════════════════ */
+
+        .qp-tile {
+            /* Material liquid glass base (translúcido sobre el card) */
+            background: linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.40) 100%);
+            border: 1px solid rgba(255,255,255,0.7);
+            backdrop-filter: blur(22px) saturate(180%);
+            -webkit-backdrop-filter: blur(22px) saturate(180%);
+            /* Neuromorfismo: highlight superior + sombra inferior interna + lift externo */
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.95),
+                inset 0 -1px 0 rgba(15,23,42,0.06),
+                0 2px 6px -2px rgba(15,23,42,0.06),
+                0 8px 22px -8px rgba(15,23,42,0.10);
+        }
+        .dark .qp-tile {
+            background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.10),
+                inset 0 -1px 0 rgba(0,0,0,0.30),
+                0 2px 6px -2px rgba(0,0,0,0.30),
+                0 10px 26px -10px rgba(0,0,0,0.55);
+        }
+
+        /* Disco interior del icono — neumórfico, neutro, glassy */
+        .qp-disc {
+            width: 56px; height: 56px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: var(--ds-radius-lg, 1rem);
+            position: relative;
+            background: linear-gradient(160deg, rgba(255,255,255,0.85), rgba(255,255,255,0.45));
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,1),
+                inset 0 -1px 0 rgba(15,23,42,0.10),
+                0 4px 10px -4px rgba(15,23,42,0.18);
+            transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s;
+        }
+        .dark .qp-disc {
+            background: linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.18),
+                inset 0 -1px 0 rgba(0,0,0,0.45),
+                0 6px 14px -6px rgba(0,0,0,0.55);
+        }
+
+        /* Icono — color del DS según variante (tinte único, no caja) */
+        .qp-icon {
+            font-size: 22px;
+            line-height: 1;
+            color: var(--qp-accent, var(--ds-brand));
+            filter: drop-shadow(0 1px 0 rgba(255,255,255,0.6));
+            transition: transform .25s ease;
+        }
+        .dark .qp-icon { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); }
+
+        /* Variantes — sólo definen --qp-accent, así el icono y el hover salen del mismo color */
+        .qp-brand   { --qp-accent: var(--ds-brand);   --qp-accent-rgb: 245, 136, 48; }
+        .qp-accent  { --qp-accent: var(--ds-accent);  --qp-accent-rgb: 168, 85, 247; }
+        .qp-success { --qp-accent: var(--ds-success); --qp-accent-rgb: 16, 185, 129; }
+        .qp-info    { --qp-accent: var(--ds-info);    --qp-accent-rgb: 59, 130, 246; }
+        .qp-warning { --qp-accent: var(--ds-warning); --qp-accent-rgb: 245, 158, 11; }
+        .qp-danger  { --qp-accent: var(--ds-danger);  --qp-accent-rgb: 239, 68, 68; }
+
+        /* Hover — tile se eleva, disco se hunde, icono respira */
+        .qp-tile:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(180deg,
+                rgba(var(--qp-accent-rgb), 0.10) 0%,
+                rgba(255,255,255,0.45) 100%);
+            border-color: rgba(var(--qp-accent-rgb), 0.40);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,1),
+                inset 0 -1px 0 rgba(15,23,42,0.06),
+                0 12px 28px -8px rgba(var(--qp-accent-rgb), 0.30),
+                0 4px 12px -4px rgba(15,23,42,0.10);
+        }
+        .dark .qp-tile:hover {
+            background: linear-gradient(180deg,
+                rgba(var(--qp-accent-rgb), 0.16) 0%,
+                rgba(255,255,255,0.04) 100%);
+            border-color: rgba(var(--qp-accent-rgb), 0.45);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.16),
+                inset 0 -1px 0 rgba(0,0,0,0.30),
+                0 16px 36px -10px rgba(var(--qp-accent-rgb), 0.40),
+                0 4px 12px -4px rgba(0,0,0,0.40);
+        }
+
+        /* En hover el disco se "presiona" (efecto neumórfico inverso) */
+        .qp-tile:hover .qp-disc {
+            transform: scale(0.94);
+            box-shadow:
+                inset 0 2px 4px rgba(15,23,42,0.18),
+                inset 0 -1px 0 rgba(255,255,255,0.6),
+                0 1px 2px rgba(15,23,42,0.05);
+        }
+        .dark .qp-tile:hover .qp-disc {
+            box-shadow:
+                inset 0 2px 4px rgba(0,0,0,0.55),
+                inset 0 -1px 0 rgba(255,255,255,0.10),
+                0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .qp-tile:hover .qp-icon { transform: scale(1.12); }
+        .qp-tile:active { transform: translateY(0); }
+        .qp-tile:active .qp-disc { transform: scale(0.90); }
+
+        /* Badge */
+        .qp-badge {
+            position: absolute;
+            top: 8px; right: 8px;
+            min-width: 18px; height: 18px;
+            padding: 0 5px;
+            background: var(--ds-danger);
+            color: white;
+            font-size: 9px; font-weight: 800;
+            border-radius: 999px;
+            display: inline-flex; align-items: center; justify-content: center;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.4),
+                0 2px 6px rgba(239,68,68,0.45);
+            animation: qp-pulse 2s ease-in-out infinite;
+        }
+        @keyframes qp-pulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.08); }
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           NAV ITEM · disco neumórfico coloreado en dropdowns
+           Reusa la paleta del Design System.
+           ═══════════════════════════════════════════════════════ */
+        .nav-disc {
+            width: 32px; height: 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            flex-shrink: 0;
+            background: linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.55));
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,1),
+                inset 0 -1px 0 rgba(15,23,42,0.10),
+                0 2px 4px -1px rgba(15,23,42,0.10);
+            transition: all .25s cubic-bezier(.34,1.56,.64,1);
+        }
+        .dark .nav-disc {
+            background: linear-gradient(160deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.18),
+                inset 0 -1px 0 rgba(0,0,0,0.40),
+                0 2px 4px -1px rgba(0,0,0,0.4);
+        }
+        .nav-disc-icon {
+            font-size: 12px;
+            line-height: 1;
+            color: var(--nav-accent, var(--ds-brand));
+            filter: drop-shadow(0 1px 0 rgba(255,255,255,0.5));
+            transition: transform .2s ease;
+        }
+        .dark .nav-disc-icon { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); }
+
+        /* Variantes — sólo definen --nav-accent y --nav-accent-rgb */
+        .nav-item--brand   { --nav-accent: var(--ds-brand);   --nav-accent-rgb: 245, 136, 48; }
+        .nav-item--accent  { --nav-accent: var(--ds-accent);  --nav-accent-rgb: 168, 85, 247; }
+        .nav-item--success { --nav-accent: var(--ds-success); --nav-accent-rgb: 16, 185, 129; }
+        .nav-item--info    { --nav-accent: var(--ds-info);    --nav-accent-rgb: 59, 130, 246; }
+        .nav-item--warning { --nav-accent: var(--ds-warning); --nav-accent-rgb: 245, 158, 11; }
+        .nav-item--danger  { --nav-accent: var(--ds-danger);  --nav-accent-rgb: 239, 68, 68; }
+
+        /* Hover de la fila — fondo tintado + disco "presionado" */
+        .nav-item:hover {
+            background: linear-gradient(180deg,
+                rgba(var(--nav-accent-rgb), 0.10) 0%,
+                rgba(var(--nav-accent-rgb), 0.04) 100%);
+        }
+        .dark .nav-item:hover {
+            background: linear-gradient(180deg,
+                rgba(var(--nav-accent-rgb), 0.16) 0%,
+                rgba(var(--nav-accent-rgb), 0.06) 100%);
+        }
+        .nav-item:hover .nav-disc {
+            transform: scale(0.94);
+            box-shadow:
+                inset 0 1px 3px rgba(15,23,42,0.15),
+                inset 0 -1px 0 rgba(255,255,255,0.6);
+        }
+        .dark .nav-item:hover .nav-disc {
+            box-shadow:
+                inset 0 1px 3px rgba(0,0,0,0.55),
+                inset 0 -1px 0 rgba(255,255,255,0.10);
+        }
+        .nav-item:hover .nav-disc-icon { transform: scale(1.12); }
+
+        /* ═══════════════════════════════════════════════════════
+           TOOLTIP · iOS Liquid Glass + Neuromorfismo (CSS-only)
+           ─────────────────────────────────────────────────────────
+           Uso (cualquier elemento):
+               <button data-tip="Eliminar">…</button>
+               <a data-tip="Configurar" data-tip-pos="bottom">…</a>
+               <span data-tip="Mucho texto" data-tip-wrap>…</span>
+           Posiciones: top (default), bottom, left, right.
+           Aparece en :hover y :focus-visible (accesible con teclado).
+           ═══════════════════════════════════════════════════════ */
+        [data-tip] { position: relative; }
+        [data-tip]:hover, [data-tip]:focus-visible { z-index: 100; }
+        [data-tip]::before, [data-tip]::after {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .18s ease, transform .22s cubic-bezier(.34,1.56,.64,1);
+            z-index: 99999;
+        }
+        [data-tip]::after {
+            content: attr(data-tip);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .01em;
+            line-height: 1.35;
+            white-space: nowrap;
+            padding: 6px 10px;
+            border-radius: 8px;
+            color: var(--ds-text-light, #0f172a);
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85));
+            border: 1px solid rgba(255,255,255,0.7);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,1),
+                inset 0 -1px 0 rgba(15,23,42,0.06),
+                0 6px 18px -4px rgba(15,23,42,0.18),
+                0 2px 6px -2px rgba(15,23,42,0.10);
+        }
+        .dark [data-tip]::after {
+            color: var(--ds-text-dark, #e2e8f0);
+            background: linear-gradient(180deg, rgba(21,36,72,0.95), rgba(15,23,42,0.92));
+            border: 1px solid rgba(255,255,255,0.10);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.10),
+                inset 0 -1px 0 rgba(0,0,0,0.40),
+                0 8px 22px -6px rgba(0,0,0,0.55),
+                0 2px 6px -2px rgba(0,0,0,0.35);
+        }
+        /* Flecha/triangulo neumórfico */
+        [data-tip]::before {
+            content: '';
+            border: 5px solid transparent;
+        }
+        /* Wrap multilínea */
+        [data-tip][data-tip-wrap]::after {
+            white-space: normal;
+            max-width: 240px;
+            text-align: center;
+        }
+
+        /* ── Posición: top (default) ── */
+        [data-tip]::after,
+        [data-tip][data-tip-pos="top"]::after {
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+        }
+        [data-tip]::before,
+        [data-tip][data-tip-pos="top"]::before {
+            bottom: calc(100% + 3px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            border-top-color: rgba(255,255,255,0.95);
+        }
+        .dark [data-tip]::before,
+        .dark [data-tip][data-tip-pos="top"]::before {
+            border-top-color: rgba(21,36,72,0.95);
+        }
+
+        /* ── Bottom ── */
+        [data-tip][data-tip-pos="bottom"]::after {
+            bottom: auto; top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+        }
+        [data-tip][data-tip-pos="bottom"]::before {
+            bottom: auto; top: calc(100% + 3px);
+            left: 50%;
+            transform: translateX(-50%) translateY(-4px);
+            border-top-color: transparent;
+            border-bottom-color: rgba(255,255,255,0.95);
+        }
+        .dark [data-tip][data-tip-pos="bottom"]::before { border-bottom-color: rgba(21,36,72,0.95); }
+
+        /* ── Right ── */
+        [data-tip][data-tip-pos="right"]::after {
+            bottom: 50%; top: 50%;
+            left: calc(100% + 8px);
+            transform: translateY(-50%) translateX(-4px);
+        }
+        [data-tip][data-tip-pos="right"]::before {
+            bottom: 50%; top: 50%;
+            left: calc(100% + 3px);
+            transform: translateY(-50%) translateX(-4px);
+            border-top-color: transparent;
+            border-right-color: rgba(255,255,255,0.95);
+        }
+        .dark [data-tip][data-tip-pos="right"]::before { border-right-color: rgba(21,36,72,0.95); }
+
+        /* ── Left ── */
+        [data-tip][data-tip-pos="left"]::after {
+            bottom: 50%; top: 50%;
+            right: calc(100% + 8px);
+            left: auto;
+            transform: translateY(-50%) translateX(4px);
+        }
+        [data-tip][data-tip-pos="left"]::before {
+            bottom: 50%; top: 50%;
+            right: calc(100% + 3px);
+            left: auto;
+            transform: translateY(-50%) translateX(4px);
+            border-top-color: transparent;
+            border-left-color: rgba(255,255,255,0.95);
+        }
+        .dark [data-tip][data-tip-pos="left"]::before { border-left-color: rgba(21,36,72,0.95); }
+
+        /* Mostrar en hover y focus-visible (a11y) — animación de aparición */
+        [data-tip]:hover::after,
+        [data-tip]:hover::before,
+        [data-tip]:focus-visible::after,
+        [data-tip]:focus-visible::before {
+            opacity: 1;
+            transition-delay: .35s;
+        }
+        [data-tip]:hover::after,
+        [data-tip]:focus-visible::after,
+        [data-tip][data-tip-pos="top"]:hover::after,
+        [data-tip][data-tip-pos="top"]:focus-visible::after {
+            transform: translateX(-50%) translateY(0);
+        }
+        [data-tip][data-tip-pos="bottom"]:hover::after,
+        [data-tip][data-tip-pos="bottom"]:focus-visible::after {
+            transform: translateX(-50%) translateY(0);
+        }
+        [data-tip][data-tip-pos="right"]:hover::after,
+        [data-tip][data-tip-pos="right"]:focus-visible::after {
+            transform: translateY(-50%) translateX(0);
+        }
+        [data-tip][data-tip-pos="left"]:hover::after,
+        [data-tip][data-tip-pos="left"]:focus-visible::after {
+            transform: translateY(-50%) translateX(0);
+        }
     </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 dark:bg-[#0f1d3d] dark:text-gray-100 transition-colors duration-300">
+<body class="bg-slate-50 text-gray-800 dark:bg-[#0a1535] dark:text-gray-100 transition-colors duration-300 relative">
+    {# Liquid Glass background — orbes flotantes globales detrás de TODO #}
+    <div class="lg-bg" aria-hidden="true"><span></span></div>
     {% include 'components/background_decor.html' %}
     {% include 'components/loader.html' %}
 
@@ -122,192 +749,117 @@
         {% endif %}
     </div>
 
-    <!-- Top Navigation -->
-    <nav class="bg-[#1a2b4d] sticky top-0 z-50 shadow-lg relative">
+    <!-- Top Navigation (Liquid Glass) -->
+    <nav class="lg-nav sticky top-0 z-50 shadow-lg shadow-black/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20">
-                <div class="flex items-center gap-8">
-                    <a href="{% url 'panel:dashboard' %}" class="flex-shrink-0 flex items-center gap-3 group hover:opacity-90 transition-all">
-                        <i class="fa-solid fa-shield-halved text-unemi-orange text-3xl animate-pulse group-hover:scale-110 transition-transform"></i>
-                        <span class="text-2xl font-bold text-white">
-                            <span class="brand-certif">CERTIF</span><span class="brand-ai">ai</span> <span class="text-sm font-light opacity-80 uppercase tracking-widest ml-1">Admin</span>
-                        </span>
+            <div class="flex justify-between items-center h-16">
+                <!-- Brand + Menu -->
+                <div class="flex items-center gap-2 lg:gap-6">
+                    <a href="{% url 'panel:dashboard' %}" class="flex items-center gap-2.5 group">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F58830] to-[#D97520] flex items-center justify-center shadow-lg shadow-[#F58830]/20 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                            <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="flex items-baseline gap-1">
+                                <span class="brand-certif text-lg text-slate-900 dark:text-white">certif</span><span class="brand-ai text-lg">ai</span>
+                            </div>
+                            <span class="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Admin</span>
+                        </div>
                     </a>
 
-                    <!-- Desktop Menu -->
-                    <div class="hidden md:flex items-center space-x-1">
-                        <!-- Certificados Dropdown -->
-                        <div class="relative group">
-                            <button class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2 {% if 'batch' in request.resolver_match.url_name %}bg-white/10 text-white{% endif %}">
-                                <i class="fa-solid fa-certificate"></i>
-                                Certificados
-                                <i class="fa-solid fa-chevron-down text-[10px] opacity-50 group-hover:rotate-180 transition-transform"></i>
-                            </button>
-                            <div class="absolute left-0 mt-1 w-48 bg-[#1a2b4d] border border-white/10 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-[60]">
-                                <a href="{% url 'panel:batch_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-list-ul mr-2 text-xs opacity-70"></i> Ver Lotes
-                                </a>
-                                <a href="{% url 'panel:batch_create' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-plus mr-2 text-xs opacity-70"></i> Subir Nuevo
-                                </a>
-                            </div>
-                        </div>
+                    <!-- Separador vertical -->
+                    <div class="hidden md:block h-6 w-px bg-slate-300/60 dark:bg-white/10"></div>
 
-                        <!-- Gestión Dropdown -->
-                        <div class="relative group">
-                            <button class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2 {% if 'session' in request.resolver_match.url_name or 'lideres' in request.resolver_match.url_name %}bg-white/10 text-white{% endif %}">
-                                <i class="fa-solid fa-users-gear"></i>
-                                Gestión
-                                <i class="fa-solid fa-chevron-down text-[10px] opacity-50 group-hover:rotate-180 transition-transform"></i>
-                            </button>
-                            <div class="absolute left-0 mt-1 w-48 bg-[#1a2b4d] border border-white/10 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-[60]">
-                                <a href="{% url 'panel:session_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-calendar-days mr-2 text-xs opacity-70"></i> Eventos
-                                </a>
-                                <a href="{% url 'panel:lideres_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-user-tie mr-2 text-xs opacity-70"></i> Líderes
-                                </a>
-                                <a href="{% url 'panel:participantes_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-user-graduate mr-2 text-xs opacity-70"></i> Participantes
-                                </a>
-                            </div>
-                        </div>
-
-                        {% if user.rol == 'superadmin' %}
-                        <!-- Admin Dropdown -->
-                        <div class="relative group">
-                            <button class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all duration-200 flex items-center gap-2 {% if 'landing' in request.resolver_match.url_name or 'solicitudes' in request.resolver_match.url_name %}bg-white/10 text-white{% endif %}">
-                                <i class="fa-solid fa-gears"></i>
-                                Admin
-                                <i class="fa-solid fa-chevron-down text-[10px] opacity-50 group-hover:rotate-180 transition-transform"></i>
-                            </button>
-                            <div class="absolute left-0 mt-1 w-52 bg-[#1a2b4d] border border-white/10 rounded-xl shadow-2xl py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 z-[60]">
-                                <a href="{% url 'panel:landing_builder' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-wand-magic-sparkles mr-2 text-xs opacity-70"></i> Landing Page
-                                </a>
-                                <a href="{% url 'panel:solicitudes_pendientes' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors relative">
-                                    <i class="fa-solid fa-user-clock mr-2 text-xs opacity-70"></i> Solicitudes
-                                    {% if pendientes_count > 0 %}
-                                    <span class="absolute top-2.5 right-4 bg-red-500 text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse">
-                                        {{ pendientes_count }}
-                                    </span>
-                                    {% endif %}
-                                </a>
-                                <a href="{% url 'panel:firma_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-signature mr-2 text-xs opacity-70"></i> Firmas Inst.
-                                </a>
-                                <a href="{% url 'panel:design_global' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-palette mr-2 text-xs opacity-70"></i> Diseño Global
-                                </a>
-                                <a href="{% url 'panel:usuarios_list' %}" class="block px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 transition-colors">
-                                    <i class="fa-solid fa-users-cog mr-2 text-xs opacity-70"></i> Usuarios
-                                </a>
-                            </div>
-                        </div>
-                        {% endif %}
+                    <!-- Desktop Menu — generado desde context processor -->
+                    <div class="hidden md:flex items-center gap-1">
+                        {% for group in nav_groups %}
+                            {% include 'panel/includes/_nav_dropdown.html' with group=group %}
+                        {% endfor %}
                     </div>
                 </div>
 
                 <!-- Right Side -->
-                <div class="flex items-center gap-4">
-                    <div class="hidden md:block relative">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
-                        </div>
-                        <input type="text" class="bg-black/20 border border-white/10 text-white text-sm rounded-full focus:ring-unemi-orange focus:border-unemi-orange block w-48 pl-9 p-2 placeholder-gray-400 transition-all focus:w-64" placeholder="Buscar...">
-                    </div>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Search (desktop) — componente reutilizable -->
+                    {% include 'panel/includes/_nav_search.html' %}
 
-                    <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-yellow-300 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/20">
-                        <i id="theme-icon" class="fa-solid fa-sun text-sm"></i>
+                    <!-- Notificaciones (badge solicitudes) -->
+                    {% if pendientes_count > 0 %}
+                    <a href="{% url 'panel:solicitudes_pendientes' %}" class="relative w-9 h-9 rounded-xl bg-slate-200/70 hover:bg-slate-300/70 dark:bg-white/5 dark:hover:bg-white/10 flex items-center justify-center text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors" title="{{ pendientes_count }} solicitud{{ pendientes_count|pluralize:'es' }} pendiente{{ pendientes_count|pluralize:'s' }}">
+                        <i class="fa-solid fa-bell text-sm"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center ring-2 ring-white dark:ring-[#152448] animate-pulse">{{ pendientes_count }}</span>
+                    </a>
+                    {% endif %}
+
+                    <!-- Theme toggle -->
+                    <button onclick="toggleTheme()" class="w-9 h-9 rounded-xl bg-slate-200/70 hover:bg-slate-300/70 dark:bg-white/5 dark:hover:bg-white/10 flex items-center justify-center text-amber-500 hover:text-amber-600 dark:text-amber-300 dark:hover:text-amber-200 transition-colors" title="Cambiar tema">
+                        <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
                     </button>
 
-                    <div class="flex items-center gap-3 pl-4 border-l border-white/10">
-                        <div class="hidden md:block text-right">
-                            <p class="text-sm font-bold text-white leading-tight">{{ user.first_name }}</p>
-                            <p class="text-xs text-blue-200">{% if user.rol == 'superadmin' %}Administrador{% else %}Coordinador{% endif %}</p>
-                        </div>
-                        <div class="h-10 w-10 rounded-full bg-unemi-orange border-2 border-white/20 flex items-center justify-center text-white shadow-lg">
-                            <span class="font-bold text-lg">{{ user.username|first|upper }}</span>
-                        </div>
-                        
-                        <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden ml-2 text-white p-2">
-                            <i class="fa-solid fa-bars text-xl"></i>
+                    <!-- Separador -->
+                    <div class="hidden sm:block h-6 w-px bg-slate-300/60 dark:bg-white/10"></div>
+
+                    <!-- User card con dropdown -->
+                    <div class="relative group">
+                        <button class="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors">
+                            <div class="hidden sm:block text-right">
+                                <p class="text-xs font-bold text-slate-900 dark:text-white leading-tight">{{ user.first_name|default:user.username }}</p>
+                                <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{% if user.rol == 'superadmin' %}Administrador{% else %}Coordinador{% endif %}</p>
+                            </div>
+                            <div class="relative">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F58830] to-[#D97520] flex items-center justify-center text-white shadow-lg ring-2 ring-white/70 dark:ring-white/10">
+                                    <span class="font-black text-sm">{{ user.username|first|upper }}</span>
+                                </div>
+                                <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#152448]"></span>
+                            </div>
                         </button>
-                        
-                        <form action="{% url 'panel:logout' %}" method="post" class="hidden md:block ml-2">
-                             {% csrf_token %}
-                             <button type="submit" class="text-gray-400 hover:text-red-400 transition-colors" title="Cerrar Sesión">
-                                 <i class="fa-solid fa-power-off text-lg"></i>
-                             </button>
-                        </form>
+
+                        <!-- User dropdown -->
+                        <div class="absolute right-0 top-full pt-2 w-52 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-[60]">
+                            <div class="bg-white dark:bg-[#152448] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                                <div class="px-4 py-3 border-b border-slate-200 dark:border-white/5">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ user.first_name|default:user.username }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ user.email }}</p>
+                                </div>
+                                <a href="{% url 'panel:mi_estado' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors">
+                                    <i class="fa-solid fa-circle-user w-4 text-slate-500 dark:text-slate-400"></i> Mi estado
+                                </a>
+                                <form action="{% url 'panel:logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                        <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Cerrar sesión
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Mobile burger -->
+                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden w-9 h-9 rounded-xl bg-slate-200/70 hover:bg-slate-300/70 dark:bg-white/5 dark:hover:bg-white/10 flex items-center justify-center text-slate-700 dark:text-white transition-colors">
+                        <i class="fa-solid fa-bars text-sm"></i>
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden bg-[#0F163A] border-t border-white/10">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                 <a href="{% url 'panel:dashboard' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 border-l-4 border-unemi-orange bg-white/5">
-                     <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
-                 </a>
-                 
-                 <!-- Certificados Section -->
-                 <div class="pt-2 pb-1 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Certificados</div>
-                 <a href="{% url 'panel:batch_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-folder-open mr-2 text-sm opacity-70"></i> Lotes
-                 </a>
-                 <a href="{% url 'panel:batch_create' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-plus mr-2 text-sm opacity-70"></i> Subir Nuevo
-                 </a>
-
-                 <!-- Gestión Section -->
-                 <div class="pt-3 pb-1 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Gestión</div>
-                 <a href="{% url 'panel:session_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-calendar-days mr-2 text-sm opacity-70"></i> Eventos
-                 </a>
-                 <a href="{% url 'panel:lideres_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-user-tie mr-2 text-sm opacity-70"></i> Líderes
-                 </a>
-                 <a href="{% url 'panel:participantes_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-user-graduate mr-2 text-sm opacity-70"></i> Participantes
-                 </a>
-
-                 {% if user.rol == 'superadmin' %}
-                 <!-- Admin Section -->
-                 <div class="pt-3 pb-1 px-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Administración</div>
-                 <a href="{% url 'panel:landing_builder' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-wand-magic-sparkles mr-2 text-sm opacity-70"></i> Landing Page
-                 </a>
-                 <a href="{% url 'panel:solicitudes_pendientes' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6 relative">
-                     <i class="fa-solid fa-user-clock mr-2 text-sm opacity-70"></i> Solicitudes
-                     {% if pendientes_count > 0 %}
-                     <span class="ml-2 bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 animate-pulse">{{ pendientes_count }}</span>
-                     {% endif %}
-                 </a>
-                 <a href="{% url 'panel:firma_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-signature mr-2 text-sm opacity-70"></i> Firmas Institucionales
-                 </a>
-                 <a href="{% url 'panel:design_global' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-palette mr-2 text-sm opacity-70"></i> Diseño Global
-                 </a>
-                 <a href="{% url 'panel:usuarios_list' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 pl-6">
-                     <i class="fa-solid fa-users-cog mr-2 text-sm opacity-70"></i> Usuarios
-                 </a>
-                 {% endif %}
-                 <div class="border-t border-white/10 my-2"></div>
-                 <form action="{% url 'panel:logout' %}" method="post" class="block w-full">
-                     {% csrf_token %}
-                     <button type="submit" class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-400 hover:bg-white/10">
-                         Cerrar Sesión
-                     </button>
-                 </form>
-            </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-[#0f1d3d] border-t border-slate-200 dark:border-white/10">
+            <a href="{% url 'panel:dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white border-l-4 border-[#F58830] bg-slate-100 dark:bg-white/5">
+                <i class="fa-solid fa-chart-pie text-[#F58830]"></i> Dashboard
+            </a>
+            {% for group in nav_groups %}
+                {% include 'panel/includes/_nav_mobile_section.html' with group=group %}
+            {% endfor %}
+            <form action="{% url 'panel:logout' %}" method="post" class="border-t border-slate-200 dark:border-white/5">
+                {% csrf_token %}
+                <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar sesión
+                </button>
+            </form>
         </div>
-        <div class="h-1 flex w-full absolute bottom-0 left-0">
-            <div class="w-[75%] bg-[#F58830]"></div>
-            <div class="w-[25%] bg-[#162054] dark:bg-white"></div>
-        </div>
+
+        <!-- Borde inferior gradient -->
+        <div class="h-0.5 w-full bg-gradient-to-r from-[#F58830] via-pink-500 to-purple-500 absolute bottom-0 left-0 opacity-60 dark:opacity-80"></div>
     </nav>
 
     <!-- Main Content -->

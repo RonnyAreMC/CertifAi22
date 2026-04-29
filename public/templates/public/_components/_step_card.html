@@ -1,0 +1,30 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · StepCard — paso numerado con título + descripción.
+
+Args:
+    number   (int|str)  número del paso (obligatorio)
+    title    (str)      título del paso (obligatorio)
+    text     (str)      descripción
+    color    (str)      'primary'(default)|'blue' del badge numérico
+    text_html (str)     HTML opcional en lugar de text (para usar <strong> etc)
+
+Uso:
+    {% include 'public/_components/_step_card.html' with number=1 color='blue'
+        title='Asiste al seminario' text='Participa activamente en la ponencia.' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+{% with c=color|default:'primary' %}
+<div class="flex gap-4 p-5 bg-white dark:bg-[#162054] border border-gray-200 dark:border-white/10 rounded-2xl transition-all hover:border-[#F58830] hover:translate-x-1 hover:shadow-lg hover:shadow-[#F58830]/10">
+    <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shrink-0 shadow-md
+        {% if c == 'blue' %}bg-[#162054]{% else %}bg-[#F58830]{% endif %}">
+        {{ number }}
+    </div>
+    <div class="flex-1">
+        <h4 class="font-bold text-gray-900 dark:text-white mb-1">{{ title }}</h4>
+        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+            {% if text_html %}{{ text_html|safe }}{% else %}{{ text }}{% endif %}
+        </p>
+    </div>
+</div>
+{% endwith %}

@@ -3,208 +3,67 @@
 
 {% block content %}
 <div class="relative min-h-[80vh] py-10 md:py-14">
-
-    <!-- Orbes flotantes -->
-    <div class="absolute inset-0 pointer-events-none overflow-hidden -z-10">
-        <div class="absolute top-[5%] left-[5%] w-[400px] h-[400px] rounded-full bg-[#162054]/5 dark:bg-[#162054]/40 blur-[120px]"></div>
-        <div class="absolute bottom-[10%] right-[5%] w-[450px] h-[450px] rounded-full bg-[#F58830]/10 dark:bg-[#F58830]/15 blur-[140px]"></div>
-    </div>
+    {% include 'public/_layouts/_decorative_orbs.html' %}
 
     <div class="container mx-auto px-4">
 
-        <!-- Back -->
-        <div class="mb-8 flex justify-start">
-            <a id="back-link" href="{% url 'public:home' %}" class="w-11 h-11 rounded-full bg-white dark:bg-[#162054] flex items-center justify-center shadow-md border border-gray-200 dark:border-white/10 hover:scale-110 hover:border-[#F58830] transition-all group">
-                <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
-            </a>
-        </div>
+        {# Botón volver — el JS le actualiza el href para preservar query #}
+        <a id="back-link" href="{% url 'public:home' %}" aria-label="Volver"
+           class="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white dark:bg-[#162054] shadow-md border border-gray-200 dark:border-white/10 hover:scale-110 hover:border-[#F58830] hover:text-[#F58830] transition-all group mb-6">
+            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+        </a>
 
-        <!-- Loading state -->
+        {# Loader inicial #}
         <div id="loading-state" class="text-center py-20">
             <i class="fa-solid fa-spinner fa-spin text-4xl text-[#F58830]"></i>
             <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">Buscando certificados...</p>
         </div>
 
-        <!-- Header de resultados (populated by JS) -->
+        {# Header de resultados — JS lo puebla #}
         <div id="results-header" class="hidden mb-10">
             <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] font-bold mb-3">
-                <span class="w-12 h-[2px] bg-[#F58830]"></span>
-                Resultados de búsqueda
+                <span class="w-12 h-[2px] bg-[#F58830]"></span> Resultados de búsqueda
             </div>
-
             <h1 id="results-title" class="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-[#162054] dark:text-white leading-[0.95] mb-3"></h1>
             <p id="results-summary" class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl"></p>
 
             <div id="zip-action" class="mt-6 hidden">
                 <a id="zip-link" href="#" target="_blank"
                    class="inline-flex items-center gap-2 bg-[#162054] hover:bg-[#0d1740] dark:bg-[#F58830] dark:hover:bg-[#e07820] text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all uppercase text-xs tracking-wider">
-                    <i class="fa-solid fa-file-zipper"></i>
-                    Descargar todo (ZIP)
+                    <i class="fa-solid fa-file-zipper"></i> Descargar todo (ZIP)
                 </a>
             </div>
         </div>
 
-        <!-- Results Grid -->
+        {# Grid de cards — JS lo puebla #}
         <div id="results-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
 
-        <!-- Empty state -->
-        <div id="empty-state" class="hidden max-w-xl mx-auto text-center py-16">
-            <div class="w-24 h-24 mx-auto rounded-3xl bg-[#F58830]/10 dark:bg-[#F58830]/20 flex items-center justify-center mb-6">
-                <i class="fa-solid fa-magnifying-glass text-4xl text-[#F58830]"></i>
+        {# Empty state #}
+        <div id="empty-state" class="hidden">
+            <div class="text-center py-16 max-w-xl mx-auto">
+                <div class="w-24 h-24 mx-auto rounded-3xl bg-[#F58830]/10 dark:bg-[#F58830]/20 flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-magnifying-glass text-4xl text-[#F58830]"></i>
+                </div>
+                <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">No encontramos nada</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
+                    No hay registros asociados a <strong id="empty-query" class="text-[#F58830]"></strong>. Verifica que la cédula o correo sean correctos.
+                </p>
+                {% include 'public/_components/_button.html' with
+                    variant='primary' icon='fa-rotate-left' label='Intentar otra búsqueda'
+                    url='/' size='lg' %}
             </div>
-            <h3 class="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">No encontramos nada</h3>
-            <p class="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
-                No hay registros asociados a <strong id="empty-query" class="text-[#F58830]"></strong>. Verifica que la cédula o correo sean correctos.
-            </p>
-            <a href="{% url 'public:home' %}" class="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-[#162054] dark:bg-[#F58830] hover:opacity-90 rounded-xl transition-all shadow-lg uppercase tracking-wider">
-                <i class="fa-solid fa-rotate-left"></i>
-                Intentar otra búsqueda
-            </a>
         </div>
 
-        <!-- Error state -->
-        <div id="error-state" class="hidden max-w-xl mx-auto text-center py-16">
+        {# Error state #}
+        <div id="error-state" class="hidden text-center py-16 max-w-xl mx-auto">
             <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
-            <p class="text-gray-500 dark:text-gray-400 mb-4">Hubo un error al buscar. <a href="" class="underline text-[#F58830]">Reintentar</a></p>
+            <p class="text-gray-500 dark:text-gray-400">Hubo un error al buscar. <a href="" class="underline text-[#F58830]">Reintentar</a></p>
         </div>
     </div>
 </div>
 
 <script>
-const FACULTY_COLORS = {
-    'FACI':     { bar: '#0071CE', bg: 'rgba(0, 113, 206, 0.12)',  text: '#0071CE' },
-    'FACS':     { bar: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981' },
-    'FACE':     { bar: '#EC4899', bg: 'rgba(236, 72, 153, 0.12)', text: '#EC4899' },
-    'FACSECYD': { bar: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)', text: '#8B5CF6' },
-    'POSGRADO': { bar: '#FF9100', bg: 'rgba(255, 145, 0, 0.12)',  text: '#FF9100' }
-};
-
-const DOWNLOAD_URL_BASE = '/api/v1/public/certificates';
-const ZIP_URL_BASE = '/api/v1/public/certificates/bulk-download/';
-
-function esc(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    }[c]));
-}
-
-function formatDate(iso) {
-    if (!iso) return '';
-    try {
-        const d = new Date(iso);
-        if (isNaN(d)) return iso;
-        return d.toLocaleDateString('es-EC', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch { return iso; }
-}
-
-function renderCertCard(cert) {
-    const fac = (cert.lote_facultad || '').toUpperCase();
-    const colors = FACULTY_COLORS[fac] || { bar: '#F58830', bg: 'rgba(245, 136, 48, 0.12)', text: '#F58830' };
-    const facDisplay = cert.lote_facultad_display || 'General';
-    const fecha = formatDate(cert.fecha_curso || cert.created_at);
-    const hashShort = (cert.hash_verificacion || '').slice(0, 6);
-
-    return `
-    <div class="bg-white dark:bg-[#162054] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-[#F58830]">
-        <div class="h-1.5 w-full" style="background: ${colors.bar}"></div>
-        <div class="p-5 flex-1 flex flex-col">
-            <div class="flex items-start justify-between gap-3 mb-4">
-                <span class="text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider" style="background: ${colors.bg}; color: ${colors.text}">
-                    ${esc(facDisplay)}
-                </span>
-                <span class="text-[10px] text-gray-400 font-mono">#${esc(hashShort)}</span>
-            </div>
-
-            <h3 class="font-extrabold text-gray-900 dark:text-white text-base leading-snug line-clamp-2 mb-4" title="${esc(cert.lote_nombre || cert.curso)}">
-                ${esc(cert.lote_nombre || cert.curso)}
-            </h3>
-
-            <div class="space-y-2 mb-5 flex-1">
-                <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
-                    <i class="fa-solid fa-user w-4 text-center text-[#F58830] mr-2"></i>
-                    <span class="font-medium truncate">${esc(cert.nombres)} ${esc(cert.apellidos)}</span>
-                </div>
-                <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
-                    <i class="fa-regular fa-calendar w-4 text-center text-[#F58830] mr-2"></i>
-                    <span>${esc(fecha)}</span>
-                </div>
-                ${cert.horas ? `
-                <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
-                    <i class="fa-regular fa-clock w-4 text-center text-[#F58830] mr-2"></i>
-                    <span>${cert.horas} horas académicas</span>
-                </div>` : ''}
-            </div>
-
-            <a href="${DOWNLOAD_URL_BASE}/${esc(cert.hash_verificacion)}/download/" target="_blank"
-                class="w-full bg-[#162054] hover:bg-[#0d1740] dark:bg-[#F58830] dark:hover:bg-[#e07820] text-white text-xs font-bold py-3 px-4 rounded-xl text-center transition-colors flex items-center justify-center gap-2 uppercase tracking-wider shadow-md">
-                <i class="fa-solid fa-download"></i>
-                Descargar PDF
-            </a>
-        </div>
-    </div>`;
-}
-
-(async function runSearch() {
-    const params = new URLSearchParams(window.location.search);
-    const query = (params.get('q') || '').trim();
-
-    // Update back link to preserve query
-    if (query) {
-        document.getElementById('back-link').href = `{% url "public:home" %}?q=${encodeURIComponent(query)}`;
-    }
-
-    const loading = document.getElementById('loading-state');
-    const header = document.getElementById('results-header');
-    const grid = document.getElementById('results-grid');
-    const empty = document.getElementById('empty-state');
-    const err = document.getElementById('error-state');
-    const titleEl = document.getElementById('results-title');
-    const summaryEl = document.getElementById('results-summary');
-
-    if (!query) {
-        loading.classList.add('hidden');
-        empty.classList.remove('hidden');
-        document.getElementById('empty-query').textContent = '(consulta vacía)';
-        return;
-    }
-
-    try {
-        const res = await fetch(`/api/v1/public/certificates/?q=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        loading.classList.add('hidden');
-
-        const results = data.results || [];
-        const total = data.count || results.length;
-
-        if (total === 0) {
-            empty.classList.remove('hidden');
-            document.getElementById('empty-query').textContent = `"${query}"`;
-            return;
-        }
-
-        // Header
-        header.classList.remove('hidden');
-        const first = results[0];
-        const nombre = `${first.nombres} ${first.apellidos}`.trim();
-        titleEl.innerHTML = `Hola,<br><span class="text-[#F58830]">${esc(nombre)}</span>`;
-        summaryEl.innerHTML = `Encontramos <span class="inline-flex items-center justify-center min-w-[2rem] h-7 px-2 rounded-lg bg-[#F58830]/15 text-[#F58830] font-extrabold mx-1">${total}</span> certificado${total > 1 ? 's' : ''} asociado${total > 1 ? 's' : ''} a tu búsqueda.`;
-
-        // ZIP button
-        if (total > 1) {
-            const zipAction = document.getElementById('zip-action');
-            zipAction.classList.remove('hidden');
-            document.getElementById('zip-link').href = `${ZIP_URL_BASE}?q=${encodeURIComponent(query)}`;
-        }
-
-        // Cards
-        grid.classList.remove('hidden');
-        grid.innerHTML = results.map(renderCertCard).join('');
-    } catch (e) {
-        loading.classList.add('hidden');
-        err.classList.remove('hidden');
-        console.error(e);
-    }
-})();
+window.SEARCH_CONFIG = { homeUrl: "{% url 'public:home' %}" };
 </script>
+<script src="{% static 'js/search.js' %}"></script>
 {% endblock %}

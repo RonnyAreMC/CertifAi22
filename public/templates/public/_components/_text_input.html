@@ -1,0 +1,43 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · TextInput — input con label uppercase consistente.
+
+Args:
+    name        (str)  obligatorio · atributo name
+    label       (str)  obligatorio · texto del label
+    type        (str)  'text'(default)|'email'|'tel'|'number'|'password'|'date'|'time'|'url'
+    placeholder (str)  texto placeholder
+    value       (str)  valor inicial
+    required    (bool) marca requerido + asterisco rojo
+    inputmode   (str)  ej 'numeric'
+    maxlength   (int)
+    autocomplete (str) 'off' / etc
+    helper      (str)  texto de ayuda debajo
+    icon        (str)  FA class para icono dentro del input (sin "fa-solid")
+    id          (str)  default == name
+
+Uso:
+    {% include 'public/_components/_text_input.html' with
+        name='email' label='Email' type='email' required=True
+        placeholder='correo@ejemplo.com' icon='fa-envelope' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+<div>
+    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">
+        {{ label }}{% if required %} <span class="text-red-500">*</span>{% endif %}
+    </label>
+    <div class="relative">
+        {% if icon %}<i class="fa-solid {{ icon }} absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>{% endif %}
+        <input type="{{ type|default:'text' }}"
+               id="{{ id|default:name }}"
+               name="{{ name }}"
+               {% if value %}value="{{ value }}"{% endif %}
+               {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+               {% if required %}required{% endif %}
+               {% if inputmode %}inputmode="{{ inputmode }}"{% endif %}
+               {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+               {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+               class="w-full p-3 {% if icon %}pl-11{% endif %} rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] focus:ring-2 focus:ring-[#F58830]/20 transition-all">
+    </div>
+    {% if helper %}<p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{{ helper }}</p>{% endif %}
+</div>

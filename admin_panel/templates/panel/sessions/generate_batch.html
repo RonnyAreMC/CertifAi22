@@ -31,7 +31,7 @@
 
     <!-- Confirm Form -->
     <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-8">
-        <form method="POST" class="space-y-5">
+        <form id="genBatchForm" class="space-y-5" data-sesion-id="{{ sesion.id }}" data-no-loader>
             {% csrf_token %}
 
             <div>
@@ -48,11 +48,19 @@
             <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-blue-700 dark:text-blue-300 text-sm">
                 <i class="fa-solid fa-circle-info mr-2"></i>
                 Se creará un lote con <strong>{{ total_confirmados }} certificados</strong> y serás redirigido a la página de configuración (colores, firmas, plantilla).
+                Cada participante recibirá un correo notificando que su certificado está disponible.
             </div>
 
+            <div id="genBatchError" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm"></div>
+
             <div class="flex gap-3 pt-4">
-                <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all">
-                    <i class="fa-solid fa-certificate mr-1"></i> Generar Lote de Certificados
+                <button id="genBatchBtn" type="submit" class="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-wait text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                    <span class="btn-default flex items-center gap-2">
+                        <i class="fa-solid fa-certificate"></i> Generar Lote de Certificados
+                    </span>
+                    <span class="btn-loading hidden flex items-center gap-2">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Generando…
+                    </span>
                 </button>
                 <a href="{% url 'panel:session_list' %}" class="px-6 py-3 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-[#0F163A]/50 transition-all text-center">
                     Cancelar
@@ -61,4 +69,64 @@
         </form>
     </div>
 </div>
+
+<script>
+(function() {
+    const form     = document.getElementById('genBatchForm');
+    const btn      = document.getElementById('genBatchBtn');
+    const errorBox = document.getElementById('genBatchError');
+    const sesionId = form.dataset.sesionId;
+    const csrf     = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Defensa extra: el loader global del tigrillo escucha submits y se queda colgado
+        if (typeof hideLoader === 'function') hideLoader();
+
+        errorBox.classList.add('hidden');
+        btn.disabled = true;
+        btn.querySelector('.btn-default').classList.add('hidden');
+        btn.querySelector('.btn-loading').classList.remove('hidden');
+
+        const facultad = form.querySelector('[name=facultad]').value;
+
+        try {
+            const res = await fetch(`/api/v1/admin/sessions/${sesionId}/generate-batch/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf,
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ facultad: facultad }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                const msg = data.error || data.detail || `Error ${res.status} al generar el lote.`;
+                throw new Error(msg);
+            }
+
+            // Éxito → redirigir a configuración del lote
+            const loteId = data.lote_id;
+            const sent = data.correos_enviados || 0;
+            // Pequeño feedback antes del redirect
+            btn.querySelector('.btn-loading i').className = 'fa-solid fa-circle-check';
+            btn.querySelector('.btn-loading').innerHTML = `<i class="fa-solid fa-circle-check"></i> Lote creado · ${sent} correo${sent === 1 ? '' : 's'} enviado${sent === 1 ? '' : 's'}`;
+            setTimeout(() => {
+                window.location.href = `/panel/batches/${loteId}/configure/`;
+            }, 800);
+        } catch (err) {
+            errorBox.textContent = err.message || 'Error inesperado al generar el lote.';
+            errorBox.classList.remove('hidden');
+            btn.disabled = false;
+            btn.querySelector('.btn-default').classList.remove('hidden');
+            btn.querySelector('.btn-loading').classList.add('hidden');
+        }
+    });
+})();
+</script>
 {% endblock %}

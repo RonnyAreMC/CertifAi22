@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(.venv/Scripts/python.exe manage.py check)",
-      "Bash(curl -sL -o static/fonts/KaushanScript-Regular.ttf \"https://github.com/google/fonts/raw/main/ofl/kaushanscript/KaushanScript-Regular.ttf\")"
+      "Bash(curl -sL -o static/fonts/KaushanScript-Regular.ttf \"https://github.com/google/fonts/raw/main/ofl/kaushanscript/KaushanScript-Regular.ttf\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8001/)"
     ]
   }
 }

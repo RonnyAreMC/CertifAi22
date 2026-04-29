@@ -1,0 +1,87 @@
+{% extends 'public/account/_base.html' %}
+{% block page_title %}Mi perfil{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-5">
+
+    <div>
+        <p class="text-xs font-bold uppercase tracking-widest text-[var(--ds-brand)]">
+            <i class="fa-solid fa-user"></i> Mi perfil
+        </p>
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-1">Datos de cuenta</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Mantenenos al día — usamos esto para emitir tus certificados.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="lg-card rounded-3xl p-6 sm:p-8 space-y-5">
+        {% csrf_token %}
+
+        <!-- Avatar -->
+        <div class="flex items-center gap-4 pb-5 border-b border-slate-200 dark:border-white/10">
+            {% if p.avatar %}
+            <img src="{{ p.avatar.url }}" class="w-16 h-16 rounded-full object-cover ring-2 ring-white/70 dark:ring-white/10" alt="">
+            {% else %}
+            <span class="avatar-circle" style="width:64px;height:64px;font-size:1.5rem;">{{ p.initials }}</span>
+            {% endif %}
+            <div class="flex-1">
+                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ p.nombre_completo }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ p.email }}</p>
+                <label class="inline-flex mt-2 items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer
+                              bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-white/10
+                              text-slate-700 dark:text-slate-300 hover:text-[var(--ds-brand)] hover:border-[var(--ds-brand)]/40 transition-all">
+                    <i class="fa-solid fa-camera"></i> Cambiar foto
+                    <input type="file" name="avatar" accept="image/*" class="hidden">
+                </label>
+            </div>
+        </div>
+
+        <!-- Datos -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Nombres</label>
+                <input type="text" name="nombres" value="{{ p.nombres }}" required
+                       class="w-full mt-1 px-3 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Apellidos</label>
+                <input type="text" name="apellidos" value="{{ p.apellidos }}" required
+                       class="w-full mt-1 px-3 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Cédula</label>
+                <input type="text" name="cedula" value="{{ p.cedula }}"
+                       class="w-full mt-1 px-3 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Celular</label>
+                <input type="tel" name="celular" value="{{ p.celular }}"
+                       class="w-full mt-1 px-3 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Email</label>
+                <input type="email" value="{{ p.email }}" disabled
+                       class="w-full mt-1 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                <p class="text-[10px] text-slate-400 mt-1">El email no se puede cambiar.</p>
+            </div>
+        </div>
+
+        <!-- Cambiar contraseña -->
+        <div class="pt-4 border-t border-slate-200 dark:border-white/10">
+            <p class="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
+                <i class="fa-solid fa-lock"></i> Cambiar contraseña <span class="font-medium normal-case tracking-normal text-slate-400">(opcional)</span>
+            </p>
+            <input type="password" name="new_password" placeholder="Nueva contraseña (dejar vacío para no cambiar)" autocomplete="new-password"
+                   class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+            <a href="{% url 'public:account_dashboard' %}" class="lg-btn">
+                <i class="fa-solid fa-xmark"></i> Cancelar
+            </a>
+            <button type="submit" class="lg-btn lg-btn-prominent">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+            </button>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

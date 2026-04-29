@@ -40,8 +40,17 @@ CSRF_TRUSTED_ORIGINS = [
     f"https://{h}" for h in ALLOWED_HOSTS if h not in ('localhost', '127.0.0.1', '*')
 ]
 
-# Email Configuration
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+# Email — usamos la Gmail API de la cuenta institucional (Workspace).
+# Requiere haber autorizado el scope gmail.send en /panel/google/connect/.
+# Override con EMAIL_BACKEND en .env para tests (console / locmem / smtp).
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'core.services.email.backend.GmailAPIBackend')
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    f'CertifAI <{os.getenv("GOOGLE_OAUTH_EMAIL", "noreply@certifai.local")}>',
+)
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Mantenemos las vars SMTP por si quieres caer al backend SMTP de Django temporalmente
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
@@ -98,6 +107,9 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'admin_panel.context_processors.solicitudes_pendientes',
+                'admin_panel.context_processors.nav_menu',
+                'admin_panel.context_processors.design_tokens',
+                'public.context_processors.participante',
             ],
         },
     },
@@ -262,3 +274,18 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:19006',     # Expo web
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# ── Google OAuth (Meet + Calendar + Drive) ─────────────────────────
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_REDIRECT_URI = os.getenv('GOOGLE_REDIRECT_URI', 'http://localhost:8000/admin/google/callback/')
+GOOGLE_OAUTH_EMAIL = os.getenv('GOOGLE_OAUTH_EMAIL', '')
+GOOGLE_OAUTH_SCOPES = [
+    'https://www.googleapis.com/auth/calendar.events',
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/documents.readonly',
+    'https://www.googleapis.com/auth/gmail.send',  # enviar correos como la cuenta institucional
+    'https://www.googleapis.com/auth/userinfo.email',
+    'openid',
+]

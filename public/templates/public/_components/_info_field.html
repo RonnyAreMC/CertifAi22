@@ -1,0 +1,32 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · InfoField — campo de info con label uppercase + valor + icono.
+
+Args:
+    label    (str)  uppercase, ej: 'Fecha'
+    value    (str)  el valor a mostrar
+    icon     (str)  FA class (sin "fa-solid"), ej: 'fa-calendar-day'
+    color    (str)  color del icono: 'primary'(default)|'blue'|'emerald'|'purple'|'red'
+
+Uso:
+    {% include 'public/_components/_info_field.html' with
+        icon='fa-calendar-day' label='Fecha' value='Lunes 27/04/2026' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+{% with c=color|default:'primary' %}
+<div class="flex items-start gap-2.5">
+    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0
+        {% if c == 'primary' %}bg-[#F58830]/15 text-[#F58830]
+        {% elif c == 'blue'    %}bg-blue-500/15 text-blue-500
+        {% elif c == 'emerald' %}bg-emerald-500/15 text-emerald-500
+        {% elif c == 'purple'  %}bg-purple-500/15 text-purple-500
+        {% elif c == 'red'     %}bg-red-500/15 text-red-500
+        {% else %}bg-gray-200/50 text-gray-500{% endif %}">
+        <i class="fa-solid {{ icon }} text-sm"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ label }}</p>
+        <p class="text-sm font-bold text-gray-800 dark:text-white break-words leading-tight">{{ value }}</p>
+    </div>
+</div>
+{% endwith %}

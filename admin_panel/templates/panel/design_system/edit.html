@@ -1,0 +1,266 @@
+{% extends 'panel/base.html' %}
+{% load static %}
+
+{% block page_title %}Design System{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+            <a href="{% url 'panel:dashboard' %}" class="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-[var(--ds-brand)] transition-colors mb-3">
+                <i class="fa-solid fa-arrow-left"></i> Volver al panel
+            </a>
+            <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                <i class="fa-solid fa-swatchbook text-[var(--ds-brand)] mr-2"></i> Design System
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Tokens del :root — colores, fuentes, radios, sombras y botones del panel.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <form action="{% url 'panel:design_system_reset' %}" method="post" onsubmit="return confirm('¿Restaurar todos los valores por defecto?')">
+                {% csrf_token %}
+                <button type="submit" class="lg-btn lg-btn-clear">
+                    <i class="fa-solid fa-rotate-left"></i> Restaurar por defecto
+                </button>
+            </form>
+            <button type="submit" form="ds-form" class="lg-btn lg-btn-prominent">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+            </button>
+        </div>
+    </div>
+
+    <form id="ds-form" method="post" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {% csrf_token %}
+
+        <!-- ═══════ COLUMNA EDITOR (col-span-2) ═══════ -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- ─── Branding ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-droplet text-[var(--ds-brand)]"></i> Branding
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {% include 'panel/design_system/_color_field.html' with name='color_brand' label='Brand' value=tokens.color_brand %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_brand_dark' label='Brand Dark' value=tokens.color_brand_dark %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_accent' label='Acento' value=tokens.color_accent %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Superficies ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-blue-500"></i> Superficies
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {% include 'panel/design_system/_color_field.html' with name='color_bg_dark' label='Fondo (oscuro)' value=tokens.color_bg_dark %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_bg_light' label='Fondo (claro)' value=tokens.color_bg_light %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_card_dark' label='Card (oscuro)' value=tokens.color_card_dark %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_card_light' label='Card (claro)' value=tokens.color_card_light %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Texto ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-font text-purple-500"></i> Texto
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {% include 'panel/design_system/_color_field.html' with name='color_text_dark' label='Principal (oscuro)' value=tokens.color_text_dark %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_text_light' label='Principal (claro)' value=tokens.color_text_light %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_text_muted_dark' label='Atenuado (oscuro)' value=tokens.color_text_muted_dark %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_text_muted_light' label='Atenuado (claro)' value=tokens.color_text_muted_light %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Estado ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-traffic-light text-amber-500"></i> Estado
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {% include 'panel/design_system/_color_field.html' with name='color_success' label='Éxito' value=tokens.color_success %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_danger' label='Peligro' value=tokens.color_danger %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_warning' label='Aviso' value=tokens.color_warning %}
+                    {% include 'panel/design_system/_color_field.html' with name='color_info' label='Info' value=tokens.color_info %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Tipografía ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-text-height text-pink-500"></i> Tipografía
+                </h2>
+                <div class="space-y-3">
+                    {% include 'panel/design_system/_text_field.html' with name='font_sans' label='Sans-serif (UI)' value=tokens.font_sans hint="Stack CSS para texto general" %}
+                    {% include 'panel/design_system/_text_field.html' with name='font_display' label='Display (títulos/branding)' value=tokens.font_display hint="Stack CSS para títulos" %}
+                    {% include 'panel/design_system/_text_field.html' with name='font_mono' label='Monoespaciada' value=tokens.font_mono hint="Stack CSS para códigos / IDs" %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Geometría ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-square-rounded text-emerald-500"></i> Geometría
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {% include 'panel/design_system/_text_field.html' with name='radius_sm' label='Radio sm' value=tokens.radius_sm %}
+                    {% include 'panel/design_system/_text_field.html' with name='radius_md' label='Radio md' value=tokens.radius_md %}
+                    {% include 'panel/design_system/_text_field.html' with name='radius_lg' label='Radio lg' value=tokens.radius_lg %}
+                    {% include 'panel/design_system/_text_field.html' with name='radius_xl' label='Radio xl' value=tokens.radius_xl %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Botones (Liquid Glass) ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-half-stroke text-cyan-500"></i> Botones — Liquid Glass
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {% include 'panel/design_system/_text_field.html' with name='btn_blur' label='backdrop-blur' value=tokens.btn_blur %}
+                    {% include 'panel/design_system/_text_field.html' with name='btn_saturate' label='backdrop-saturate' value=tokens.btn_saturate %}
+                    {% include 'panel/design_system/_text_field.html' with name='btn_glass_opacity_dark' label='Opacidad (oscuro)' value=tokens.btn_glass_opacity_dark type='number' step='0.01' %}
+                    {% include 'panel/design_system/_text_field.html' with name='btn_glass_opacity_light' label='Opacidad (claro)' value=tokens.btn_glass_opacity_light type='number' step='0.01' %}
+                </div>
+                </div>
+            </section>
+
+            <!-- ─── Sombras ─── -->
+            <section class="lg-card relative overflow-hidden rounded-3xl p-6">
+                <div class="relative z-10">
+                <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-moon text-slate-500"></i> Sombras
+                </h2>
+                <div class="space-y-3">
+                    {% include 'panel/design_system/_text_field.html' with name='shadow_card' label='Card (oscuro)' value=tokens.shadow_card hint="box-shadow CSS" %}
+                    {% include 'panel/design_system/_text_field.html' with name='shadow_card_light' label='Card (claro)' value=tokens.shadow_card_light hint="box-shadow CSS" %}
+                </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ═══════ COLUMNA PREVIEW (col-span-1, sticky) ═══════ -->
+        <aside class="lg:col-span-1">
+            <div class="sticky top-24 space-y-4">
+                <div class="lg-card relative overflow-hidden rounded-3xl p-6">
+                    <div class="relative z-10">
+                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-eye text-[var(--ds-brand)]"></i> Preview en vivo
+                    </h2>
+
+                    <!-- Tipografía -->
+                    <div class="mb-5 pb-5 border-b border-slate-200 dark:border-white/10">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Tipografía</p>
+                        <p class="ds-display text-2xl font-bold text-slate-900 dark:text-white">Display: CertifAI</p>
+                        <p class="text-base text-slate-700 dark:text-slate-200 mt-1">Sans: el renacuajo come pollo</p>
+                        <p class="ds-mono text-xs text-slate-500 dark:text-slate-400 mt-1">mono: const x = 42;</p>
+                    </div>
+
+                    <!-- Color brand -->
+                    <div class="mb-5 pb-5 border-b border-slate-200 dark:border-white/10">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Brand</p>
+                        <div class="flex gap-2">
+                            <div class="flex-1 h-12 rounded-lg" style="background: var(--ds-brand);"></div>
+                            <div class="flex-1 h-12 rounded-lg" style="background: var(--ds-brand-dark);"></div>
+                            <div class="flex-1 h-12 rounded-lg" style="background: var(--ds-accent);"></div>
+                        </div>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="mb-5 pb-5 border-b border-slate-200 dark:border-white/10">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Estado</p>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div class="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white" style="background: var(--ds-success);">OK</div>
+                            <div class="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white" style="background: var(--ds-danger);">ERR</div>
+                            <div class="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white" style="background: var(--ds-warning);">WARN</div>
+                            <div class="h-9 rounded-lg flex items-center justify-center text-[10px] font-bold text-white" style="background: var(--ds-info);">INFO</div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="mb-5 pb-5 border-b border-slate-200 dark:border-white/10">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Botones</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="lg-btn lg-btn-prominent">
+                                <i class="fa-solid fa-bolt"></i> Prominent
+                            </button>
+                            <button type="button" class="lg-btn">
+                                <i class="fa-solid fa-pen"></i> Regular
+                            </button>
+                            <button type="button" class="lg-btn lg-btn-clear">
+                                <i class="fa-solid fa-eye"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Radios -->
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Radios</p>
+                        <div class="flex gap-2 items-end">
+                            <div class="w-12 h-12 bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[9px]" style="border-radius: var(--ds-radius-sm);">sm</div>
+                            <div class="w-12 h-12 bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[9px]" style="border-radius: var(--ds-radius-md);">md</div>
+                            <div class="w-12 h-12 bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[9px]" style="border-radius: var(--ds-radius-lg);">lg</div>
+                            <div class="w-12 h-12 bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[9px]" style="border-radius: var(--ds-radius-xl);">xl</div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed text-center px-2">
+                    <i class="fa-solid fa-circle-info text-[var(--ds-brand)]"></i>
+                    Los cambios se aplican a todo el panel al guardar y recargar (Ctrl+Shift+R).
+                </p>
+            </div>
+        </aside>
+
+    </form>
+</div>
+
+<script>
+// Live preview: cuando el user cambia un color con type=color, refrescar la swatch contigua y la CSS var asociada
+document.addEventListener('DOMContentLoaded', () => {
+    const tokenToVar = {
+        color_brand: '--ds-brand', color_brand_dark: '--ds-brand-dark', color_accent: '--ds-accent',
+        color_bg_dark: '--ds-bg-dark', color_bg_light: '--ds-bg-light',
+        color_card_dark: '--ds-card-dark', color_card_light: '--ds-card-light',
+        color_text_dark: '--ds-text-dark', color_text_light: '--ds-text-light',
+        color_text_muted_dark: '--ds-text-muted-dark', color_text_muted_light: '--ds-text-muted-light',
+        color_success: '--ds-success', color_danger: '--ds-danger',
+        color_warning: '--ds-warning', color_info: '--ds-info',
+    };
+    document.querySelectorAll('input[type=color]').forEach(input => {
+        input.addEventListener('input', e => {
+            const cssVar = tokenToVar[e.target.name];
+            if (cssVar) document.documentElement.style.setProperty(cssVar, e.target.value);
+            // sync hex text input
+            const hex = document.querySelector(`input[name=${e.target.name}_hex]`);
+            if (hex) hex.value = e.target.value.toUpperCase();
+        });
+    });
+    document.querySelectorAll('input[data-hex-mirror]').forEach(input => {
+        input.addEventListener('input', e => {
+            const target = document.querySelector(`input[type=color][name=${e.target.dataset.hexMirror}]`);
+            if (target && /^#[0-9a-f]{6}$/i.test(e.target.value)) {
+                target.value = e.target.value;
+                target.dispatchEvent(new Event('input'));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

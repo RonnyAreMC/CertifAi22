@@ -1,0 +1,36 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · SectionHeader — encabezado de sección con título + subtítulo.
+
+Args:
+    eyebrow  (str)  texto pequeño naranja arriba del título (opcional)
+    title    (str)  título principal (obligatorio)
+    subtitle (str)  descripción debajo (opcional)
+    align    (str)  'left'|'center'  default 'center'
+    size     (str)  'sm'|'md'|'lg'   default 'md'
+
+Uso:
+    {% include 'public/_components/_section_header.html' with
+        eyebrow='Eventos próximos' title='Eventos disponibles'
+        subtitle='Inscríbete en los próximos seminarios.' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+{% with a=align|default:'center' s=size|default:'md' %}
+<div class="{% if a == 'center' %}text-center{% endif %} mb-8">
+    {% if eyebrow %}
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#F58830]/10 text-[#F58830] uppercase tracking-wider mb-3">
+        <i class="fa-solid fa-calendar-day text-[10px]"></i>
+        {{ eyebrow }}
+    </span>
+    {% endif %}
+    <h2 class="font-black text-gray-900 dark:text-white tracking-tight
+        {% if s == 'sm' %}text-2xl{% elif s == 'lg' %}text-4xl md:text-5xl{% else %}text-3xl md:text-4xl{% endif %}">
+        {{ title }}
+    </h2>
+    {% if subtitle %}
+    <p class="text-gray-500 dark:text-gray-400 mt-2 max-w-2xl {% if a == 'center' %}mx-auto{% endif %} leading-relaxed">
+        {{ subtitle }}
+    </p>
+    {% endif %}
+</div>
+{% endwith %}

@@ -18,7 +18,7 @@ class PublicSesionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SesionAsistencia.objects.active().select_related('lote')
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['modalidad', 'solo_lideres']
+    filterset_fields = ['modalidad']
     search_fields = ['titulo', 'descripcion', 'lugar']
     ordering_fields = ['fecha', 'hora_inicio']
     ordering = ['fecha', 'hora_inicio']

@@ -1,0 +1,115 @@
+{% extends 'public/account/_base.html' %}
+{% block page_title %}Mis certificados{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-[var(--ds-brand)]">
+                <i class="fa-solid fa-certificate"></i> Mis certificados
+            </p>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
+                {{ total }} certificado{{ total|pluralize:"s" }}
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Descargá, verificá o compartí cualquier certificado.</p>
+        </div>
+
+        <form method="get" class="relative w-full sm:w-72">
+            <input type="text" name="q" placeholder="Buscar por curso o lote…"
+                   value="{{ q }}"
+                   class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/70 dark:bg-white/5
+                          border border-slate-200 dark:border-white/10
+                          text-sm text-slate-900 dark:text-white placeholder-slate-400
+                          focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20
+                          backdrop-blur-md transition-all">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        </form>
+    </div>
+
+    <!-- Lista -->
+    {% if certificados %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for c in certificados %}
+        <div class="lg-card rounded-2xl overflow-hidden flex flex-col group">
+            <!-- Hero -->
+            <div class="relative h-28 rounded-t-2xl overflow-hidden bg-gradient-to-br from-[var(--ds-brand)] via-[#E8721C] to-[var(--ds-brand-dark)] flex items-center justify-center">
+                <div class="absolute inset-0 opacity-15" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;"></div>
+                <i class="fa-solid fa-certificate text-white/40 text-5xl relative"></i>
+                <span class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/85 dark:bg-black/40 text-slate-900 dark:text-white backdrop-blur-md ring-1 ring-white/60">
+                    {{ c.horas }}h
+                </span>
+            </div>
+
+            <!-- Body -->
+            <div class="p-4 flex-1 flex flex-col">
+                <h3 class="font-black text-sm text-slate-900 dark:text-white leading-snug line-clamp-2 mb-1.5"
+                    style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                    {{ c.curso }}
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    <i class="fa-solid fa-calendar-day text-[var(--ds-brand)] mr-1"></i>{{ c.fecha_curso|date:"d M Y" }}
+                </p>
+                {% if c.lote %}
+                <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 truncate">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i>{{ c.lote.nombre_lote|truncatechars:42 }}
+                </p>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="mt-auto pt-3.5 flex items-center gap-1.5">
+                    <a href="/api/v1/public/certificates/{{ c.hash_verificacion }}/download/" target="_blank"
+                       class="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold
+                              bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)] text-white
+                              shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_14px_-4px_rgba(245,136,48,0.40)]
+                              hover:brightness-110 transition-all"
+                       data-tip="Descargar PDF">
+                        <i class="fa-solid fa-download"></i> Descargar
+                    </a>
+                    <a href="{% url 'public:verify_certificate' c.hash_verificacion %}"
+                       class="w-9 h-9 inline-flex items-center justify-center rounded-xl text-xs
+                              bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-white/10
+                              text-slate-600 dark:text-slate-300
+                              hover:text-[var(--ds-brand)] hover:border-[var(--ds-brand)]/40 transition-all"
+                       data-tip="Verificar autenticidad" data-tip-pos="left">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </a>
+                    <button onclick="navigator.clipboard.writeText(window.location.origin + '{% url 'public:verify_certificate' c.hash_verificacion %}'); this.querySelector('i').className='fa-solid fa-check'; setTimeout(()=>this.querySelector('i').className='fa-solid fa-share-nodes', 1500)"
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-xl text-xs
+                                   bg-white/70 dark:bg-white/5 border border-slate-200 dark:border-white/10
+                                   text-slate-600 dark:text-slate-300
+                                   hover:text-[var(--ds-brand)] hover:border-[var(--ds-brand)]/40 transition-all"
+                            data-tip="Copiar link público" data-tip-pos="left">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="lg-card rounded-3xl p-12 text-center">
+        {% if q %}
+        <i class="fa-solid fa-magnifying-glass text-4xl text-slate-300 dark:text-slate-600 mb-3"></i>
+        <h3 class="text-base font-bold text-slate-700 dark:text-slate-300">Sin resultados para "{{ q }}"</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Probá con otra palabra clave.</p>
+        <a href="{% url 'public:account_certificados' %}" class="inline-flex mt-4 items-center gap-1.5 text-xs font-bold text-[var(--ds-brand)] hover:underline">
+            <i class="fa-solid fa-rotate-left"></i> Limpiar búsqueda
+        </a>
+        {% else %}
+        <i class="fa-solid fa-certificate text-5xl text-slate-300 dark:text-slate-600 mb-3"></i>
+        <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300">Aún no tenés certificados</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Cuando completes un evento, los certificados aparecerán acá.</p>
+        <a href="{% url 'public:account_eventos' %}?tab=disponibles" class="inline-flex mt-4 items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold
+                bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)] text-white
+                shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_14px_-4px_rgba(245,136,48,0.40)]
+                hover:brightness-110 transition-all">
+            <i class="fa-solid fa-compass"></i> Explorar eventos
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

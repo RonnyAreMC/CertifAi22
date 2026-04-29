@@ -1,0 +1,471 @@
+{% comment %}
+COMPONENT · Modal global de detalles de evento.
+Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
+{% endcomment %}
+<div id="evModal" class="ev-modal hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="evModalTitle">
+    <div class="ev-modal-backdrop" data-ev-close></div>
+
+    <div class="ev-modal-card nm-card" role="document">
+        <!-- Botón cerrar (top-right) -->
+        <button type="button" class="ev-modal-close" data-ev-close aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="ev-modal-scroll">
+
+            <!-- Hero (banner/gradiente) -->
+            <div class="ev-modal-hero" id="evModalHero">
+                <div class="ev-modal-hero-fallback" id="evModalHeroFallback">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <img id="evModalBanner" src="" alt="" class="ev-modal-banner hidden">
+                <div class="ev-modal-hero-overlay"></div>
+
+                <div class="ev-modal-hero-pills">
+                    <span id="evModalStatus" class="ev-modal-pill ev-modal-pill-status hidden"></span>
+                    <span id="evModalModality" class="ev-modal-pill ev-modal-pill-modality"></span>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="ev-modal-body">
+                <h2 id="evModalTitle" class="ds-display"></h2>
+
+                <!-- Meta key/value -->
+                <div class="ev-modal-meta">
+                    <div class="ev-modal-meta-row">
+                        <span class="ev-modal-meta-key"><i class="fa-solid fa-calendar-day"></i> Fecha</span>
+                        <span class="ev-modal-meta-val" id="evModalDate">—</span>
+                    </div>
+                    <div class="ev-modal-meta-row">
+                        <span class="ev-modal-meta-key"><i class="fa-solid fa-clock"></i> Horario</span>
+                        <span class="ev-modal-meta-val ds-mono" id="evModalTime">—</span>
+                    </div>
+                    <div class="ev-modal-meta-row" id="evModalLocationRow">
+                        <span class="ev-modal-meta-key" id="evModalLocationLbl"><i class="fa-solid fa-location-dot"></i> Lugar</span>
+                        <span class="ev-modal-meta-val" id="evModalLocation">—</span>
+                    </div>
+                </div>
+
+                <!-- Ponentes -->
+                <div id="evModalPonentesBlock" class="ev-modal-section hidden">
+                    <p class="ev-modal-eyebrow">Ponente<span id="evModalPonentesPlural">s</span></p>
+                    <div class="ev-modal-ponentes" id="evModalPonentes"></div>
+                </div>
+
+                <!-- Descripción -->
+                <div id="evModalDescBlock" class="ev-modal-section hidden">
+                    <p class="ev-modal-eyebrow">Sobre el evento</p>
+                    <div id="evModalDesc" class="ev-modal-desc-content"></div>
+                </div>
+
+                <!-- CTAs -->
+                <div class="ev-modal-actions" id="evModalActions">
+                    <a id="evModalMeetBtn" href="#" target="_blank" rel="noopener" class="nm-btn nm-btn-primary hidden">
+                        <i class="fa-solid fa-video"></i> Entrar a la reunión
+                    </a>
+                    <form id="evModalInscribirForm" action="" method="post" class="hidden" style="flex:1;margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nm-btn nm-btn-primary">
+                            <i class="fa-solid fa-bookmark"></i> Inscribirme
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ev-modal { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .ev-modal.hidden { display: none; }
+    .ev-modal-backdrop {
+        position: absolute; inset: 0;
+        background: rgba(10, 21, 53, 0.65);
+        backdrop-filter: blur(8px);
+        animation: ev-fade-in .25s ease;
+    }
+    .ev-modal-card {
+        position: relative;
+        width: 100%; max-width: 580px;
+        max-height: calc(100vh - 32px);
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        animation: ev-pop-in .35s cubic-bezier(.34,1.56,.64,1);
+        border-radius: 24px;
+    }
+    @keyframes ev-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes ev-pop-in {
+        from { opacity: 0; transform: translateY(20px) scale(0.96); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .ev-modal-scroll {
+        overflow-y: auto;
+        max-height: calc(100vh - 32px);
+        scrollbar-width: thin;
+    }
+    .ev-modal-scroll::-webkit-scrollbar { width: 8px; }
+    .ev-modal-scroll::-webkit-scrollbar-track { background: transparent; }
+    .ev-modal-scroll::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.15); border-radius: 4px; }
+    .dark .ev-modal-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+
+    /* Botón cerrar (top-right, icon only) */
+    .ev-modal-close {
+        position: absolute; top: 14px; right: 14px;
+        z-index: 10;
+        width: 36px; height: 36px;
+        border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.92); color: #0f172a;
+        border: 1px solid rgba(15,23,42,0.10);
+        backdrop-filter: blur(20px);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 4px 12px -4px rgba(15,23,42,0.20);
+        transition: all .2s;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .ev-modal-close:hover { transform: scale(1.05); background: white; }
+
+    /* Hero */
+    .ev-modal-hero {
+        position: relative;
+        height: 180px;
+        overflow: hidden;
+    }
+    .ev-modal-hero-fallback {
+        position: absolute; inset: 0;
+        background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,0.4); font-size: 64px;
+    }
+    .ev-modal-card.is-virtual .ev-modal-hero-fallback {
+        background: linear-gradient(135deg, #3B82F6, #1E40AF);
+    }
+    .ev-modal-banner {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+    .ev-modal-hero-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.55) 100%);
+    }
+    .ev-modal-hero-pills {
+        position: absolute; left: 0; right: 0; bottom: 14px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 18px;
+    }
+    .ev-modal-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 11px; font-weight: 800;
+        backdrop-filter: blur(12px);
+    }
+    .ev-modal-pill-status {
+        background: rgba(255,255,255,0.92); color: #0f172a;
+        border: 1px solid rgba(255,255,255,0.6);
+    }
+    .ev-modal-pill-modality {
+        color: white;
+        background: rgba(0,0,0,0.45);
+        border: 1px solid rgba(255,255,255,0.30);
+        margin-left: auto;
+    }
+
+    /* Body */
+    .ev-modal-body {
+        padding: 24px 28px 28px;
+    }
+    .ev-modal-body h2 {
+        font-size: 24px; line-height: 1.2; font-weight: 800;
+        letter-spacing: -0.4px;
+        color: #0f172a;
+        margin: 0 0 18px;
+    }
+    .dark .ev-modal-body h2 { color: #fff; }
+
+    /* Meta key/value rows */
+    .ev-modal-meta {
+        border-top: 1px solid rgba(15,23,42,0.06);
+    }
+    .dark .ev-modal-meta { border-top-color: rgba(255,255,255,0.06); }
+    .ev-modal-meta-row {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(15,23,42,0.06);
+        font-size: 13px;
+    }
+    .dark .ev-modal-meta-row { border-bottom-color: rgba(255,255,255,0.06); }
+    .ev-modal-meta-key {
+        color: #64748b; font-weight: 500;
+        display: inline-flex; align-items: center; gap: 8px;
+        flex-shrink: 0;
+    }
+    .dark .ev-modal-meta-key { color: #94a3b8; }
+    .ev-modal-meta-key i { color: var(--ds-brand); font-size: 12px; width: 14px; text-align: center; }
+    .ev-modal-meta-key .meet-key-icon { display: inline-flex; align-items: center; width: 18px; }
+    .ev-modal-meta-val { color: #0f172a; font-weight: 600; text-align: right; }
+    .dark .ev-modal-meta-val { color: #fff; }
+    .ev-modal-meta-val a { color: var(--ds-brand); text-decoration: none; }
+
+    /* Sections */
+    .ev-modal-section { margin-top: 20px; }
+    .ev-modal-eyebrow {
+        font-size: 10px; font-weight: 800; letter-spacing: 0.10em;
+        text-transform: uppercase; color: #94a3b8; margin: 0 0 10px;
+    }
+
+    /* Ponentes */
+    .ev-modal-ponentes {
+        display: grid;
+        gap: 10px;
+    }
+    .ev-modal-ponente {
+        display: flex; align-items: flex-start; gap: 12px;
+        padding: 12px 14px;
+        background: rgba(15,23,42,0.03);
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 14px;
+    }
+    .dark .ev-modal-ponente {
+        background: rgba(255,255,255,0.03);
+        border-color: rgba(255,255,255,0.08);
+    }
+    .ev-modal-ponente-avatar {
+        flex-shrink: 0;
+        width: 38px; height: 38px;
+        border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+        color: white;
+        font-weight: 800; font-size: 13px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 10px -3px rgba(245,136,48,0.40);
+    }
+    .ev-modal-ponente-name { font-weight: 700; font-size: 13px; color: #0f172a; line-height: 1.3; }
+    .dark .ev-modal-ponente-name { color: #fff; }
+    .ev-modal-ponente-meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .dark .ev-modal-ponente-meta { color: #94a3b8; }
+    .ev-modal-ponente-bio { font-size: 12px; color: #475569; line-height: 1.5; margin-top: 6px; }
+    .dark .ev-modal-ponente-bio { color: #cbd5e1; }
+
+    /* Descripción HTML rendering */
+    .ev-modal-desc-content {
+        font-size: 14px; line-height: 1.65; color: #475569;
+        background: rgba(15,23,42,0.03);
+        border: 1px solid rgba(15,23,42,0.06);
+        border-radius: 14px;
+        padding: 16px 18px;
+    }
+    .dark .ev-modal-desc-content {
+        background: rgba(255,255,255,0.03);
+        border-color: rgba(255,255,255,0.08);
+        color: #cbd5e1;
+    }
+    .ev-modal-desc-content :first-child { margin-top: 0; }
+    .ev-modal-desc-content :last-child { margin-bottom: 0; }
+    .ev-modal-desc-content p { margin: 0 0 10px; }
+    .ev-modal-desc-content h2 {
+        font-size: 14px !important; line-height: 1.3 !important;
+        font-weight: 800 !important;
+        letter-spacing: 0;
+        color: #0f172a !important;
+        margin: 16px 0 8px !important;
+        text-transform: none !important;
+    }
+    .dark .ev-modal-desc-content h2 { color: #fff !important; }
+    .ev-modal-desc-content h3 { font-size: 13px; font-weight: 700; color: #0f172a; margin: 14px 0 6px; }
+    .dark .ev-modal-desc-content h3 { color: #fff; }
+    .ev-modal-desc-content ul, .ev-modal-desc-content ol { padding-left: 22px; margin: 8px 0; }
+    .ev-modal-desc-content li { margin-bottom: 4px; }
+    .ev-modal-desc-content strong { color: #0f172a; font-weight: 700; }
+    .dark .ev-modal-desc-content strong { color: #fff; }
+    .ev-modal-desc-content a { color: var(--ds-brand); text-decoration: underline; }
+
+    /* Actions */
+    .ev-modal-actions {
+        display: flex; gap: 8px; flex-wrap: wrap;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(15,23,42,0.06);
+    }
+    .dark .ev-modal-actions { border-top-color: rgba(255,255,255,0.06); }
+    /* Si no hay CTAs visibles, oculta el separador */
+    .ev-modal-actions:not(:has(> :not(.hidden))) {
+        display: none;
+    }
+    .ev-modal-actions .nm-btn { width: auto; flex: 1; min-width: 0; }
+</style>
+
+<script>
+(function() {
+    const modal = document.getElementById('evModal');
+    if (!modal) return;
+    const card     = modal.querySelector('.ev-modal-card');
+    const titleEl  = document.getElementById('evModalTitle');
+    const descBox  = document.getElementById('evModalDescBlock');
+    const descEl   = document.getElementById('evModalDesc');
+    const ponBox   = document.getElementById('evModalPonentesBlock');
+    const ponList  = document.getElementById('evModalPonentes');
+    const ponPlur  = document.getElementById('evModalPonentesPlural');
+    const dateEl   = document.getElementById('evModalDate');
+    const timeEl   = document.getElementById('evModalTime');
+    const locRow   = document.getElementById('evModalLocationRow');
+    const locLbl   = document.getElementById('evModalLocationLbl');
+    const locVal   = document.getElementById('evModalLocation');
+    const banner   = document.getElementById('evModalBanner');
+    const heroFb   = document.getElementById('evModalHeroFallback');
+    const statusP  = document.getElementById('evModalStatus');
+    const modalP   = document.getElementById('evModalModality');
+    const meetBtn  = document.getElementById('evModalMeetBtn');
+    const inscForm = document.getElementById('evModalInscribirForm');
+
+    function close() {
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+    modal.querySelectorAll('[data-ev-close]').forEach(el => el.addEventListener('click', close));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) close();
+    });
+
+    function initials(name) {
+        return (name || '').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+    }
+    function escapeHtml(s) {
+        return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    window.openEventModal = function(trigger) {
+        const d = trigger.dataset;
+        const isVirtual = d.evVirtual === '1';
+        card.classList.toggle('is-virtual', isVirtual);
+
+        titleEl.textContent = d.evTitle || '';
+
+        // Descripción — render como HTML real (viene de CKEditor admin)
+        if (d.evDesc && d.evDesc.trim()) {
+            descEl.innerHTML = d.evDesc;
+            descBox.classList.remove('hidden');
+        } else {
+            descBox.classList.add('hidden');
+        }
+
+        // Ponentes
+        let ponentes = [];
+        try { ponentes = JSON.parse(d.evPonentes || '[]'); } catch(e) { ponentes = []; }
+        if (ponentes.length > 0) {
+            ponPlur.style.display = ponentes.length === 1 ? 'none' : '';
+            ponList.innerHTML = ponentes.map(p => {
+                const meta = [p.titulo, p.afiliacion].filter(Boolean).join(' · ');
+                return `
+                    <div class="ev-modal-ponente">
+                        <div class="ev-modal-ponente-avatar">${escapeHtml(initials(p.nombre))}</div>
+                        <div style="flex:1;min-width:0;">
+                            <p class="ev-modal-ponente-name">${escapeHtml(p.nombre)}</p>
+                            ${meta ? `<p class="ev-modal-ponente-meta">${escapeHtml(meta)}</p>` : ''}
+                            ${p.bio ? `<p class="ev-modal-ponente-bio">${escapeHtml(p.bio)}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            ponBox.classList.remove('hidden');
+        } else {
+            ponBox.classList.add('hidden');
+        }
+
+        // Fecha + horario
+        dateEl.textContent = d.evDate || '';
+        timeEl.textContent = `${d.evTimeStart || '--:--'} – ${d.evTimeEnd || '--:--'}`;
+
+        // Lugar / plataforma
+        const meetSvg = `<svg viewBox="0 0 87.5 72" width="18" height="15" style="display:inline-block;vertical-align:-3px;flex-shrink:0;" aria-hidden="true">
+            <path fill="#00832d" d="M49.5 36l8.53 9.75 11.47 7.33 2-17.02-2-16.64-11.69 6.44z"/>
+            <path fill="#0066da" d="M0 51.5V66c0 3.315 2.685 6 6 6h14.5l3-10.96-3-9.54-9.95-3z"/>
+            <path fill="#e94235" d="M20.5 0L0 20.5l10.55 3 9.95-3 2.95-9.41z"/>
+            <path fill="#2684fc" d="M0 20.5h20.5v31H0z"/>
+            <path fill="#00ac47" d="M82.6 8.68L69.5 19.42v33.66l13.16 10.79c1.97 1.54 4.85.135 4.85-2.37V11c0-2.535-2.945-3.925-4.91-2.32zM49.5 36v15.5h-29V72h43c3.315 0 6-2.685 6-6V53.08z"/>
+            <path fill="#ffba00" d="M63.5 0h-43v20.5h29V36l20-.04V6c0-3.315-2.685-6-6-6z"/>
+        </svg>`;
+        if (isVirtual) {
+            locLbl.innerHTML = `<span class="meet-key-icon">${meetSvg}</span> Plataforma`;
+            const platformLabel = d.evPlatform || 'Google Meet';
+            if (d.evMeet) {
+                locVal.innerHTML = `<a href="${d.evMeet}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;">${meetSvg}<span>${platformLabel}</span><i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i></a>`;
+            } else {
+                locVal.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px;">${meetSvg}<span>${platformLabel}</span></span>`;
+            }
+            locRow.style.display = '';
+        } else if (d.evPlace) {
+            locLbl.innerHTML = '<i class="fa-solid fa-location-dot"></i> Lugar';
+            locVal.textContent = d.evPlace;
+            locRow.style.display = '';
+        } else {
+            locRow.style.display = 'none';
+        }
+
+        // Banner
+        if (d.evBanner) {
+            banner.src = d.evBanner;
+            banner.classList.remove('hidden');
+            heroFb.style.display = 'none';
+        } else {
+            banner.classList.add('hidden');
+            banner.src = '';
+            heroFb.style.display = '';
+            heroFb.querySelector('i').className = isVirtual ? 'fa-solid fa-video' : 'fa-solid fa-calendar-check';
+        }
+
+        // Pills
+        modalP.innerHTML = isVirtual
+            ? '<i class="fa-solid fa-video"></i> Virtual'
+            : '<i class="fa-solid fa-building"></i> Presencial';
+        modalP.style.background = isVirtual ? 'rgba(59,130,246,0.85)' : 'rgba(245,136,48,0.85)';
+
+        const status = d.evStatus;
+        if (status) {
+            statusP.classList.remove('hidden');
+            const map = {
+                'asisti':    {icon: 'fa-circle-check', text: 'Asistí',    cls: 'text-emerald-600'},
+                'no_asisti': {icon: 'fa-circle-xmark', text: 'No asistí', cls: 'text-red-500'},
+                'inscrito':  {icon: 'fa-bookmark',     text: 'Inscrito',  cls: 'text-blue-500'},
+            };
+            const s = map[status];
+            if (s) {
+                statusP.innerHTML = `<i class="fa-solid ${s.icon} text-[10px]"></i> ${s.text}`;
+                statusP.className = `ev-modal-pill ev-modal-pill-status ${s.cls}`;
+            } else {
+                statusP.classList.add('hidden');
+            }
+        } else {
+            statusP.classList.add('hidden');
+        }
+
+        // Botón Meet
+        if (isVirtual && d.evMeet && (status === 'inscrito' || status === 'asisti')) {
+            meetBtn.href = d.evMeet;
+            meetBtn.classList.remove('hidden');
+        } else {
+            meetBtn.classList.add('hidden');
+        }
+
+        // Form de inscripción
+        if (d.evCanInscribir === '1') {
+            inscForm.action = d.evInscribirUrl || '';
+            inscForm.classList.remove('hidden');
+        } else {
+            inscForm.classList.add('hidden');
+        }
+
+        // Reset scroll al inicio
+        modal.querySelector('.ev-modal-scroll').scrollTop = 0;
+
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    };
+})();
+</script>

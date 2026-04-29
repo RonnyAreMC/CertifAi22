@@ -1,0 +1,36 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+LAYOUT · Hero — encabezado de página tipo hero gradient.
+
+Args:
+    eyebrow  (str)  badge naranja arriba (opcional)
+    eyebrow_icon (str)  ej: 'fa-calendar-day'
+    title    (str)  título grande (obligatorio)
+    subtitle (str)  bajada del título
+    background (str) 'gradient' (default) | 'solid'
+
+Uso:
+    {% include 'public/_layouts/_hero.html' with
+        eyebrow='Eventos próximos' eyebrow_icon='fa-calendar-day'
+        title='Eventos disponibles'
+        subtitle='Inscríbete en los próximos seminarios.' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+<div class="relative overflow-hidden text-center py-12 md:py-16 mb-8 -mx-4 px-4">
+    <!-- Decoración de fondo (gradient + dots + orbs) -->
+    <div class="absolute inset-0 -z-10 bg-gradient-to-br from-[#162054] via-[#1f2d6b] to-[#0f1d3d] rounded-3xl"></div>
+    <div class="absolute inset-0 -z-10 opacity-15 rounded-3xl" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 22px 22px;"></div>
+    <div class="absolute -top-20 left-1/4 w-72 h-72 -z-10 rounded-full bg-[#F58830]/15 blur-3xl"></div>
+    <div class="absolute -bottom-20 right-1/4 w-64 h-64 -z-10 rounded-full bg-purple-500/15 blur-3xl"></div>
+
+    {% if eyebrow %}
+    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold bg-[#F58830]/15 text-[#F58830] uppercase tracking-wider mb-4 border border-[#F58830]/30">
+        {% if eyebrow_icon %}<i class="fa-solid {{ eyebrow_icon }} text-[10px]"></i>{% endif %}
+        {{ eyebrow }}
+    </span>
+    {% endif %}
+    <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight">{{ title }}</h1>
+    {% if subtitle %}
+    <p class="text-slate-300 mt-3 max-w-2xl mx-auto text-sm md:text-base leading-relaxed">{{ subtitle }}</p>
+    {% endif %}
+</div>

@@ -16,7 +16,10 @@ from core.models import (
     SesionAsistencia, ConfirmacionAsistencia, RegistroAsistencia,
     LoteCertificados, Certificado, FirmaInstitucional,
 )
+from core.models._choices import Modalidad
 from core.services.pdf_service import generate_certificate_pdf
+from core.services.meet import calendar_client as meet_calendar
+from core.services.email import sender as email_sender
 from api.common.viewsets import AuditedModelViewSet
 
 from .serializers import (
@@ -48,6 +51,42 @@ class SesionViewSet(AuditedModelViewSet):
     def audit_detail(self, instance, action):
         return f'Sesión #{instance.pk} ({instance.titulo or instance.dia_semana} - {instance.fecha})'
 
+    # ── Hooks Google Calendar / Meet ─────────────────────────────
+    def _should_auto_create_meet(self, sesion: SesionAsistencia) -> bool:
+        """Toda sesión virtual = Meet auto-generado (no hay otras plataformas)."""
+        return (
+            sesion.modalidad == Modalidad.VIRTUAL
+            and not sesion.google_calendar_event_id
+        )
+
+    def perform_create(self, serializer):
+        sesion = serializer.save()
+        if self._should_auto_create_meet(sesion):
+            result = meet_calendar.create_meet_event(sesion)
+            if result is not None:
+                meet_link, event_id = result
+                sesion.enlace_virtual = meet_link
+                sesion.google_calendar_event_id = event_id
+                sesion.save(update_fields=['enlace_virtual', 'google_calendar_event_id'])
+                self.log_audit('CREAR_MEET_SESION', f'Sesión #{sesion.pk}: {meet_link}')
+        # Auditoría base (la del AuditedModelViewSet)
+        self.log_audit(self._action_code('create'), self.audit_detail(sesion, 'create'))
+
+    def perform_update(self, serializer):
+        sesion = serializer.save()
+        # Si tiene evento de Calendar y cambió fecha/hora, sincronizamos.
+        if sesion.google_calendar_event_id:
+            meet_calendar.update_meet_event(sesion)
+        # Si recién ahora se marcó como virtual+meet, creamos el evento.
+        elif self._should_auto_create_meet(sesion):
+            result = meet_calendar.create_meet_event(sesion)
+            if result is not None:
+                meet_link, event_id = result
+                sesion.enlace_virtual = meet_link
+                sesion.google_calendar_event_id = event_id
+                sesion.save(update_fields=['enlace_virtual', 'google_calendar_event_id'])
+        self.log_audit(self._action_code('update'), self.audit_detail(sesion, 'update'))
+
     def destroy(self, request, *args, **kwargs):
         sesion = self.get_object()
         if sesion.confirmaciones.exists() or sesion.registros.exists():
@@ -55,6 +94,9 @@ class SesionViewSet(AuditedModelViewSet):
                 {'error': 'No puedes eliminar una sesión que ya tiene participantes registrados o confirmados.'},
                 status=status.HTTP_409_CONFLICT,
             )
+        # Cancelar en Calendar antes de borrar localmente.
+        if sesion.google_calendar_event_id:
+            meet_calendar.delete_meet_event(sesion.google_calendar_event_id)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])
@@ -245,9 +287,28 @@ class SesionViewSet(AuditedModelViewSet):
             'GENERAR_LOTE_SESION',
             f'Lote "{lote.nombre_lote}" generado desde sesión {sesion.id} con {len(certs)} certificados',
         )
+
+        # ── Notificación por correo a cada participante ──
+        # Re-consultamos los certificados creados para tener pk + hash_verificacion
+        # (bulk_create no garantiza hidratar el hash autogenerado en algunas DBs).
+        sent = 0
+        certs_creados = (Certificado.objects
+            .filter(lote=lote)
+            .select_related('participante'))
+        for cert in certs_creados:
+            ok = email_sender.send_certificate_issued(
+                certificado=cert,
+                sesion=sesion,
+                participante=cert.participante,
+                request=request,
+            )
+            if ok:
+                sent += 1
+
         return Response({
             'ok': True,
             'lote_id': lote.id,
             'lote_nombre': lote.nombre_lote,
             'certificados_creados': len(certs),
+            'correos_enviados': sent,
         })

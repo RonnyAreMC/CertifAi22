@@ -1,0 +1,119 @@
+{% comment %}
+ATOM · Event card. Click → abre modal de detalles.
+Args:
+    e: SesionAsistencia (con prefetch de ponentes recomendado)
+    show_inscribir: bool — si True el modal mostrará un botón "Inscribirme"
+    status: 'inscrito' | 'asisti' | 'no_asisti' | 'disponible' (opcional)
+{% endcomment %}
+{% load json_tags %}{% spaceless %}
+{% with ponentes_json=e.ponentes.all|ponentes_json %}
+<button type="button"
+        class="ev-card lg-card rounded-3xl overflow-hidden flex flex-col hover:-translate-y-1 transition-all group text-left w-full p-0"
+        data-ev-id="{{ e.id }}"
+        data-ev-title="{{ e.titulo|default:e.dia_semana }}"
+        data-ev-desc="{{ e.descripcion|default:'' }}"
+        data-ev-day="{{ e.dia_semana }}"
+        data-ev-date="{{ e.fecha|date:'l, d \\d\\e F \\d\\e Y'|capfirst }}"
+        data-ev-time-start="{{ e.hora_inicio|time:'H:i' }}"
+        data-ev-time-end="{{ e.hora_fin|time:'H:i' }}"
+        data-ev-virtual="{{ e.es_virtual|yesno:'1,0' }}"
+        data-ev-platform="{{ e.plataforma_display_safe|default:'' }}"
+        data-ev-meet="{{ e.enlace_virtual|default:'' }}"
+        data-ev-place="{{ e.lugar|default:'' }}"
+        data-ev-banner="{% if e.imagen_banner %}{{ e.imagen_banner.url }}{% endif %}"
+        data-ev-status="{{ status|default:'' }}"
+        data-ev-ponentes="{{ ponentes_json }}"
+        data-ev-inscribir-url="{% url 'public:account_evento_inscribir' e.id %}"
+        data-ev-can-inscribir="{% if show_inscribir %}1{% else %}0{% endif %}"
+        onclick="window.openEventModal && window.openEventModal(this)">
+{% endwith %}
+{% endspaceless %}
+    <!-- Hero más grande -->
+    <div class="relative h-44 overflow-hidden rounded-t-3xl">
+        {% if e.imagen_banner %}
+        <img src="{{ e.imagen_banner.url }}" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+        {% else %}
+        <div class="w-full h-full {% if e.es_virtual %}bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800{% else %}bg-gradient-to-br from-[var(--ds-brand)] via-[#E8721C] to-[var(--ds-brand-dark)]{% endif %} flex items-center justify-center">
+            <i class="fa-solid {% if e.es_virtual %}fa-video{% else %}fa-calendar-check{% endif %} text-white/40 text-6xl"></i>
+        </div>
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/40"></div>
+
+        <!-- Pills -->
+        <span class="absolute top-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md
+                     {% if e.es_virtual %}bg-blue-500/90{% else %}bg-[var(--ds-brand)]/90{% endif %} text-white ring-1 ring-white/30">
+            <i class="fa-solid {% if e.es_virtual %}fa-video{% else %}fa-building{% endif %} text-[9px]"></i>
+            {{ e.es_virtual|yesno:'Virtual,Presencial' }}
+        </span>
+
+        {% if status %}
+        <span class="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md bg-white/90 dark:bg-black/45 ring-1 ring-white/60 dark:ring-white/20
+                     {% if status == 'asisti' %}text-emerald-600 dark:text-emerald-300{% elif status == 'no_asisti' %}text-red-500 dark:text-red-400{% elif status == 'inscrito' %}text-blue-600 dark:text-blue-300{% else %}text-slate-700 dark:text-slate-300{% endif %}">
+            {% if status == 'asisti' %}<i class="fa-solid fa-circle-check text-[9px]"></i> Asistí
+            {% elif status == 'no_asisti' %}<i class="fa-solid fa-circle-xmark text-[9px]"></i> No asistí
+            {% elif status == 'inscrito' %}<i class="fa-solid fa-bookmark text-[9px]"></i> Inscrito
+            {% endif %}
+        </span>
+        {% endif %}
+
+        <!-- Día abajo izquierda en el banner -->
+        <div class="absolute bottom-3 left-3">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-black/40 backdrop-blur-md ring-1 ring-white/20">
+                <i class="fa-solid fa-calendar-day text-[10px]"></i>
+                {{ e.dia_semana|truncatechars:3 }} {{ e.fecha|date:"d M" }} · {{ e.hora_inicio|time:"H:i" }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Body más generoso -->
+    <div class="p-5 flex-1 flex flex-col relative">
+        <h3 class="font-black text-base text-slate-900 dark:text-white leading-snug pr-9 mb-2 tracking-tight"
+            style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+            {{ e.titulo|default:e.dia_semana }}
+        </h3>
+
+        <!-- Meta secundaria -->
+        <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
+            {% if e.es_virtual %}
+            <span class="inline-flex items-center gap-1.5">
+                <svg viewBox="0 0 87.5 72" width="14" height="11.5" style="flex-shrink:0;" aria-hidden="true">
+                    <path fill="#00832d" d="M49.5 36l8.53 9.75 11.47 7.33 2-17.02-2-16.64-11.69 6.44z"/>
+                    <path fill="#0066da" d="M0 51.5V66c0 3.315 2.685 6 6 6h14.5l3-10.96-3-9.54-9.95-3z"/>
+                    <path fill="#e94235" d="M20.5 0L0 20.5l10.55 3 9.95-3 2.95-9.41z"/>
+                    <path fill="#2684fc" d="M0 20.5h20.5v31H0z"/>
+                    <path fill="#00ac47" d="M82.6 8.68L69.5 19.42v33.66l13.16 10.79c1.97 1.54 4.85.135 4.85-2.37V11c0-2.535-2.945-3.925-4.91-2.32zM49.5 36v15.5h-29V72h43c3.315 0 6-2.685 6-6V53.08z"/>
+                    <path fill="#ffba00" d="M63.5 0h-43v20.5h29V36l20-.04V6c0-3.315-2.685-6-6-6z"/>
+                </svg>
+                {{ e.plataforma_display_safe|default:"Google Meet" }}
+            </span>
+            {% elif e.lugar %}
+            <span class="inline-flex items-center gap-1.5 truncate">
+                <i class="fa-solid fa-location-dot text-[var(--ds-brand)] text-[11px]"></i>
+                <span class="truncate">{{ e.lugar|truncatechars:30 }}</span>
+            </span>
+            {% endif %}
+            {% with cnt=e.ponentes.all|length %}
+            {% if cnt %}
+            <span class="text-slate-300 dark:text-slate-600">·</span>
+            <span class="inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-microphone text-[var(--ds-accent)] text-[11px]"></i>
+                {{ cnt }} ponente{{ cnt|pluralize:"s" }}
+            </span>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Footer con CTA -->
+        <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 group-hover:text-[var(--ds-brand)] transition-colors">
+                Ver detalles
+            </span>
+            <span class="w-9 h-9 rounded-full inline-flex items-center justify-center
+                         bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400
+                         group-hover:bg-[var(--ds-brand)] group-hover:text-white
+                         transition-all group-hover:translate-x-0.5">
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+        </div>
+    </div>
+</button>

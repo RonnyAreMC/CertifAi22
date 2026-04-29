@@ -1,0 +1,33 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · EmptyState — para listas vacías o "no hay datos".
+
+Args:
+    icon     (str)  FA class, ej: 'fa-calendar-xmark'  default 'fa-inbox'
+    title    (str)  obligatorio
+    text     (str)  descripción opcional
+    cta_url  (str)  url del botón opcional
+    cta_label (str) texto del botón opcional
+    cta_icon (str)  icono del botón opcional
+
+Uso:
+    {% include 'public/_components/_empty_state.html' with
+        icon='fa-calendar-xmark'
+        title='Sin eventos disponibles'
+        text='Vuelve más tarde para ver los próximos.'
+        cta_url='/' cta_label='Ir al inicio' cta_icon='fa-house' %}
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+<div class="text-center py-16 px-6">
+    <div class="w-20 h-20 mx-auto rounded-full bg-gray-100 dark:bg-[#0F163A]/50 flex items-center justify-center mb-5">
+        <i class="fa-solid {{ icon|default:'fa-inbox' }} text-gray-400 dark:text-gray-500 text-2xl"></i>
+    </div>
+    <h3 class="text-lg font-bold text-gray-700 dark:text-gray-200 mb-2">{{ title }}</h3>
+    {% if text %}<p class="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed mb-5">{{ text }}</p>{% endif %}
+    {% if cta_url and cta_label %}
+    <a href="{{ cta_url }}" class="inline-flex items-center gap-2 bg-[#F58830] hover:bg-[#D97520] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-all hover:-translate-y-0.5 shadow-md hover:shadow-lg">
+        {% if cta_icon %}<i class="fa-solid {{ cta_icon }}"></i>{% endif %}
+        {{ cta_label }}
+    </a>
+    {% endif %}
+</div>

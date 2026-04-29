@@ -1,0 +1,29 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · Card — contenedor estandarizado con padding/shadow.
+
+Args:
+    padding   (str)  'sm'|'md'|'lg'  default 'md'
+    interactive (bool)  agrega hover lift+shadow + cursor-pointer
+    elevated  (bool)  shadow-lg en lugar de shadow-md
+    no_padding (bool)  si True elimina padding (útil cuando lleva imagen edge-to-edge)
+
+Uso:
+    {% include 'public/_components/_card.html' with content_block=... %}
+
+⚠️ Como Django no soporta block content en includes, usá este patrón:
+    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-md border border-gray-100 dark:border-blue-900/30 p-6">
+        ...contenido...
+    </div>
+
+O bien usá las clases via mixin CSS (ver static/css/public_components.css):
+    <div class="ui-card">...</div>
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+<div class="bg-white dark:bg-[#162054] rounded-2xl border border-gray-100 dark:border-blue-900/30
+    {% if elevated %}shadow-lg{% else %}shadow-md{% endif %}
+    {% if interactive %}cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all duration-300{% endif %}
+    {% if not no_padding %}{% if padding == 'sm' %}p-4{% elif padding == 'lg' %}p-8{% else %}p-6{% endif %}{% endif %}
+    {{ extra|default:'' }}">
+    {{ content|safe }}
+</div>

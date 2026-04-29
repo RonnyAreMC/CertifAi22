@@ -1,0 +1,17 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+LAYOUT · DecorativeOrbs — orbes flotantes blureados de fondo.
+Se renderizan absolute, -z-10. Pensado para envolverse en un contenedor relative.
+
+Uso (sin args):
+    <div class="relative ...">
+        {% include 'public/_layouts/_decorative_orbs.html' %}
+        ...contenido...
+    </div>
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+<div class="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute top-[5%] left-[5%] w-[400px] h-[400px] rounded-full bg-[#162054]/5 dark:bg-[#162054]/40 blur-[120px]"></div>
+    <div class="absolute bottom-[10%] right-[5%] w-[450px] h-[450px] rounded-full bg-[#F58830]/10 dark:bg-[#F58830]/15 blur-[140px]"></div>
+    <div class="absolute top-[40%] left-[40%] w-[280px] h-[280px] rounded-full bg-purple-400/10 dark:bg-purple-500/10 blur-[100px]"></div>
+</div>

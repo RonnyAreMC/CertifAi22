@@ -1,6 +1,95 @@
 {% extends 'panel/base.html' %}
 
 {% block content %}
+<style>
+    /* ═══════════ Event Card · iOS Liquid Glass + Neuromorfismo ═══════════ */
+    .event-card {
+        transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s;
+    }
+    .event-card:hover {
+        transform: translateY(-3px);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.7),
+            0 18px 40px -12px rgba(15,23,42,0.18),
+            0 6px 14px -6px rgba(15,23,42,0.10);
+    }
+    .dark .event-card:hover {
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.10),
+            0 22px 48px -14px rgba(0,0,0,0.65),
+            0 6px 14px -6px rgba(0,0,0,0.40);
+    }
+
+    /* Primary CTA — gradiente con highlight + sombra de color */
+    .ev-cta {
+        color: white;
+        position: relative;
+        border: 1px solid rgba(255,255,255,0.20);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.40),
+            inset 0 -1px 0 rgba(0,0,0,0.15),
+            0 6px 14px -4px var(--ev-cta-glow, rgba(15,23,42,0.30));
+        transition: all .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .ev-cta:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    .ev-cta:active { transform: translateY(0); }
+    .ev-cta--brand   { background: linear-gradient(135deg, var(--ds-brand) 0%, var(--ds-brand-dark) 100%); --ev-cta-glow: rgba(245,136,48,0.45); }
+    .ev-cta--success { background: linear-gradient(135deg, #10B981 0%, #059669 100%); --ev-cta-glow: rgba(16,185,129,0.45); }
+    .ev-cta--accent  { background: linear-gradient(135deg, var(--ds-accent) 0%, #7C3AED 100%); --ev-cta-glow: rgba(168,85,247,0.45); }
+
+    /* Icon-only neumorphic buttons */
+    .ev-icon-btn {
+        width: 36px; height: 36px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 10px;
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--ev-icon-color, #64748b);
+        background: linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.55));
+        border: 1px solid rgba(255,255,255,0.6);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,1),
+            inset 0 -1px 0 rgba(15,23,42,0.06),
+            0 2px 4px -1px rgba(15,23,42,0.10);
+        transition: all .2s cubic-bezier(.34,1.56,.64,1);
+    }
+    .dark .ev-icon-btn {
+        color: var(--ev-icon-color, #94a3b8);
+        background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+        border: 1px solid rgba(255,255,255,0.10);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.12),
+            inset 0 -1px 0 rgba(0,0,0,0.30),
+            0 2px 4px -1px rgba(0,0,0,0.30);
+    }
+    .ev-icon-btn:hover {
+        transform: translateY(-1px);
+        color: var(--ev-icon-hover, var(--ds-brand));
+    }
+    .ev-icon-btn:active {
+        transform: translateY(0);
+        box-shadow:
+            inset 0 2px 4px rgba(15,23,42,0.15),
+            inset 0 -1px 0 rgba(255,255,255,0.5);
+    }
+    .dark .ev-icon-btn:active {
+        box-shadow:
+            inset 0 2px 4px rgba(0,0,0,0.5),
+            inset 0 -1px 0 rgba(255,255,255,0.08);
+    }
+    .ev-icon-btn--brand   { --ev-icon-color: var(--ds-brand);   --ev-icon-hover: var(--ds-brand-dark); }
+    .ev-icon-btn--success { --ev-icon-color: var(--ds-success); --ev-icon-hover: #059669; }
+    .ev-icon-btn--warning { --ev-icon-color: var(--ds-warning); --ev-icon-hover: #D97706; }
+    .ev-icon-btn--danger  { --ev-icon-hover: var(--ds-danger); }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
 <div class="space-y-8">
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -11,10 +100,10 @@
             </h1>
             <p class="text-gray-500 dark:text-gray-400 mt-1">Gestiona tus eventos, registro de participantes y códigos QR.</p>
         </div>
-        <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="bg-[#F58830] hover:bg-[#D97520] text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center gap-2">
+        <a href="{% url 'panel:session_create' %}" class="bg-[#F58830] hover:bg-[#D97520] text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-1 flex items-center gap-2">
             <i class="fa-solid fa-plus"></i>
             Nuevo Evento
-        </button>
+        </a>
     </div>
 
     <!-- Filters -->
@@ -57,154 +146,150 @@
     {% if sesiones %}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for s in sesiones %}
-        <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 overflow-hidden hover:shadow-xl transition-all group">
-            {% if s.imagen_banner %}
-            <div class="relative h-32 overflow-hidden bg-gray-100 dark:bg-[#0F163A]">
-                <img src="{{ s.imagen_banner.url }}" alt="Banner" class="w-full h-full object-cover">
-                <div class="absolute top-2 right-2">
-                    {% if s.es_virtual %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/90 text-white backdrop-blur-sm">
-                        <i class="fa-solid fa-video text-[10px]"></i> Virtual
-                    </span>
-                    {% else %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#F58830]/90 text-white backdrop-blur-sm">
-                        <i class="fa-solid fa-building text-[10px]"></i> Presencial
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ s.activa|yesno:'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400,bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' }}">
-                        <i class="fa-solid {{ s.activa|yesno:'fa-circle-check,fa-circle-xmark' }} text-[10px]"></i>
-                        {{ s.activa|yesno:'Activa,Inactiva' }}
-                    </span>
-                    {% if not s.imagen_banner %}
-                        {% if s.es_virtual %}
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                            <i class="fa-solid fa-video text-[10px]"></i> Virtual
-                        </span>
-                        {% else %}
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
-                            <i class="fa-solid fa-building text-[10px]"></i> Presencial
-                        </span>
-                        {% endif %}
-                    {% endif %}
-                    {% if s.solo_lideres %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
-                        <i class="fa-solid fa-user-tie text-[10px]"></i> Líderes
-                    </span>
-                    {% endif %}
-                    <span class="text-xs text-gray-400 dark:text-gray-500 font-mono">ID #{{ s.id }}</span>
-                </div>
-
-                {% if s.titulo %}
-                <h3 class="font-black text-lg text-gray-800 dark:text-white mb-1">{{ s.titulo }}</h3>
+        <div class="event-card lg-card rounded-3xl transition-all group flex flex-col">
+            <!-- ═══ Hero ═══ -->
+            <div class="relative h-28 overflow-hidden rounded-t-3xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-[#0F163A] dark:to-[#162054]">
+                {% if s.imagen_banner %}
+                <img src="{{ s.imagen_banner.url }}" alt="Banner" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
                 {% else %}
-                <h3 class="font-black text-lg text-gray-800 dark:text-white mb-1">{{ s.dia_semana }}</h3>
+                <div class="w-full h-full flex items-center justify-center {% if s.es_virtual %}bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800{% else %}bg-gradient-to-br from-[var(--ds-brand)] via-[#E8721C] to-[var(--ds-brand-dark)]{% endif %} relative">
+                    <div class="absolute inset-0 opacity-15" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;"></div>
+                    <i class="fa-solid {% if s.es_virtual %}fa-video{% else %}fa-calendar-check{% endif %} text-white/40 text-5xl relative"></i>
+                </div>
                 {% endif %}
+                <!-- Gradiente para legibilidad de los badges -->
+                <div class="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/30"></div>
 
-                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                    <i class="fa-solid fa-calendar-day mr-1 text-[#F58830]"></i>
-                    {{ s.dia_semana }} {{ s.fecha|date:"d/m/Y" }}
-                </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
-                    <i class="fa-solid fa-clock mr-1 text-[#F58830]"></i>
-                    {{ s.hora_inicio|time:"H:i" }} – {{ s.hora_fin|time:"H:i" }}
-                </p>
+                <!-- Status pill (top-left, glass) -->
+                <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md bg-white/85 dark:bg-black/40 ring-1 ring-white/60 dark:ring-white/20 {{ s.activa|yesno:'text-emerald-600 dark:text-emerald-300,text-red-500 dark:text-red-400' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ s.activa|yesno:'bg-emerald-500 animate-pulse,bg-red-500' }}"></span>
+                    {{ s.activa|yesno:'Activa,Inactiva' }}
+                </span>
+
+                <!-- Modalidad pill (top-right, glass) -->
+                <span class="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md ring-1 ring-white/30 {% if s.es_virtual %}bg-blue-500/85 text-white{% else %}bg-[var(--ds-brand)]/85 text-white{% endif %}">
+                    <i class="fa-solid {% if s.es_virtual %}fa-video{% else %}fa-building{% endif %} text-[9px]"></i>
+                    {{ s.es_virtual|yesno:'Virtual,Presencial' }}
+                </span>
+
+                <!-- ID (bottom-right) -->
+                <span class="absolute bottom-2 right-3 text-[10px] font-mono text-white/80 backdrop-blur-sm px-1.5 py-0.5 rounded bg-black/20">#{{ s.id }}</span>
+            </div>
+
+            <!-- ═══ Body ═══ -->
+            <div class="p-5 flex-1 flex flex-col">
+                <!-- Title -->
+                <h3 class="font-black text-base text-slate-900 dark:text-white leading-snug line-clamp-2 mb-2">
+                    {{ s.titulo|default:s.dia_semana }}
+                </h3>
+
+                <!-- Meta line — date · time · place (todo en una sola fila/wrapeable) -->
+                <div class="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px] text-slate-600 dark:text-slate-300 font-medium mb-2">
+                    <span class="inline-flex items-center gap-1.5">
+                        <i class="fa-solid fa-calendar-day text-[var(--ds-brand)] text-[11px]"></i>
+                        {{ s.dia_semana|truncatechars:3 }} {{ s.fecha|date:"d/m" }}
+                    </span>
+                    <span class="text-slate-300 dark:text-slate-600">·</span>
+                    <span class="inline-flex items-center gap-1.5 ds-mono">
+                        <i class="fa-solid fa-clock text-[var(--ds-brand)] text-[11px]"></i>
+                        {{ s.hora_inicio|time:"H:i" }}–{{ s.hora_fin|time:"H:i" }}
+                    </span>
+                </div>
+
                 {% if s.es_virtual and s.enlace_virtual %}
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
-                    <i class="fa-solid fa-link mr-1 text-[#F58830]"></i>
-                    <a href="{{ s.enlace_virtual }}" target="_blank" rel="noopener" class="hover:text-[#F58830] hover:underline">{{ s.plataforma_display_safe }}</a>
-                </p>
+                <a href="{{ s.enlace_virtual }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-1.5 text-[12px] text-slate-500 dark:text-slate-400 hover:text-[var(--ds-brand)] dark:hover:text-[var(--ds-brand)] truncate transition-colors">
+                    <i class="fa-solid fa-link text-[11px]"></i>
+                    <span class="truncate">{{ s.plataforma_display_safe }}</span>
+                </a>
                 {% elif s.lugar %}
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    <i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i>
-                    {{ s.lugar }}
+                <p class="inline-flex items-center gap-1.5 text-[12px] text-slate-500 dark:text-slate-400 truncate">
+                    <i class="fa-solid fa-location-dot text-[11px]"></i>
+                    <span class="truncate">{{ s.lugar }}</span>
                 </p>
                 {% endif %}
+
                 {% if s.lote %}
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                    <i class="fa-solid fa-graduation-cap mr-1"></i>
-                    {{ s.lote.nombre_lote|truncatechars:40 }}
+                <p class="inline-flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mt-1 truncate">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span class="truncate">{{ s.lote.nombre_lote|truncatechars:40 }}</span>
                 </p>
                 {% endif %}
 
-                <!-- Stats -->
-                <div class="flex gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-blue-900/20">
-                    <div class="text-center flex-1">
-                        <p class="text-2xl font-black text-[#F58830]">{{ s.total_confirmados }}</p>
-                        <p class="text-[0.6rem] uppercase tracking-wider text-gray-400 font-bold">Confirmados</p>
+                <!-- Stats minimalistas con barra integrada -->
+                <div class="mt-auto pt-4">
+                    <div class="flex items-baseline justify-between gap-3 mb-1.5">
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-2xl font-black text-slate-900 dark:text-white tabular-nums">{{ s.total_confirmados }}</span>
+                            {% if s.capacidad > 0 %}
+                            <span class="text-sm font-bold text-slate-400 dark:text-slate-500 tabular-nums">/ {{ s.capacidad }}</span>
+                            {% else %}
+                            <span class="text-sm font-bold text-slate-400 dark:text-slate-500"><i class="fa-solid fa-infinity"></i></span>
+                            {% endif %}
+                            <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold ml-1">conf.</span>
+                        </div>
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-base font-black text-emerald-500 tabular-nums">{{ s.total_asistentes }}</span>
+                            <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">asist.</span>
+                        </div>
                     </div>
-                    <div class="text-center flex-1">
-                        <p class="text-2xl font-black text-green-500">{{ s.total_asistentes }}</p>
-                        <p class="text-[0.6rem] uppercase tracking-wider text-gray-400 font-bold">Asistentes</p>
+                    {% if s.capacidad > 0 %}
+                    <div class="w-full bg-slate-200/70 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
+                        <div class="h-full rounded-full transition-all {{ s.esta_llena|yesno:'bg-red-500,bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)]' }}" style="width: {% widthratio s.total_confirmados s.capacidad 100 %}%"></div>
                     </div>
-                    <div class="text-center flex-1">
-                        {% if s.capacidad == 0 %}
-                        <p class="text-2xl font-black text-blue-500">&infin;</p>
-                        {% else %}
-                        <p class="text-2xl font-black text-blue-500">{{ s.capacidad }}</p>
-                        {% endif %}
-                        <p class="text-[0.6rem] uppercase tracking-wider text-gray-400 font-bold">Cupos Max</p>
-                    </div>
+                    {% if s.esta_llena %}
+                    <p class="text-[10px] text-red-500 font-bold mt-1 text-right uppercase tracking-wider">Agotado</p>
+                    {% endif %}
+                    {% endif %}
                 </div>
-
-                <!-- Capacity Bar -->
-                {% if s.capacidad > 0 %}
-                <div class="mt-3">
-                    <div class="w-full bg-gray-100 dark:bg-[#0F163A]/50 rounded-full h-2 overflow-hidden">
-                        <div class="h-full rounded-full transition-all {{ s.esta_llena|yesno:'bg-red-500,bg-[#F58830]' }}" style="width: {% widthratio s.total_confirmados s.capacidad 100 %}%"></div>
-                    </div>
-                    <p class="text-[0.55rem] text-gray-400 mt-1 text-right font-bold">
-                        {{ s.cupos_disponibles }} cupos disponibles
-                        {% if s.esta_llena %}<span class="text-red-500 ml-1">AGOTADO</span>{% endif %}
-                    </p>
-                </div>
-                {% else %}
-                <div class="mt-3">
-                    <p class="text-[0.55rem] text-green-500 font-bold text-right">
-                        <i class="fa-solid fa-infinity mr-1"></i> Cupos ilimitados
-                    </p>
-                </div>
-                {% endif %}
             </div>
 
-            <!-- Actions -->
-            <div class="bg-gray-50 dark:bg-[#0F163A]/50 px-5 py-3 space-y-2">
-                <!-- Primary actions row -->
-                <div class="flex gap-2">
-                    <a href="{% url 'panel:session_qr_display' s.id %}" class="flex-1 text-center bg-[#162054] dark:bg-[#F58830] text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-qrcode"></i> QR
-                    </a>
-                    {% if s.total_confirmados > 0 and not s.lote %}
-                    <a href="{% url 'panel:session_generate_batch' s.id %}" class="flex-1 text-center bg-green-600 text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5" title="Generar certificados desde participantes">
-                        <i class="fa-solid fa-certificate"></i> Generar Certificados
-                    </a>
-                    {% elif s.lote %}
-                    <a href="{% url 'panel:batch_configure' s.lote.id %}" class="flex-1 text-center bg-purple-600 text-white text-xs font-bold py-2.5 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-1.5" title="Configurar diseño del lote">
-                        <i class="fa-solid fa-palette"></i> Config. Lote
-                    </a>
-                    {% endif %}
-                </div>
-                <!-- Secondary actions row -->
-                <div class="flex gap-2">
-                    <a href="{% url 'panel:session_edit' s.id %}" class="flex-1 text-center py-2 rounded-lg text-xs font-bold bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all flex items-center justify-center gap-1.5" title="Editar sesión">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </a>
-                    {% if s.activa %}
-                    <button onclick="copyRegistroLink({{ s.id }})" class="flex-1 text-center py-2 rounded-lg text-xs font-bold bg-[#F58830]/10 text-[#F58830] hover:bg-[#F58830]/20 transition-all flex items-center justify-center gap-1.5" title="Copiar link de registro público">
-                        <i class="fa-solid fa-link"></i> Link Registro
-                    </button>
-                    {% endif %}
-                    <button type="button" onclick="toggleSession({{ s.id }})" class="px-3 py-2 rounded-lg text-xs font-bold {{ s.activa|yesno:'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100,bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100' }} transition-all" title="{{ s.activa|yesno:'Desactivar,Activar' }}">
-                        <i class="fa-solid {{ s.activa|yesno:'fa-pause,fa-play' }}"></i>
-                    </button>
-                    <button type="button" onclick="deleteSession({{ s.id }})" class="px-3 py-2 rounded-lg text-xs font-bold bg-gray-100 text-gray-400 dark:bg-gray-800/50 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/40 dark:hover:text-red-400 transition-all" title="Eliminar">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
+            <!-- ═══ Actions (footer, neumórfico) ═══ -->
+            <div class="px-4 pb-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center gap-2">
+                <!-- Primary CTA -->
+                {% if s.total_confirmados > 0 and not s.lote %}
+                <a href="{% url 'panel:session_generate_batch' s.id %}"
+                   class="ev-cta ev-cta--success flex-1 inline-flex items-center justify-center gap-1.5 text-[12px] font-bold py-2.5 px-3 rounded-xl"
+                   data-tip="Generar certificados desde participantes">
+                    <i class="fa-solid fa-certificate"></i>
+                    <span class="truncate">Generar</span>
+                </a>
+                {% elif s.lote %}
+                <a href="{% url 'panel:batch_configure' s.lote.id %}"
+                   class="ev-cta ev-cta--accent flex-1 inline-flex items-center justify-center gap-1.5 text-[12px] font-bold py-2.5 px-3 rounded-xl"
+                   data-tip="Configurar diseño del lote">
+                    <i class="fa-solid fa-palette"></i>
+                    <span class="truncate">Config. Lote</span>
+                </a>
+                {% else %}
+                <a href="{% url 'panel:session_qr_display' s.id %}"
+                   class="ev-cta ev-cta--brand flex-1 inline-flex items-center justify-center gap-1.5 text-[12px] font-bold py-2.5 px-3 rounded-xl"
+                   data-tip="Mostrar QR de registro">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>QR</span>
+                </a>
+                {% endif %}
+
+                <!-- Secondary icon-only actions (neumórficas) -->
+                {% if s.total_confirmados > 0 and not s.lote or s.lote %}
+                <a href="{% url 'panel:session_qr_display' s.id %}" class="ev-icon-btn" data-tip="Mostrar QR">
+                    <i class="fa-solid fa-qrcode"></i>
+                </a>
+                {% endif %}
+                <a href="{% url 'panel:session_edit' s.id %}" class="ev-icon-btn" data-tip="Editar">
+                    <i class="fa-solid fa-pen"></i>
+                </a>
+                {% if s.activa %}
+                <button type="button" onclick="copyRegistroLink({{ s.id }})" class="ev-icon-btn ev-icon-btn--brand" data-tip="Copiar link de registro público">
+                    <i class="fa-solid fa-link"></i>
+                </button>
+                {% endif %}
+                <button type="button" onclick="toggleSession({{ s.id }})" class="ev-icon-btn {{ s.activa|yesno:'ev-icon-btn--warning,ev-icon-btn--success' }}" data-tip="{{ s.activa|yesno:'Desactivar evento,Activar evento' }}">
+                    <i class="fa-solid {{ s.activa|yesno:'fa-pause,fa-play' }}"></i>
+                </button>
+                <button type="button" onclick="deleteSession({{ s.id }})" class="ev-icon-btn ev-icon-btn--danger" data-tip="Eliminar evento">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </div>
         </div>
         {% endfor %}
@@ -220,7 +305,6 @@
     {% endif %}
 </div>
 
-<!-- Create Session Modal -->
 <div id="createModal" class="fixed inset-0 z-[100] hidden">
     <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm" onclick="document.getElementById('createModal').classList.add('hidden')"></div>
     <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
@@ -272,19 +356,15 @@
                 </div>
 
                 <!-- Virtual fields (shown only when virtual) -->
-                <div id="create_virtual_fields" class="hidden space-y-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30">
-                    <div>
-                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Plataforma</label>
-                        <select name="plataforma_virtual" class="w-full p-3 rounded-xl bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
-                            <option value="zoom">Zoom</option>
-                            <option value="meet">Google Meet</option>
-                            <option value="teams">Microsoft Teams</option>
-                            <option value="otro">Otra plataforma</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Enlace de la reunión <span class="text-red-500">*</span></label>
-                        <input type="url" name="enlace_virtual" placeholder="https://zoom.us/j/... o https://meet.google.com/..." class="w-full p-3 rounded-xl bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                <div id="create_virtual_fields" class="hidden space-y-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/30">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l5-5v14l-5-5M5 7h10v10H5z"/></svg>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-emerald-900 dark:text-emerald-100">Google Meet automático</p>
+                            <p class="text-xs text-emerald-700 dark:text-emerald-300/80 mt-1 leading-relaxed">
+                                Al crear la sesión se generará un enlace de Google Meet con grabación y transcripción habilitadas. No necesitas pegar un link manual.
+                            </p>
+                        </div>
                     </div>
                 </div>
 

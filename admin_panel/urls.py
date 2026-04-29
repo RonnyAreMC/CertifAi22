@@ -24,13 +24,15 @@ from .views import (
     session_qr_display, session_generate_batch,
     # design
     design_global, design_global_preview, design_save_firma_pos,
-    # landing
-    landing_builder,
+    # design system (UI tokens)
+    design_system_edit, design_system_reset,
     # leaders
     lideres_list, lideres_add_manual, lideres_upload_excel,
     lideres_process_mapping,
 )
 from . import views_firmas
+from .views import google_oauth as google_views
+from .views import ai_config as ai_config_views
 
 app_name = 'panel'
 
@@ -80,6 +82,10 @@ urlpatterns = [
     path('diseno/preview/', design_global_preview, name='design_global_preview'),
     path('diseno/firma-pos/', design_save_firma_pos, name='design_save_firma_pos'),
 
+    # Design System (UI tokens — colores, fuentes, botones del panel)
+    path('design-system/', design_system_edit, name='design_system'),
+    path('design-system/reset/', design_system_reset, name='design_system_reset'),
+
     # Certificates (form add)
     path('batches/<int:id>/add-certificate/', add_certificate, name='add_certificate'),
     path('api/participante-lookup/',
@@ -105,21 +111,6 @@ urlpatterns = [
     path('sessions/<int:id>/bulk-pdf/',
          RedirectView.as_view(url='/api/v1/admin/sessions/%(id)s/bulk-pdf/', permanent=False),
          name='session_bulk_pdf'),
-
-    # Landing builder (shell; CRUD vía /api/v1/admin/landing/blocks/)
-    path('landing/', landing_builder, name='landing_builder'),
-    path('landing/add-block/',
-         RedirectView.as_view(url='/api/v1/admin/landing/blocks/', permanent=False),
-         name='landing_add_block'),
-    path('landing/block/<int:id>/update/',
-         RedirectView.as_view(url='/api/v1/admin/landing/blocks/%(id)s/', permanent=False),
-         name='landing_update_block'),
-    path('landing/block/<int:id>/delete/',
-         RedirectView.as_view(url='/api/v1/admin/landing/blocks/%(id)s/', permanent=False),
-         name='landing_delete_block'),
-    path('landing/reorder/',
-         RedirectView.as_view(url='/api/v1/admin/landing/blocks/reorder/', permanent=False),
-         name='landing_reorder'),
 
     # Mi Estado
     path('mi-estado/', mi_estado, name='mi_estado'),
@@ -153,4 +144,12 @@ urlpatterns = [
     path('firmas/<int:id>/delete/',
          RedirectView.as_view(url='/api/v1/admin/firmas/%(id)s/', permanent=False),
          name='firma_delete'),
+
+    # Google OAuth (Meet + Calendar + Drive)
+    path('google/connect/', google_views.google_connect, name='google_connect'),
+    path('google/callback/', google_views.google_callback, name='google_callback'),
+    path('google/status/', google_views.google_status, name='google_status'),
+
+    # Configuración IA (proveedor + API key)
+    path('ai/config/', ai_config_views.ai_config, name='ai_config'),
 ]

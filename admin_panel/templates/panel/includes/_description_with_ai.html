@@ -1,0 +1,306 @@
+{% comment %}
+Componente reutilizable: textarea de descripción con CKEditor 5 + asistente IA.
+
+Uso:
+    {% include 'panel/includes/_description_with_ai.html' with
+        title_input_name='titulo'
+        description_name='descripcion'
+        description_value=sesion.descripcion %}
+
+Args:
+    title_input_name: name del input que tiene el título del evento (default: 'titulo')
+    description_name: name del textarea/input de descripción (default: 'descripcion')
+    description_value: HTML inicial (opcional)
+
+El componente expone una función JS global `getDescriptionHTML()` que devuelve
+el HTML actual del editor — útil al construir el FormData del submit.
+{% endcomment %}
+
+{% load static %}
+{% with title_name=title_input_name|default:"titulo" desc_name=description_name|default:"descripcion" %}
+<div>
+    <div class="flex items-center justify-between mb-2">
+        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <i class="fa-solid fa-align-left mr-1 text-[#F58830]"></i> Descripción
+        </label>
+        <button type="button" onclick="openAIModal()" class="group inline-flex items-center gap-3 pl-1.5 pr-5 py-1.5 rounded-full bg-gradient-to-r from-[#F58830]/15 to-blue-500/15 hover:from-[#F58830]/25 hover:to-blue-500/25 border-2 border-[#F58830]/30 hover:border-[#F58830]/50 text-gray-800 dark:text-white text-sm font-bold transition-all hover:shadow-lg hover:-translate-y-0.5">
+            <span class="relative">
+                <img src="{% static 'img/certy.png' %}" alt="Certy" class="w-12 h-12 rounded-full ring-2 ring-white dark:ring-[#162054] shadow-md group-hover:scale-110 transition-transform bg-white">
+                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#162054] flex items-center justify-center">
+                    <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                </span>
+            </span>
+            <span class="flex flex-col items-start leading-tight">
+                <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Asistente IA</span>
+                <span class="text-sm">Pedir ayuda a <span class="bg-gradient-to-r from-[#F58830] to-blue-500 bg-clip-text text-transparent">Certy</span></span>
+            </span>
+            <i class="fa-solid fa-sparkles text-[#F58830] text-xs"></i>
+        </button>
+    </div>
+    <textarea id="description-editor" name="{{ desc_name }}">{{ description_value|default:'' }}</textarea>
+    <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Usá la barra para dar formato (negritas, listas, encabezados) o el asistente IA para generarla.</p>
+</div>
+
+<!-- Modal asistente IA -->
+<div id="ai-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm" onclick="closeAIModal()"></div>
+    <div class="relative bg-white dark:bg-[#162054] rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-100 dark:border-blue-900/30 max-h-[90vh] overflow-hidden flex flex-col">
+        <!-- Header con Certy -->
+        <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-blue-900/30 bg-gradient-to-r from-[#F58830]/10 to-blue-500/10">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <img src="{% static 'img/certy.png' %}" alt="Certy" class="w-14 h-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-[#162054] bg-white dark:bg-[#0F163A]">
+                    <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#162054] flex items-center justify-center">
+                        <i class="fa-solid fa-sparkles text-white text-[7px]"></i>
+                    </span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-black text-gray-800 dark:text-white">
+                        Hola, soy <span class="bg-gradient-to-r from-[#F58830] to-blue-500 bg-clip-text text-transparent">Certy</span>
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Tu asistente IA para escribir descripciones de eventos</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeAIModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 space-y-4 overflow-y-auto flex-1">
+            <div id="ai-modal-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"></div>
+
+            <!-- Título detectado (chip pequeño, no card) -->
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-gray-500 dark:text-gray-400">Sobre:</span>
+                <span id="ai-title-preview" class="px-2 py-1 rounded-md bg-[#F58830]/10 text-[#F58830] dark:text-orange-300 font-bold truncate max-w-[400px]">—</span>
+                <span id="ai-title-warning" class="hidden text-amber-600 dark:text-amber-400"><i class="fa-solid fa-triangle-exclamation"></i> falta el título arriba</span>
+            </div>
+
+            <!-- Pedido en lenguaje natural -->
+            <div>
+                <label class="text-sm font-bold text-gray-700 dark:text-gray-200 block mb-2">¿Qué querés que escriba Certy?</label>
+                <textarea id="ai-context" rows="4"
+                    placeholder="Ej: una descripción amigable para médicos sobre IA en salud, duración 2 horas, con la temática de diagnóstico asistido…"
+                    class="w-full p-4 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border-2 border-gray-200 dark:border-blue-900/30 focus:border-[#F58830] text-gray-800 dark:text-white text-sm focus:outline-none resize-none transition-colors"></textarea>
+                <div class="flex items-center justify-between mt-2">
+                    <p class="text-[11px] text-gray-400 dark:text-gray-500">Tip: contale a quién va dirigido, duración, tema, tono…</p>
+                    <span class="text-[10px] text-gray-400">Enter ↵ para enviar</span>
+                </div>
+            </div>
+
+            <!-- Sugerencias rápidas (chips) -->
+            <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="quickAction('improve')" class="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-[#0F163A]/50 hover:bg-[#F58830]/15 hover:text-[#F58830] border border-gray-200 dark:border-blue-900/30 text-gray-600 dark:text-gray-300 font-medium transition-all">
+                    <i class="fa-solid fa-pen-fancy text-[10px] mr-1"></i> Mejorá lo que tengo
+                </button>
+                <button type="button" onclick="quickAction('expand')" class="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-[#0F163A]/50 hover:bg-[#F58830]/15 hover:text-[#F58830] border border-gray-200 dark:border-blue-900/30 text-gray-600 dark:text-gray-300 font-medium transition-all">
+                    <i class="fa-solid fa-expand text-[10px] mr-1"></i> Expandila
+                </button>
+                <button type="button" onclick="quickAction('shorten')" class="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-[#0F163A]/50 hover:bg-[#F58830]/15 hover:text-[#F58830] border border-gray-200 dark:border-blue-900/30 text-gray-600 dark:text-gray-300 font-medium transition-all">
+                    <i class="fa-solid fa-compress text-[10px] mr-1"></i> Resumila
+                </button>
+                <button type="button" onclick="quickAction('formal')" class="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-[#0F163A]/50 hover:bg-[#F58830]/15 hover:text-[#F58830] border border-gray-200 dark:border-blue-900/30 text-gray-600 dark:text-gray-300 font-medium transition-all">
+                    <i class="fa-solid fa-user-tie text-[10px] mr-1"></i> Más formal
+                </button>
+                <button type="button" onclick="quickAction('friendly')" class="text-xs px-3 py-1.5 rounded-full bg-gray-100 dark:bg-[#0F163A]/50 hover:bg-[#F58830]/15 hover:text-[#F58830] border border-gray-200 dark:border-blue-900/30 text-gray-600 dark:text-gray-300 font-medium transition-all">
+                    <i class="fa-solid fa-face-smile text-[10px] mr-1"></i> Más amigable
+                </button>
+            </div>
+
+            <!-- Resultado generado -->
+            <div id="ai-result" class="hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider"><i class="fa-solid fa-circle-check mr-1"></i> Certy escribió esto:</p>
+                    <button type="button" onclick="regenerateAI()" class="text-xs text-gray-500 hover:text-[#F58830] font-bold"><i class="fa-solid fa-arrows-rotate"></i> Otra vez</button>
+                </div>
+                <div id="ai-result-content" class="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/40 text-gray-800 dark:text-gray-200 text-sm leading-relaxed max-h-[300px] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-5 border-t border-gray-100 dark:border-blue-900/30 bg-gray-50/50 dark:bg-[#0F163A]/30 flex flex-wrap gap-3">
+            <button type="button" id="ai-generate-btn" onclick="generateAI()" class="flex-1 min-w-[180px] bg-gradient-to-r from-[#F58830] to-blue-500 hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-sparkles"></i>
+                <span>Pedirle a Certy</span>
+            </button>
+            <button type="button" id="ai-apply-btn" onclick="applyAI()" disabled class="hidden flex-1 min-w-[180px] bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-all">
+                <i class="fa-solid fa-check mr-1"></i> Usar este texto
+            </button>
+            <button type="button" onclick="closeAIModal()" class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-[#0F163A]/50 transition-all">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- CKEditor 5 desde CDN -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
+<style>
+.ck-editor__editable_inline {
+    min-height: 200px !important;
+    background: transparent !important;
+    color: inherit !important;
+    border: 1px solid rgba(229, 231, 235, 1) !important;
+    border-radius: 0 0 .75rem .75rem !important;
+}
+.dark .ck-editor__editable_inline {
+    border-color: rgba(30, 64, 175, 0.3) !important;
+    background: rgba(15, 22, 58, 0.5) !important;
+}
+.ck.ck-editor__main > .ck-editor__editable {
+    padding: 12px !important;
+}
+.ck.ck-toolbar {
+    border-radius: .75rem .75rem 0 0 !important;
+    border: 1px solid rgba(229, 231, 235, 1) !important;
+    background: rgba(249, 250, 251, 1) !important;
+}
+.dark .ck.ck-toolbar {
+    background: rgba(15, 22, 58, 0.5) !important;
+    border-color: rgba(30, 64, 175, 0.3) !important;
+}
+.dark .ck-content { color: white !important; }
+.dark .ck.ck-button { color: rgba(229, 231, 235, 1) !important; }
+.dark .ck.ck-button:hover, .dark .ck.ck-button.ck-on { background: rgba(245, 136, 48, 0.15) !important; }
+#ai-modal { display: none; }
+#ai-modal.show { display: flex; }
+#ai-modal .ck-editor__editable_inline { min-height: 120px !important; }
+</style>
+
+<script>
+let ckEditorInstance = null;
+const TITLE_INPUT_SELECTOR = 'input[name="{{ title_name }}"]';
+
+ClassicEditor
+    .create(document.querySelector('#description-editor'), {
+        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'undo', 'redo'],
+        heading: {
+            options: [
+                { model: 'paragraph', title: 'Párrafo', class: 'ck-heading_paragraph' },
+                { model: 'heading2', view: 'h2', title: 'Título', class: 'ck-heading_heading2' },
+                { model: 'heading3', view: 'h3', title: 'Subtítulo', class: 'ck-heading_heading3' },
+            ],
+        },
+        language: 'es',
+    })
+    .then(editor => { ckEditorInstance = editor; })
+    .catch(err => console.error('CKEditor init failed:', err));
+
+// Función global para que el form submit la use
+window.getDescriptionHTML = function () {
+    return ckEditorInstance ? ckEditorInstance.getData() : '';
+};
+
+// ── Modal asistente IA ──────────────────────────────────────
+function openAIModal() {
+    const titleInput = document.querySelector(TITLE_INPUT_SELECTOR);
+    const title = (titleInput?.value || '').trim();
+    const titlePreview = document.getElementById('ai-title-preview');
+    const titleWarning = document.getElementById('ai-title-warning');
+    if (!title) {
+        titlePreview.textContent = '—';
+        titleWarning.classList.remove('hidden');
+    } else {
+        titlePreview.textContent = title;
+        titleWarning.classList.add('hidden');
+    }
+    document.getElementById('ai-result').classList.add('hidden');
+    document.getElementById('ai-apply-btn').classList.add('hidden');
+    document.getElementById('ai-modal-error').classList.add('hidden');
+    document.getElementById('ai-modal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    // Auto-focus en el textarea para que el admin tipee directo
+    setTimeout(() => document.getElementById('ai-context').focus(), 100);
+}
+
+// Enter envía (Shift+Enter = nueva línea)
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('ai-context');
+    if (ctx) {
+        ctx.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateAI();
+            }
+        });
+    }
+});
+function closeAIModal() {
+    document.getElementById('ai-modal').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+let lastGeneratedHTML = '';
+let lastAction = '';
+
+// Acción por defecto inteligente: si hay descripción, "improve"; si no, "create".
+function smartDefaultAction() {
+    const current = ckEditorInstance ? ckEditorInstance.getData().trim() : '';
+    return current && current !== '<p>&nbsp;</p>' && current !== '<p></p>' ? 'improve' : 'create';
+}
+
+// Chips de acción rápida — generan al toque sin requerir prompt
+function quickAction(action) {
+    lastAction = action;
+    generateAI(action);
+}
+
+async function generateAI(forceAction) {
+    const titleInput = document.querySelector(TITLE_INPUT_SELECTOR);
+    const title = (titleInput?.value || '').trim();
+    const errBox = document.getElementById('ai-modal-error');
+    errBox.classList.add('hidden');
+
+    if (!title) {
+        errBox.textContent = 'Necesitamos al menos el título del evento. Cerrá este modal y llenálo arriba.';
+        errBox.classList.remove('hidden');
+        return;
+    }
+    const accion = forceAction || lastAction || smartDefaultAction();
+    lastAction = accion;
+    const contexto = document.getElementById('ai-context').value.trim();
+    const descripcionActual = ckEditorInstance ? ckEditorInstance.getData() : '';
+
+    const btn = document.getElementById('ai-generate-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Certy está pensando...</span>';
+
+    try {
+        const res = await fetch('/api/v1/admin/ai/event-description/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '',
+            },
+            body: JSON.stringify({ titulo: title, accion, contexto, descripcion_actual: descripcionActual }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+            errBox.textContent = data.message || data.error || ('Error ' + res.status);
+            errBox.classList.remove('hidden');
+            return;
+        }
+        lastGeneratedHTML = data.html || '';
+        document.getElementById('ai-result-content').innerHTML = lastGeneratedHTML;
+        document.getElementById('ai-result').classList.remove('hidden');
+        document.getElementById('ai-apply-btn').classList.remove('hidden');
+        document.getElementById('ai-apply-btn').disabled = false;
+    } catch (err) {
+        errBox.textContent = 'Error de red: ' + err.message;
+        errBox.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-sparkles"></i><span>Pedirle a Certy</span>';
+    }
+}
+
+function regenerateAI() { generateAI(); }
+
+function applyAI() {
+    if (ckEditorInstance && lastGeneratedHTML) {
+        ckEditorInstance.setData(lastGeneratedHTML);
+    }
+    closeAIModal();
+}
+</script>
+{% endwith %}

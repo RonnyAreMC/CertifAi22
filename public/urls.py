@@ -1,10 +1,13 @@
-"""URLs públicas — solo routing declarativo (TemplateView + RedirectView).
+"""URLs públicas — landing + flujo guest + cuentas de participantes.
 
-Toda la lógica vive en `api/public/*`. Aquí solo se declara qué template
-sirve cada URL y a qué endpoint API redirigen los enlaces legacy.
+La lógica de los flujos guest (cédula, hash de cert, QR) sigue en
+`api/public/*`. Las páginas con server-side state (login, register,
+mis-certificados, eventos personalizados) viven en `public.views`.
 """
 from django.urls import path
 from django.views.generic import RedirectView, TemplateView
+
+from . import views as account_views
 
 app_name = 'public'
 
@@ -14,9 +17,25 @@ def page(template):
 
 
 urlpatterns = [
-    # ── Páginas (shells HTML) ────────────────────────────────
-    path('', page('public/landing.html'), name='landing'),
-    path('inicio/', page('public/home.html'), name='home'),
+    # ── Landing rediseñada (con datos de eventos para hero/swiper) ──
+    path('', account_views.home, name='home'),
+    path('inicio/', RedirectView.as_view(pattern_name='public:home', permanent=False), name='inicio_legacy'),
+
+    # ── Cuenta de participante ──────────────────────────────
+    path('cuenta/login/',         account_views.login_view,        name='account_login'),
+    path('cuenta/register/',      account_views.register_view,     name='account_register'),
+    path('cuenta/logout/',        account_views.logout_view,       name='account_logout'),
+    path('cuenta/',               account_views.dashboard,         name='account_dashboard'),
+    path('cuenta/certificados/',  account_views.certificados_view, name='account_certificados'),
+    path('cuenta/eventos/',       account_views.eventos_view,      name='account_eventos'),
+    path('cuenta/perfil/',        account_views.perfil_view,       name='account_perfil'),
+    path('cuenta/eventos/<int:sesion_id>/inscribir/',
+         account_views.evento_inscribir, name='account_evento_inscribir'),
+
+    # ── Google Sign-In ──────────────────────────────────────
+    path('cuenta/google/start/',    account_views.google_signin_start,    name='account_google_start'),
+    path('cuenta/google/callback/', account_views.google_signin_callback, name='account_google_callback'),
+
     path('eventos/', page('public/eventos_list.html'), name='eventos_disponibles'),
     path('search/', page('public/search.html'), name='search'),
     path('attendance/', page('public/attendance_search.html'), name='attendance_search'),

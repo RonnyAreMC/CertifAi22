@@ -3,10 +3,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.base.mixins import log_audit
+from core.models import AIConfig
 from core.services.ai import copilot, excel_mapper, insights, recommender, voice
+from core.services.ai import client as ai_client
 
 from .serializers import (
+    AIConfigSerializer,
+    AITestInputSerializer,
     CopilotBodyInputSerializer,
+    EventDescriptionInputSerializer,
     ExcelMapInputSerializer,
     VoiceExtractInputSerializer,
 )
@@ -37,6 +42,27 @@ class CopilotBodyView(BaseAIView):
         result = copilot.generate_body_text(**ser.validated_data)
         self._audit(f'tipo={ser.validated_data["tipo_evento"]} tono={ser.validated_data["tono"]}')
         return self._respond(result)
+
+
+class EventDescriptionView(BaseAIView):
+    """POST: asistente IA para la descripción de un evento.
+
+    Recibe: titulo (req), accion, contexto (prompt libre), descripcion_actual.
+    Devuelve: HTML enriquecido para CKEditor.
+    """
+    ai_action = 'EVENT_DESCRIPTION'
+
+    def post(self, request):
+        ser = EventDescriptionInputSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        result = copilot.improve_event_description(**ser.validated_data)
+        self._audit(
+            f'accion={ser.validated_data["accion"]} '
+            f'titulo={ser.validated_data["titulo"][:60]!r}'
+        )
+        if not result.get('implemented'):
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'ok': True, 'html': result['html'], 'action': result.get('action')})
 
 
 class ExcelMapColumnsView(BaseAIView):
@@ -83,3 +109,90 @@ class RecommendationsView(APIView):
         if not result.get('implemented', False):
             return Response(result, status=status.HTTP_501_NOT_IMPLEMENTED)
         return Response(result)
+
+
+# ── Configuración IA (singleton) ──────────────────────────────
+
+class AIConfigView(APIView):
+    """GET / PUT: leer y actualizar la config IA singleton."""
+    permission_classes = [permissions.IsAdminUser]
+
+    def _get_or_create(self) -> AIConfig:
+        cfg, _ = AIConfig.objects.get_or_create(pk=1)
+        return cfg
+
+    def get(self, request):
+        cfg = self._get_or_create()
+        return Response(AIConfigSerializer(cfg).data)
+
+    def put(self, request):
+        cfg = self._get_or_create()
+        ser = AIConfigSerializer(cfg, data=request.data, partial=True)
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        log_audit(request.user, 'AI_CONFIG_UPDATE',
+                  f'provider={cfg.provider} model={cfg.model} enabled={cfg.enabled}')
+        return Response(AIConfigSerializer(cfg).data)
+
+
+class AITestView(APIView):
+    """POST: prueba la config con overrides opcionales del form (sin persistir).
+
+    Si el form manda `api_key`, `provider`, etc., construye un AIRuntime
+    transitorio. Útil para probar antes de guardar.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        ser = AITestInputSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        data = ser.validated_data
+        prompt = data['prompt']
+
+        # Si llegan overrides del form, usamos un runtime transitorio.
+        api_key = (data.get('api_key') or '').strip()
+        if api_key:
+            rt = ai_client.AIRuntime(
+                provider=data.get('provider') or 'claude',
+                model=data.get('model') or 'claude-haiku-4-5',
+                api_key=api_key,
+                temperature=data.get('temperature', 0.7),
+                max_tokens=data.get('max_tokens', 256),
+            )
+        else:
+            # Sin override → leer de DB. Si la key guardada está vacía,
+            # también probamos con la del input (útil cuando el admin
+            # solo cambia provider/model sin re-pegar la key).
+            rt = ai_client.get_runtime()
+            if rt is None:
+                # Última chance: usar la key existente en DB aunque enabled=False
+                from core.models import AIConfig
+                cfg = AIConfig.objects.filter(pk=1).first()
+                if cfg and cfg.api_key and cfg.model:
+                    rt = ai_client.AIRuntime(
+                        provider=data.get('provider') or cfg.provider,
+                        model=data.get('model') or cfg.model,
+                        api_key=cfg.api_key,
+                        temperature=data.get('temperature', cfg.temperature),
+                        max_tokens=data.get('max_tokens', cfg.max_tokens),
+                    )
+            if rt is None:
+                return Response(
+                    {'ok': False, 'error': 'Falta la API key. Pegala arriba y volvé a probar.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        try:
+            text = ai_client.call_ai_with_runtime(
+                rt,
+                system='Sos un asistente que responde en español, breve y directo.',
+                user=prompt,
+            )
+        except RuntimeError as exc:
+            return Response({'ok': False, 'error': str(exc)},
+                            status=status.HTTP_502_BAD_GATEWAY)
+        except Exception as exc:  # noqa: BLE001 — mostramos el error real al admin
+            return Response({'ok': False, 'error': f'{type(exc).__name__}: {exc}'},
+                            status=status.HTTP_502_BAD_GATEWAY)
+        log_audit(request.user, 'AI_CONFIG_TEST', f'provider={rt.provider} model={rt.model}')
+        return Response({'ok': True, 'response': text, 'provider': rt.provider, 'model': rt.model})

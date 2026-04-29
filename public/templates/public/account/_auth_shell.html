@@ -1,0 +1,612 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5">
+    <title>{% block page_title %}Iniciar sesión{% endblock %} · CertifAI</title>
+    <link rel="icon" type="image/png" href="{% static 'tiger_chase_loader.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Sora:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Outfit', 'sans-serif'] } } } };
+        if (localStorage.theme === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+        }
+    </script>
+
+    <style>
+        :root {
+            --ds-brand:      {{ design.color_brand|default:'#F58830' }};
+            --ds-brand-dark: {{ design.color_brand_dark|default:'#D97520' }};
+            --ds-accent:     {{ design.color_accent|default:'#A855F7' }};
+            --ds-bg-dark:    {{ design.color_bg_dark|default:'#0A1535' }};
+        }
+        @font-face {
+            font-family: 'Comfortaa';
+            src: url('{% static "fonts/Comfortaa-Bold.ttf" %}') format('truetype');
+            font-weight: 700; font-display: swap;
+        }
+        body { font-family: 'Outfit', system-ui, sans-serif; min-height: 100vh; overflow-x: hidden; }
+        .light body { background: #f8fafc; color: #0f172a; }
+        .dark body  { background: var(--ds-bg-dark); color: #e2e8f0; }
+        .ds-display { font-family: 'Sora', 'Outfit', sans-serif; }
+        .ds-mono    { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+        .brand-certif { font-family: 'Comfortaa', 'Outfit', sans-serif; font-weight: 700; text-transform: lowercase; letter-spacing: -0.01em; }
+        .brand-ai {
+            font-family: 'Comfortaa', 'Outfit', sans-serif; font-weight: 700; text-transform: lowercase; letter-spacing: -0.01em;
+            background: linear-gradient(135deg, var(--ds-brand) 0%, #ec4899 55%, var(--ds-accent) 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           NEUMORFISMO · clases reutilizables (.nm-*)
+           ═══════════════════════════════════════════════════════ */
+        .nm-card {
+            position: relative;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.85);
+            border-radius: 24px;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.95),
+                inset 0 -1px 0 rgba(15,23,42,0.04),
+                0 24px 60px -16px rgba(15,23,42,0.18);
+        }
+        .dark .nm-card {
+            background: rgba(22,32,84,0.78);
+            border-color: rgba(255,255,255,0.12);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.10),
+                inset 0 -1px 0 rgba(0,0,0,0.30),
+                0 30px 70px -16px rgba(0,0,0,0.55);
+        }
+
+        .nm-input { position: relative; }
+        .nm-input > input,
+        .nm-input > select {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border-radius: 13px;
+            border: 1px solid rgba(15,23,42,0.10);
+            background: rgba(255,255,255,0.85);
+            color: #0f172a;
+            font-size: 0.875rem; font-weight: 500;
+            box-shadow:
+                inset 0 1px 2px rgba(15,23,42,0.06),
+                inset 0 -1px 0 rgba(255,255,255,0.6);
+            transition: all .25s;
+        }
+        .dark .nm-input > input,
+        .dark .nm-input > select {
+            background: rgba(15,23,42,0.45);
+            border-color: rgba(255,255,255,0.10);
+            color: #e2e8f0;
+            box-shadow:
+                inset 0 1px 2px rgba(0,0,0,0.30),
+                inset 0 -1px 0 rgba(255,255,255,0.05);
+        }
+        .nm-input > input:focus, .nm-input > select:focus {
+            outline: none;
+            border-color: var(--ds-brand);
+            box-shadow: inset 0 1px 2px rgba(15,23,42,0.05), 0 0 0 4px rgba(245,136,48,0.15);
+        }
+        .nm-input > .nm-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: #94a3b8; font-size: 13px;
+            pointer-events: none;
+        }
+        .nm-input > input:focus ~ .nm-icon { color: var(--ds-brand); }
+
+        .nm-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            gap: 0.5rem; width: 100%;
+            padding: 13px;
+            border-radius: 13px;
+            font-weight: 800; font-size: 0.875rem;
+            transition: all .25s cubic-bezier(.34,1.56,.64,1);
+        }
+        .nm-btn:active { transform: translateY(0); }
+        .nm-btn-primary {
+            background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+            color: white;
+            border: 1px solid rgba(255,255,255,0.35);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.5),
+                inset 0 -1px 0 rgba(0,0,0,0.10),
+                0 10px 28px -6px rgba(245,136,48,0.50);
+        }
+        .nm-btn-primary:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .nm-btn-google {
+            background: #fff;
+            color: #1f2937;
+            border: 1px solid rgba(15,23,42,0.12);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,1),
+                inset 0 -1px 0 rgba(15,23,42,0.05),
+                0 4px 12px -3px rgba(15,23,42,0.10);
+            font-weight: 700;
+            padding: 12px;
+        }
+        .nm-btn-google:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: 0 8px 22px -4px rgba(15,23,42,0.15); }
+        .dark .nm-btn-google { background: rgba(255,255,255,0.95); }
+        .nm-btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+        .nm-disc {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 56px; height: 56px;
+            border-radius: 18px;
+            color: white; font-size: 22px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px -4px rgba(15,23,42,0.30);
+        }
+        .nm-disc--brand   { background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px -4px rgba(245,136,48,0.40); }
+        .nm-disc--accent  { background: linear-gradient(135deg, var(--ds-accent), #7C3AED);              box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px -4px rgba(168,85,247,0.40); }
+        .nm-disc--success { background: linear-gradient(135deg, #10B981, #059669);                      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px -4px rgba(16,185,129,0.40); }
+        .nm-disc--info    { background: linear-gradient(135deg, #3B82F6, #2563EB);                      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px -4px rgba(59,130,246,0.40); }
+        .nm-disc--warning { background: linear-gradient(135deg, #F59E0B, #D97706);                      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 10px 24px -4px rgba(245,158,11,0.40); }
+        .nm-disc--sm { width: 36px; height: 36px; border-radius: 12px; font-size: 14px; }
+
+        .nm-divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 16px 0;
+            color: #94a3b8; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .nm-divider::before, .nm-divider::after {
+            content: ''; flex: 1; height: 1px;
+            background: rgba(15,23,42,0.10);
+        }
+        .dark .nm-divider::before, .dark .nm-divider::after { background: rgba(255,255,255,0.10); }
+
+        .nm-alert {
+            padding: 10px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nm-alert--error   { background: rgba(239,68,68,0.10);  color: #b91c1c; border: 1px solid rgba(239,68,68,0.25); }
+        .nm-alert--success { background: rgba(16,185,129,0.10); color: #047857; border: 1px solid rgba(16,185,129,0.25); }
+        .nm-alert--info    { background: rgba(59,130,246,0.10); color: #1d4ed8; border: 1px solid rgba(59,130,246,0.25); }
+        .dark .nm-alert--error   { color: #fca5a5; }
+        .dark .nm-alert--success { color: #6ee7b7; }
+        .dark .nm-alert--info    { color: #93c5fd; }
+
+        /* ═══════════════════════════════════════════════════════
+           LAYOUT 2 columnas — carrusel izquierda · form derecha
+           ═══════════════════════════════════════════════════════ */
+        .auth-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            min-height: 100vh;
+        }
+        @media (min-width: 1024px) {
+            .auth-grid { grid-template-columns: 1.35fr 1fr; }
+        }
+
+        /* ═══════════ COLUMNA IZQ · Showcase carrusel ═══════════ */
+        .showcase-col {
+            position: relative;
+            display: none;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        @media (min-width: 1024px) { .showcase-col { display: flex; flex-direction: column; } }
+
+        /* Backgrounds que rotan con cada slide */
+        .showcase-bg-stack { position: absolute; inset: 0; z-index: 0; }
+        .showcase-bg {
+            position: absolute; inset: 0;
+            opacity: 0;
+            transition: opacity 1.4s ease;
+        }
+        .showcase-bg.is-active { opacity: 1; }
+        .showcase-bg::before, .showcase-bg::after {
+            content: ''; position: absolute; border-radius: 50%; filter: blur(110px);
+            opacity: 0.55; animation: showcase-float 22s ease-in-out infinite alternate;
+        }
+        .light .showcase-bg::before, .light .showcase-bg::after { opacity: 0.32; }
+        @keyframes showcase-float { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(80px,-60px) scale(1.15); } }
+
+        .showcase-bg.bg-1::before { width: 760px; height: 760px; top: -15%; left: -10%;  background: radial-gradient(circle, var(--ds-brand) 0%, transparent 70%); }
+        .showcase-bg.bg-1::after  { width: 640px; height: 640px; bottom: -15%; right: -10%; background: radial-gradient(circle, var(--ds-accent) 0%, transparent 70%); animation-delay: -7s; }
+
+        .showcase-bg.bg-2::before { width: 760px; height: 760px; top: -20%; right: -15%; background: radial-gradient(circle, #10B981 0%, transparent 70%); }
+        .showcase-bg.bg-2::after  { width: 640px; height: 640px; bottom: -10%; left: -10%; background: radial-gradient(circle, var(--ds-brand) 0%, transparent 70%); animation-delay: -5s; }
+
+        .showcase-bg.bg-3::before { width: 800px; height: 800px; top: -10%; left: 30%;  background: radial-gradient(circle, var(--ds-accent) 0%, transparent 70%); }
+        .showcase-bg.bg-3::after  { width: 640px; height: 640px; bottom: -15%; right: -15%; background: radial-gradient(circle, #ec4899 0%, transparent 70%); animation-delay: -8s; }
+
+        .showcase-bg.bg-4::before { width: 800px; height: 800px; top: -15%; left: -10%; background: radial-gradient(circle, #3B82F6 0%, transparent 70%); }
+        .showcase-bg.bg-4::after  { width: 600px; height: 600px; bottom: -10%; right: -10%; background: radial-gradient(circle, var(--ds-brand) 0%, transparent 70%); animation-delay: -6s; }
+
+        /* Marca grande de fondo (watermark) cambia por slide */
+        .showcase-mega {
+            position: absolute; z-index: 1;
+            bottom: 6%; right: -3%;
+            font-family: 'Comfortaa', sans-serif; font-weight: 700;
+            font-size: clamp(7rem, 16vw, 14rem);
+            line-height: 0.85; letter-spacing: -0.05em;
+            text-transform: lowercase;
+            color: rgba(15,23,42,0.05);
+            user-select: none; pointer-events: none;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        .dark .showcase-mega { color: rgba(255,255,255,0.06); }
+        .showcase-mega.is-active { opacity: 1; }
+
+        /* Contenido de la columna */
+        .showcase-content {
+            position: relative; z-index: 5;
+            flex: 1;
+            display: flex; flex-direction: column;
+            padding: clamp(28px, 4vw, 56px);
+        }
+
+        .showcase-brand {
+            display: inline-flex; align-items: center; gap: 10px;
+            align-self: flex-start;
+        }
+        .showcase-brand .b-logo {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 8px 22px -4px rgba(245,136,48,0.45);
+        }
+        .showcase-brand .b-text { font-size: 1.25rem; line-height: 1; }
+
+        /* Stage del carrusel — área central donde rota Certy + texto */
+        .showcase-stage {
+            flex: 1;
+            position: relative;
+            display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+            padding-top: clamp(24px, 5vh, 56px);
+            padding-bottom: clamp(24px, 5vh, 56px);
+            min-height: 500px;
+        }
+        .showcase-slide {
+            position: absolute;
+            inset: 0;
+            display: flex; flex-direction: column; justify-content: center;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity .8s ease, transform .8s cubic-bezier(.34,1.56,.64,1);
+            pointer-events: none;
+        }
+        .showcase-slide.is-active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Hero de Certy — flotando libre con drop-shadow */
+        .certy-hero {
+            position: relative;
+            width: clamp(200px, 24vw, 300px);
+            height: clamp(200px, 24vw, 300px);
+            margin-bottom: 24px;
+            display: flex; align-items: center; justify-content: center;
+            animation: certy-bob 4.5s ease-in-out infinite alternate;
+        }
+        @keyframes certy-bob { 0% { transform: translateY(0) rotate(-2deg); } 100% { transform: translateY(-12px) rotate(2deg); } }
+        .certy-hero img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            display: block;
+            filter:
+                drop-shadow(0 28px 50px rgba(245,136,48,0.45))
+                drop-shadow(0 8px 16px rgba(15,23,42,0.20));
+        }
+        .dark .certy-hero img {
+            filter:
+                drop-shadow(0 28px 50px rgba(245,136,48,0.50))
+                drop-shadow(0 12px 24px rgba(0,0,0,0.50));
+        }
+        /* Halo radial detrás de Certy */
+        .certy-hero::before {
+            content: '';
+            position: absolute;
+            inset: 8%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(245,136,48,0.35) 0%, rgba(245,136,48,0) 70%);
+            filter: blur(20px);
+            z-index: -1;
+            animation: certy-halo 3.5s ease-in-out infinite;
+        }
+        @keyframes certy-halo {
+            0%, 100% { opacity: 0.6; transform: scale(0.95); }
+            50%      { opacity: 0.95; transform: scale(1.08); }
+        }
+
+        /* Tagline (chip) y headline */
+        .showcase-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.85);
+            color: var(--ds-brand);
+            font-size: 0.7rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.95);
+            margin-bottom: 14px;
+            align-self: flex-start;
+        }
+        .dark .showcase-tag {
+            background: rgba(22,32,84,0.65);
+            border-color: rgba(255,255,255,0.15);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+        }
+
+        .showcase-headline {
+            font-family: 'Sora', sans-serif; font-weight: 800;
+            font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+            line-height: 1.1; letter-spacing: -0.02em;
+            color: #0f172a; max-width: 520px;
+        }
+        .dark .showcase-headline { color: #fff; }
+
+        .showcase-sub {
+            font-size: 0.95rem; line-height: 1.6;
+            color: #475569; max-width: 460px; margin-top: 12px;
+        }
+        .dark .showcase-sub { color: #cbd5e1; }
+
+        /* Dots */
+        .showcase-dots {
+            display: flex; gap: 8px;
+            padding: 4px 0 0;
+            position: relative; z-index: 5;
+        }
+        .showcase-dot {
+            width: 28px; height: 4px; border-radius: 2px;
+            background: rgba(15,23,42,0.18);
+            cursor: pointer;
+            transition: all .35s;
+            border: 0;
+        }
+        .dark .showcase-dot { background: rgba(255,255,255,0.18); }
+        .showcase-dot.is-active { background: var(--ds-brand); width: 50px; }
+
+        /* ═══════════ COLUMNA DER · Form ═══════════ */
+        .form-col {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            padding: 28px 24px;
+            min-height: 100vh;
+            background: rgba(255,255,255,0.50);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(15,23,42,0.06);
+        }
+        .dark .form-col {
+            background: rgba(10,21,53,0.55);
+            border-left-color: rgba(255,255,255,0.06);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 28px;
+        }
+        @media (min-width: 640px) { .auth-card { padding: 32px; } }
+
+        .auth-card-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        /* Mobile: el carrusel se oculta, brand chip dentro de la form */
+        .mobile-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        @media (min-width: 1024px) { .mobile-brand { display: none; } }
+        .mobile-brand .b-logo {
+            width: 36px; height: 36px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 6px 16px -4px rgba(245,136,48,0.45);
+        }
+
+        /* Theme FAB */
+        .theme-fab {
+            position: fixed; top: 16px; right: 16px; z-index: 100;
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(15,23,42,0.08);
+            color: #f59e0b;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,1),
+                0 6px 18px -4px rgba(15,23,42,0.18);
+            backdrop-filter: blur(20px);
+            transition: all .2s;
+        }
+        .dark .theme-fab {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.12);
+            color: #fcd34d;
+        }
+        .theme-fab:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+<button onclick="toggleTheme()" class="theme-fab" aria-label="Cambiar tema">
+    <i id="themeIcon" class="fa-solid fa-moon"></i>
+</button>
+
+<div class="auth-grid">
+    <!-- ═══════════ LEFT · Carrusel showcase ═══════════ -->
+    <aside class="showcase-col">
+        <!-- Stack de fondos (cambian por slide) -->
+        <div class="showcase-bg-stack">
+            <div class="showcase-bg bg-1 is-active"></div>
+            <div class="showcase-bg bg-2"></div>
+            <div class="showcase-bg bg-3"></div>
+            <div class="showcase-bg bg-4"></div>
+        </div>
+
+        <!-- Watermarks gigantes (cambian por slide) -->
+        <span class="showcase-mega is-active" data-mega="0">certifai</span>
+        <span class="showcase-mega" data-mega="1">verifica</span>
+        <span class="showcase-mega" data-mega="2">aprende</span>
+        <span class="showcase-mega" data-mega="3">descubre</span>
+
+        <div class="showcase-content">
+            <!-- Brand top-left -->
+            <a href="{% url 'public:home' %}" class="showcase-brand">
+                <div class="b-logo">
+                    <i class="fa-solid fa-shield-halved text-sm"></i>
+                </div>
+                <div class="leading-none b-text">
+                    <span class="brand-certif text-slate-900 dark:text-white">certif</span><span class="brand-ai">ai</span>
+                </div>
+            </a>
+
+            <!-- Carrusel de slides -->
+            <div class="showcase-stage" id="showcaseStage">
+
+                <!-- Slide 1 · Hola Certy -->
+                <div class="showcase-slide is-active" data-slide="0">
+                    <div class="certy-hero">
+                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    </div>
+                    <span class="showcase-tag"><i class="fa-solid fa-hand-sparkles"></i> Hola, soy Certy</span>
+                    <h2 class="showcase-headline">Tu compañero de<br>aprendizaje continuo.</h2>
+                    <p class="showcase-sub">Te aviso de los eventos que importan, te ayudo a estudiar con resúmenes automáticos y guardo cada certificado en su sitio.</p>
+                </div>
+
+                <!-- Slide 2 · Certificados -->
+                <div class="showcase-slide" data-slide="1">
+                    <div class="certy-hero">
+                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    </div>
+                    <span class="showcase-tag"><i class="fa-solid fa-certificate"></i> Tus diplomas</span>
+                    <h2 class="showcase-headline">Cada certificado, en un solo lugar.</h2>
+                    <p class="showcase-sub">Lo descargas en PDF o lo compartes con un enlace público que cualquiera puede verificar al instante.</p>
+                </div>
+
+                <!-- Slide 3 · IA -->
+                <div class="showcase-slide" data-slide="2">
+                    <div class="certy-hero">
+                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    </div>
+                    <span class="showcase-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> Inteligencia artificial</span>
+                    <h2 class="showcase-headline">Resúmenes y cuestionarios automáticos.</h2>
+                    <p class="showcase-sub">La IA prepara los puntos clave de cada reunión y un cuestionario para repasar lo aprendido.</p>
+                </div>
+
+                <!-- Slide 4 · Recomendaciones -->
+                <div class="showcase-slide" data-slide="3">
+                    <div class="certy-hero">
+                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    </div>
+                    <span class="showcase-tag"><i class="fa-solid fa-compass"></i> Eventos para ti</span>
+                    <h2 class="showcase-headline">Eventos pensados a tu medida.</h2>
+                    <p class="showcase-sub">Recomendaciones según tu historial. Te inscribes con un clic y nunca te pierdes uno relevante.</p>
+                </div>
+            </div>
+
+            <!-- Dots -->
+            <div class="showcase-dots" id="showcaseDots">
+                <button class="showcase-dot is-active" data-go="0" aria-label="Slide 1"></button>
+                <button class="showcase-dot" data-go="1" aria-label="Slide 2"></button>
+                <button class="showcase-dot" data-go="2" aria-label="Slide 3"></button>
+                <button class="showcase-dot" data-go="3" aria-label="Slide 4"></button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════ RIGHT · Form ═══════════ -->
+    <main class="form-col">
+        <div class="auth-card nm-card">
+            <!-- Brand visible solo en mobile -->
+            <a href="{% url 'public:home' %}" class="mobile-brand">
+                <div class="b-logo">
+                    <i class="fa-solid fa-shield-halved text-sm"></i>
+                </div>
+                <div class="leading-none">
+                    <div class="flex items-baseline gap-1">
+                        <span class="brand-certif text-base text-slate-900 dark:text-white">certif</span><span class="brand-ai text-base">ai</span>
+                    </div>
+                </div>
+            </a>
+
+            {% if messages %}
+            <div class="space-y-2 mb-5">
+                {% for message in messages %}
+                <div class="nm-alert nm-alert--{{ message.tags|default:'info' }}">
+                    <i class="fa-solid {% if message.tags == 'error' %}fa-circle-xmark{% elif message.tags == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block auth_content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<script>
+function toggleTheme() {
+    const root = document.documentElement;
+    const icon = document.getElementById('themeIcon');
+    if (root.classList.contains('dark')) {
+        root.classList.remove('dark'); root.classList.add('light');
+        localStorage.theme = 'light';
+        if (icon) icon.className = 'fa-solid fa-sun';
+    } else {
+        root.classList.remove('light'); root.classList.add('dark');
+        localStorage.theme = 'dark';
+        if (icon) icon.className = 'fa-solid fa-moon';
+    }
+}
+(function() {
+    const icon = document.getElementById('themeIcon');
+    if (!icon) return;
+    icon.className = document.documentElement.classList.contains('dark') ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+})();
+
+// Carrusel showcase — sincroniza slides + bg + watermark
+(function() {
+    const stage  = document.getElementById('showcaseStage');
+    if (!stage) return;
+    const slides = stage.querySelectorAll('.showcase-slide');
+    const bgs    = document.querySelectorAll('.showcase-bg');
+    const megas  = document.querySelectorAll('.showcase-mega');
+    const dots   = document.querySelectorAll('.showcase-dot');
+    const total  = slides.length;
+    if (total <= 1) return;
+    let current = 0, timer = null;
+
+    function go(i) {
+        current = (i + total) % total;
+        slides.forEach((s, k) => s.classList.toggle('is-active', k === current));
+        bgs.forEach   ((b, k) => b.classList.toggle('is-active', k === current));
+        megas.forEach ((m, k) => m.classList.toggle('is-active', k === current));
+        dots.forEach  ((d, k) => d.classList.toggle('is-active', k === current));
+    }
+    const tick = () => go(current + 1);
+    const start = () => { stop(); timer = setInterval(tick, 6000); };
+    const stop  = () => { if (timer) clearInterval(timer); timer = null; };
+    dots.forEach(d => d.addEventListener('click', () => { go(parseInt(d.dataset.go)); start(); }));
+    stage.addEventListener('mouseenter', stop);
+    stage.addEventListener('mouseleave', start);
+    start();
+})();
+</script>
+</body>
+</html>

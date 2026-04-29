@@ -1,0 +1,73 @@
+{% extends 'emails/_base.html' %}
+{% block title %}Bienvenido a CertifAI{% endblock %}
+{% block preheader %}Tu cuenta está lista. Centraliza tus certificados y descubre eventos relevantes.{% endblock %}
+
+{% block content %}
+
+<!-- Eyebrow -->
+<p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#F58830;">
+    Cuenta creada
+</p>
+
+<!-- Headline -->
+<h1 class="h1" style="margin:0 0 14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:30px;line-height:36px;font-weight:700;color:#0f172a;letter-spacing:-0.5px;">
+    Hola, {{ p.nombres }}.
+</h1>
+
+<!-- Lede -->
+<p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#475569;">
+    Tu cuenta de CertifAI está lista. Desde aquí gestionas tus diplomas, descubres eventos académicos y accedes a los resúmenes que la inteligencia artificial prepara después de cada reunión.
+</p>
+
+<!-- CTA primario -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 32px;">
+    <tr>
+        <td style="background-color:#0f172a;border-radius:8px;">
+            <a href="{{ dashboard_url }}" style="display:inline-block;padding:13px 24px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.1px;">
+                Ir a mi cuenta
+            </a>
+        </td>
+    </tr>
+</table>
+
+<!-- Línea divisoria -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 28px;">
+    <tr><td style="height:1px;background-color:#e2e8f0;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+</table>
+
+<!-- Qué puedes hacer -->
+<p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#94a3b8;">
+    Qué puedes hacer
+</p>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 28px;">
+    <tr>
+        <td style="padding:0 0 16px;font-size:14px;line-height:1.6;color:#475569;">
+            <strong style="color:#0f172a;font-weight:600;">Inscribirte a eventos</strong> con un clic y recibir recordatorios antes de cada reunión.
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:0 0 16px;font-size:14px;line-height:1.6;color:#475569;">
+            <strong style="color:#0f172a;font-weight:600;">Acceder a resúmenes y cuestionarios</strong> generados por IA al terminar cada evento.
+        </td>
+    </tr>
+    <tr>
+        <td style="padding:0;font-size:14px;line-height:1.6;color:#475569;">
+            <strong style="color:#0f172a;font-weight:600;">Descargar y compartir tus certificados</strong> con un enlace público que cualquiera puede verificar.
+        </td>
+    </tr>
+</table>
+
+<!-- Línea divisoria -->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px;">
+    <tr><td style="height:1px;background-color:#e2e8f0;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+</table>
+
+<p style="margin:0;font-size:14px;line-height:1.6;color:#64748b;">
+    Si tienes alguna duda, simplemente responde a este correo.
+</p>
+<p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#0f172a;">
+    El equipo de CertifAI
+</p>
+
+{% endblock %}

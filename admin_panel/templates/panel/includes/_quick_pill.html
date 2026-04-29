@@ -1,0 +1,28 @@
+{% comment %}
+═══════════════════════════════════════════════════════════════════
+ATOM · QuickPill — tile de acción rápida (iOS Liquid Glass + Neuromorfismo).
+
+Reglas de color: SOLO se usan tokens del Design System.
+    • brand   → acciones primarias (crear, agregar)
+    • accent  → acciones especiales (IA, configuración, destacadas)
+    • success → consultas / listados positivos
+    • info    → consultas neutras
+    • warning → solicitudes pendientes
+    • danger  → acciones destructivas
+
+Args: url, icon, label, color (brand|accent|success|info|warning|danger), badge?
+═══════════════════════════════════════════════════════════════════
+{% endcomment %}
+{% with c=color|default:"brand" %}
+<a href="{% url url %}"
+   class="qp-tile qp-{{ c }} group relative flex flex-col items-center justify-center gap-2.5 p-5 rounded-2xl
+          transition-all duration-300">
+    <span class="qp-disc">
+        <i class="fa-solid {{ icon }} qp-icon"></i>
+    </span>
+    <span class="text-[11px] font-bold text-slate-700 dark:text-slate-100 leading-none tracking-wide">{{ label }}</span>
+    {% if badge and badge > 0 %}
+    <span class="qp-badge">{{ badge }}</span>
+    {% endif %}
+</a>
+{% endwith %}

@@ -1,0 +1,39 @@
+{% comment %}
+Botón de acción rápida del dashboard — Liquid Glass.
+Icono grande sin fondo de color; el hover aplica un tinte liquid glass del color elegido.
+Args:
+    url: nombre de URL Django (ej: 'panel:session_create')
+    icon: clase FA (ej: 'fa-calendar-plus')
+    label: texto
+    color: 'orange', 'blue', 'emerald', 'purple', 'red', 'pink'
+    badge: número opcional (muestra badge rojo si > 0)
+{% endcomment %}
+{% with c=color|default:"orange" %}
+<a href="{% url url %}"
+   class="qa-tile group relative flex flex-col items-center justify-center gap-2 p-5 rounded-2xl
+          bg-white/60 dark:bg-white/5
+          border border-slate-200/70 dark:border-white/10
+          hover:-translate-y-0.5 transition-all duration-200
+          backdrop-blur-xl
+          {% if c == 'orange' %}qa-orange
+          {% elif c == 'blue' %}qa-blue
+          {% elif c == 'emerald' %}qa-emerald
+          {% elif c == 'purple' %}qa-purple
+          {% elif c == 'red' %}qa-red
+          {% elif c == 'pink' %}qa-pink
+          {% endif %}">
+    <i class="fa-solid {{ icon }} text-3xl
+        {% if c == 'orange' %}text-[#F58830]
+        {% elif c == 'blue' %}text-blue-500
+        {% elif c == 'emerald' %}text-emerald-500
+        {% elif c == 'purple' %}text-purple-500
+        {% elif c == 'red' %}text-red-500
+        {% elif c == 'pink' %}text-pink-500
+        {% endif %}
+        group-hover:scale-110 transition-transform duration-200"></i>
+    <span class="text-xs font-bold text-center text-slate-700 dark:text-gray-200 leading-tight">{{ label }}</span>
+    {% if badge and badge > 0 %}
+    <span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center ring-2 ring-white dark:ring-[#162054] animate-pulse">{{ badge }}</span>
+    {% endif %}
+</a>
+{% endwith %}

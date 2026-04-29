@@ -1,0 +1,14 @@
+{% comment %}
+Atom · TextField — input de texto/numero con label y hint.
+Args: name, label, value, hint?, type? (default 'text'), step?
+{% endcomment %}
+<div class="space-y-1.5">
+    <label for="ds-{{ name }}" class="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{{ label }}</label>
+    <input type="{{ type|default:'text' }}"
+           id="ds-{{ name }}"
+           name="{{ name }}"
+           value="{{ value }}"
+           {% if step %}step="{{ step }}"{% endif %}
+           class="w-full ds-mono text-xs px-3 py-2 rounded-lg bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-200 focus:outline-none focus:border-[var(--ds-brand)] focus:ring-2 focus:ring-[var(--ds-brand)]/20 transition-all">
+    {% if hint %}<p class="text-[10px] text-slate-400 dark:text-slate-500">{{ hint }}</p>{% endif %}
+</div>

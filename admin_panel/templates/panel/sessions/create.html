@@ -1,0 +1,356 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+{% with css="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] transition-all duration-300" %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div>
+        <a href="{% url 'panel:session_list' %}" class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#F58830] transition-all mb-3">
+            <i class="fa-solid fa-arrow-left"></i> Volver a eventos
+        </a>
+        <h1 class="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
+            <i class="fa-solid fa-plus text-[#F58830] mr-2"></i> Crear Evento
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">Llená los datos del nuevo evento — los ponentes pueden ser uno o varios.</p>
+    </div>
+
+    <form id="session-form" class="space-y-6">
+        <div id="error-box" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-red-700 dark:text-red-400 text-sm"></div>
+
+        <!-- ──────── 1. Detalles del evento ──────── -->
+        <section class="lg-card rounded-2xl p-6 md:p-8 space-y-5">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-7 h-7 rounded-lg bg-[#F58830]/10 text-[#F58830] flex items-center justify-center text-sm font-black">1</span>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Detalles del evento</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Título</label>
+                    <input type="text" name="titulo" placeholder="Ej: Seminario de IA aplicada a la salud" required class="{{ css }}">
+                </div>
+                <div class="md:col-span-2">
+                    {% include 'panel/includes/_description_with_ai.html' with title_input_name='titulo' description_name='descripcion' %}
+                </div>
+            </div>
+
+            <!-- Banner upload (custom) -->
+            <div>
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2"><i class="fa-solid fa-image mr-1 text-[#F58830]"></i> Imagen de banner</label>
+                <label for="banner-input" id="banner-zone" class="block cursor-pointer rounded-2xl border-2 border-dashed border-gray-300 dark:border-blue-900/40 hover:border-[#F58830] hover:bg-[#F58830]/5 transition-all overflow-hidden">
+                    <div id="banner-empty" class="px-6 py-10 text-center">
+                        <div class="w-14 h-14 mx-auto rounded-full bg-[#F58830]/10 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-cloud-arrow-up text-[#F58830] text-2xl"></i>
+                        </div>
+                        <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Click o arrastrá una imagen</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG, WEBP · recomendado 1200×600</p>
+                    </div>
+                    <div id="banner-preview" class="hidden relative">
+                        <img id="banner-img" alt="" class="w-full h-56 object-cover">
+                        <div class="absolute top-3 right-3 flex gap-2">
+                            <button type="button" onclick="changeBanner(event)" class="w-9 h-9 rounded-full bg-white/95 hover:bg-white text-gray-700 shadow-lg flex items-center justify-center" title="Cambiar"><i class="fa-solid fa-arrows-rotate text-sm"></i></button>
+                            <button type="button" onclick="removeBanner(event)" class="w-9 h-9 rounded-full bg-white/95 hover:bg-red-50 text-red-600 shadow-lg flex items-center justify-center" title="Quitar"><i class="fa-solid fa-trash text-sm"></i></button>
+                        </div>
+                        <div class="absolute bottom-3 left-3 px-3 py-1.5 rounded-lg bg-black/55 backdrop-blur-sm text-white text-xs font-medium" id="banner-filename"></div>
+                    </div>
+                </label>
+                <input id="banner-input" type="file" name="imagen_banner" accept="image/*" class="hidden">
+            </div>
+        </section>
+
+        <!-- ──────── 2. Cuándo y dónde ──────── -->
+        <section class="lg-card rounded-2xl p-6 md:p-8 space-y-5">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-7 h-7 rounded-lg bg-[#F58830]/10 text-[#F58830] flex items-center justify-center text-sm font-black">2</span>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Cuándo y dónde</h2>
+            </div>
+
+            <!-- Modalidad -->
+            <div>
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2"><i class="fa-solid fa-globe mr-1 text-[#F58830]"></i> Modalidad</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="modalidad" value="presencial" checked class="peer sr-only" onchange="toggleModalidad()">
+                        <div class="p-4 rounded-xl border-2 border-gray-200 dark:border-blue-900/30 peer-checked:border-[#F58830] peer-checked:bg-[#F58830]/10 transition-all text-center">
+                            <i class="fa-solid fa-building text-2xl text-gray-400 peer-checked:text-[#F58830] mb-1"></i>
+                            <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Presencial</p>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="modalidad" value="virtual" class="peer sr-only" onchange="toggleModalidad()">
+                        <div class="p-4 rounded-xl border-2 border-gray-200 dark:border-blue-900/30 peer-checked:border-[#F58830] peer-checked:bg-[#F58830]/10 transition-all text-center">
+                            <i class="fa-solid fa-video text-2xl text-gray-400 peer-checked:text-[#F58830] mb-1"></i>
+                            <p class="text-sm font-bold text-gray-700 dark:text-gray-200">Virtual</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Aviso Meet (solo virtual) -->
+            <div id="virtual-fields" class="hidden p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/30">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l5-5v14l-5-5M5 7h10v10H5z"/></svg>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-emerald-900 dark:text-emerald-100">Google Meet automático</p>
+                        <p class="text-xs text-emerald-700 dark:text-emerald-300/80 mt-1 leading-relaxed">
+                            Al crear se generará un enlace de Google Meet con grabación y transcripción habilitadas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lugar (solo presencial) -->
+            <div id="lugar-wrapper">
+                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1"><i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i> Lugar</label>
+                <input type="text" name="lugar" placeholder="Ej: Auditorio Principal — Edificio A" class="{{ css }}">
+            </div>
+
+            <!-- Fecha / Hora (4 cols) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Fecha</label>
+                    <input id="id_fecha" type="date" name="fecha" required class="{{ css }}">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Día</label>
+                    <select id="id_dia_semana" name="dia_semana" required class="{{ css }} pointer-events-none opacity-80" tabindex="-1">
+                        <option value="Lunes">Lunes</option>
+                        <option value="Martes">Martes</option>
+                        <option value="Miércoles">Miércoles</option>
+                        <option value="Jueves">Jueves</option>
+                        <option value="Viernes">Viernes</option>
+                        <option value="Sábado">Sábado</option>
+                        <option value="Domingo">Domingo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Hora inicio</label>
+                    <input type="time" name="hora_inicio" required class="{{ css }}">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Hora fin</label>
+                    <input type="time" name="hora_fin" required class="{{ css }}">
+                </div>
+            </div>
+        </section>
+
+        <script>
+            // Auto-rellena el día de la semana cuando cambia la fecha
+            (function() {
+                const fechaInput = document.getElementById('id_fecha');
+                const diaSelect  = document.getElementById('id_dia_semana');
+                if (!fechaInput || !diaSelect) return;
+                const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                fechaInput.addEventListener('change', () => {
+                    if (!fechaInput.value) return;
+                    // Parsear como fecha local (YYYY-MM-DD), evitando shift de timezone
+                    const [y, m, d] = fechaInput.value.split('-').map(Number);
+                    const date = new Date(y, m - 1, d);
+                    const dayName = dias[date.getDay()];
+                    for (let i = 0; i < diaSelect.options.length; i++) {
+                        if (diaSelect.options[i].value === dayName) {
+                            diaSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                });
+                // Si la fecha ya viene precargada (ej: edit), disparar una vez al cargar
+                if (fechaInput.value) fechaInput.dispatchEvent(new Event('change'));
+            })();
+        </script>
+
+        <!-- ──────── 3. Ponentes ──────── -->
+        <section class="lg-card rounded-2xl p-6 md:p-8 space-y-4">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-[#F58830]/10 text-[#F58830] flex items-center justify-center text-sm font-black">3</span>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white">Ponentes</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Uno o varios. Solo el nombre es obligatorio.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="addPonente()" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F58830]/10 hover:bg-[#F58830]/20 text-[#F58830] text-xs font-bold transition-all whitespace-nowrap">
+                    <i class="fa-solid fa-plus"></i> Agregar
+                </button>
+            </div>
+            <div id="ponentes-list" class="space-y-3"></div>
+            <p id="ponentes-empty" class="text-center text-xs text-gray-400 dark:text-gray-500 italic py-8 border-2 border-dashed border-gray-200 dark:border-blue-900/30 rounded-xl">
+                Aún no hay ponentes. Click en "Agregar" para añadir uno.
+            </p>
+        </section>
+
+        <!-- ──────── 4. Capacidad ──────── -->
+        <section class="lg-card rounded-2xl p-6 md:p-8 space-y-4">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-7 h-7 rounded-lg bg-[#F58830]/10 text-[#F58830] flex items-center justify-center text-sm font-black">4</span>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white">Capacidad</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <input type="number" id="cap-input" min="1" placeholder="Ej: 100 cupos" disabled class="flex-1 {{ css }}">
+                <label class="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap">
+                    <input type="checkbox" id="cap-ilimitada" checked onchange="toggleCapacidad()" class="h-5 w-5 rounded text-[#F58830] focus:ring-[#F58830] border-gray-300">
+                    <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Ilimitada</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Submit -->
+        <div class="flex gap-3 sticky bottom-0 bg-white/80 dark:bg-[#0a0e2a]/80 backdrop-blur-sm p-4 -mx-4 rounded-2xl">
+            <button type="submit" id="submit-btn" class="flex-1 bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3 rounded-xl transition-all">
+                <i class="fa-solid fa-check mr-1"></i> Crear Evento
+            </button>
+            <a href="{% url 'panel:session_list' %}" class="px-6 py-3 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-50 dark:hover:bg-[#0F163A]/50 transition-all text-center">
+                Cancelar
+            </a>
+        </div>
+
+        <input type="hidden" name="capacidad" value="0">
+        <input type="hidden" name="activa" value="true">
+    </form>
+</div>
+
+<!-- Template para nuevo ponente -->
+<template id="ponente-template">
+    <div class="ponente-row p-4 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 space-y-3">
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-600 dark:text-gray-300 ponente-num">Ponente #1</span>
+            <button type="button" onclick="removePonente(this)" class="text-red-500 hover:text-red-600 text-xs font-bold">
+                <i class="fa-solid fa-trash"></i> Quitar
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input type="text" data-field="titulo" placeholder="Dr., Mgs., Ing..." class="{{ css }} text-sm">
+            <input type="text" data-field="nombre" placeholder="Nombre completo *" required class="{{ css }} text-sm md:col-span-2">
+        </div>
+        <input type="text" data-field="afiliacion" placeholder="Afiliación / Institución (opcional)" class="{{ css }} text-sm">
+        <textarea data-field="bio" rows="2" placeholder="Biografía corta (opcional)" class="{{ css }} text-sm resize-none"></textarea>
+    </div>
+</template>
+{% endwith %}
+
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+function toggleCapacidad() {
+    const cb = document.getElementById('cap-ilimitada');
+    const input = document.getElementById('cap-input');
+    input.disabled = cb.checked;
+    if (cb.checked) input.value = '';
+    else input.focus();
+}
+
+function toggleModalidad() {
+    const selected = document.querySelector('input[name="modalidad"]:checked')?.value;
+    document.getElementById('virtual-fields').classList.toggle('hidden', selected !== 'virtual');
+    document.getElementById('lugar-wrapper').classList.toggle('hidden', selected === 'virtual');
+}
+
+// ── Banner upload con preview ───────────────────────────────
+function changeBanner(e) { e.preventDefault(); document.getElementById('banner-input').click(); }
+function removeBanner(e) {
+    e.preventDefault();
+    const input = document.getElementById('banner-input');
+    input.value = '';
+    document.getElementById('banner-empty').classList.remove('hidden');
+    document.getElementById('banner-preview').classList.add('hidden');
+}
+document.getElementById('banner-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        document.getElementById('banner-img').src = ev.target.result;
+        document.getElementById('banner-filename').textContent = file.name;
+        document.getElementById('banner-empty').classList.add('hidden');
+        document.getElementById('banner-preview').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+});
+// Drag & drop
+const bannerZone = document.getElementById('banner-zone');
+['dragenter','dragover'].forEach(ev => bannerZone.addEventListener(ev, e => {
+    e.preventDefault(); bannerZone.classList.add('border-[#F58830]','bg-[#F58830]/10');
+}));
+['dragleave','drop'].forEach(ev => bannerZone.addEventListener(ev, e => {
+    e.preventDefault(); bannerZone.classList.remove('border-[#F58830]','bg-[#F58830]/10');
+}));
+bannerZone.addEventListener('drop', e => {
+    if (e.dataTransfer.files[0]) {
+        document.getElementById('banner-input').files = e.dataTransfer.files;
+        document.getElementById('banner-input').dispatchEvent(new Event('change'));
+    }
+});
+
+// ── Ponentes dinámicos ──────────────────────────────────────
+function addPonente(data = {}) {
+    const list = document.getElementById('ponentes-list');
+    const tpl = document.getElementById('ponente-template');
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    if (data.nombre) node.querySelector('[data-field="nombre"]').value = data.nombre;
+    if (data.titulo) node.querySelector('[data-field="titulo"]').value = data.titulo;
+    if (data.afiliacion) node.querySelector('[data-field="afiliacion"]').value = data.afiliacion;
+    if (data.bio) node.querySelector('[data-field="bio"]').value = data.bio;
+    list.appendChild(node);
+    refreshPonentesUI();
+}
+function removePonente(btn) { btn.closest('.ponente-row').remove(); refreshPonentesUI(); }
+function refreshPonentesUI() {
+    const rows = document.querySelectorAll('#ponentes-list .ponente-row');
+    rows.forEach((row, i) => row.querySelector('.ponente-num').textContent = `Ponente #${i + 1}`);
+    document.getElementById('ponentes-empty').classList.toggle('hidden', rows.length > 0);
+}
+function collectPonentes() {
+    return Array.from(document.querySelectorAll('#ponentes-list .ponente-row')).map(row => ({
+        nombre: row.querySelector('[data-field="nombre"]').value.trim(),
+        titulo: row.querySelector('[data-field="titulo"]').value.trim(),
+        afiliacion: row.querySelector('[data-field="afiliacion"]').value.trim(),
+        bio: row.querySelector('[data-field="bio"]').value.trim(),
+    })).filter(p => p.nombre);
+}
+
+document.getElementById('session-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const errBox = document.getElementById('error-box');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Creando...';
+    errBox.classList.add('hidden');
+
+    const fd = new FormData(e.target);
+    fd.delete('capacidad');
+    fd.set('capacidad', document.getElementById('cap-ilimitada').checked ? '0' : (document.getElementById('cap-input').value || '0'));
+    fd.set('ponentes_json', JSON.stringify(collectPonentes()));
+    // Descripción: usar HTML del CKEditor en vez del textarea oculto
+    if (typeof window.getDescriptionHTML === 'function') {
+        fd.set('descripcion', window.getDescriptionHTML());
+    }
+    // Banner: forzar inclusión del input externo
+    const bannerFile = document.getElementById('banner-input').files[0];
+    if (bannerFile) fd.set('imagen_banner', bannerFile);
+
+    try {
+        const res = await fetch('/api/v1/admin/sessions/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': CSRF },
+            body: fd,
+        });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            errBox.innerHTML = Object.entries(data).map(([k, v]) =>
+                `<p><strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</p>`).join('');
+            errBox.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Crear Evento';
+            return;
+        }
+        window.location.href = "{% url 'panel:session_list' %}";
+    } catch (err) {
+        errBox.textContent = 'Error de red: ' + err.message;
+        errBox.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Crear Evento';
+    }
+});
+</script>
+{% endblock %}

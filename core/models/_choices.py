@@ -50,25 +50,3 @@ class PlataformaVirtual(models.TextChoices):
     OTRO = 'otro', 'Otra plataforma'
 
 
-class LandingTipo(models.TextChoices):
-    HERO = 'hero', 'Encabezado Principal'
-    STATS = 'stats', 'Barra de Estadísticas'
-    STEPS = 'steps', 'Pasos / Proceso'
-    FEATURES = 'features', 'Características / Cards'
-    CTA = 'cta', 'Call to Action / Banner'
-    EVENTO = 'evento', 'Evento Destacado'
-    PASADO = 'pasado', 'Evento Pasado / Noticia'
-    CUSTOM = 'custom', 'Bloque Personalizado'
-
-
-class LandingEstilo(models.TextChoices):
-    HERO_GRADIENT = 'hero_gradient', 'Hero - Gradiente con orbes animados'
-    HERO_IMAGEN = 'hero_imagen', 'Hero - Imagen de fondo completa'
-    HERO_SPLIT = 'hero_split', 'Hero - Mitad imagen / mitad texto'
-    STATS_BAR = 'stats_bar', 'Stats - Barra de estadísticas'
-    STEPS_3 = 'steps_3', 'Steps - 3 pasos con iconos'
-    FEATURES_GRID = 'features_grid', 'Features - Grid de características'
-    CTA_BANNER = 'cta_banner', 'CTA - Banner con botón'
-    CARD_IMAGEN_TOP = 'card_imagen_top', 'Card - Imagen arriba, texto abajo'
-    CARD_HORIZONTAL = 'card_horizontal', 'Card - Imagen lateral, texto al lado'
-    CARD_SOLO_TEXTO = 'card_solo_texto', 'Card - Solo texto con color de fondo'

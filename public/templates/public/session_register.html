@@ -1,618 +1,204 @@
 {% extends 'public/base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="max-w-xl mx-auto py-4 md:py-8">
 
-    <!-- Banner -->
-    {% if sesion.imagen_banner %}
-    <div class="rounded-2xl overflow-hidden shadow-lg border border-gray-100 dark:border-blue-900/30 mb-6 bg-white dark:bg-[#162054]">
-        <img src="{{ sesion.imagen_banner.url }}" alt="{{ sesion.titulo }}" class="w-full max-h-64 object-cover">
-    </div>
-    {% endif %}
-
-    <!-- Session Info Header -->
-    <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
-        <div class="flex items-start gap-4">
-            <div class="{% if sesion.es_virtual %}bg-blue-500/10{% else %}bg-[#F58830]/10{% endif %} rounded-xl w-14 h-14 flex items-center justify-center shrink-0">
-                <i class="fa-solid {% if sesion.es_virtual %}fa-video text-blue-500{% else %}fa-calendar-check text-[#F58830]{% endif %} text-2xl"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <h1 class="text-2xl font-black text-gray-800 dark:text-white tracking-tight">
-                    {{ sesion.titulo|default:"Registro de Asistencia" }}
-                </h1>
-                {% if sesion.descripcion %}
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ sesion.descripcion }}</p>
-                {% endif %}
-                <div class="flex flex-wrap gap-3 mt-3 text-sm text-gray-500 dark:text-gray-400">
-                    <span><i class="fa-solid fa-calendar-day mr-1 text-[#F58830]"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
-                    <span><i class="fa-solid fa-clock mr-1 text-[#F58830]"></i>{{ sesion.hora_inicio|time:"H:i" }} – {{ sesion.hora_fin|time:"H:i" }}</span>
-                    {% if sesion.es_virtual %}
-                    <span><i class="fa-solid fa-video mr-1 text-blue-500"></i>{{ sesion.plataforma_display_safe }}</span>
-                    {% elif sesion.lugar %}
-                    <span><i class="fa-solid fa-location-dot mr-1 text-[#F58830]"></i>{{ sesion.lugar }}</span>
-                    {% endif %}
-                </div>
-                <div class="mt-2 flex flex-wrap gap-2">
-                    {% if sesion.es_virtual %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                        <i class="fa-solid fa-video text-[10px]"></i> Evento Virtual
-                    </span>
-                    {% else %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400">
-                        <i class="fa-solid fa-building text-[10px]"></i> Evento Presencial
-                    </span>
-                    {% endif %}
-                    {% if sesion.solo_lideres %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
-                        <i class="fa-solid fa-user-tie text-[10px]"></i> Solo Líderes Académicos
-                    </span>
-                    {% endif %}
-                    {% if capacidad_ilimitada %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                        <i class="fa-solid fa-infinity text-[10px]"></i> Cupos ilimitados
-                    </span>
-                    {% elif cupos > 0 %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-                        <i class="fa-solid fa-users text-[10px]"></i> {{ cupos }} cupos disponibles
-                    </span>
-                    {% else %}
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400">
-                        <i class="fa-solid fa-ban text-[10px]"></i> Sin cupos disponibles
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+    {# Header con info del evento — partial reutilizable #}
+    {% include 'public/_partials/_session_summary.html' with sesion=sesion cupos=cupos capacidad_ilimitada=capacidad_ilimitada %}
 
     {% if cupos == 0 and not capacidad_ilimitada %}
-    <!-- No capacity -->
-    <div class="text-center py-12">
-        <div class="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-red-500">
-            <i class="fa-solid fa-circle-xmark"></i>
-        </div>
-        <h3 class="text-xl font-bold text-gray-700 dark:text-gray-300">Sesión sin cupos</h3>
-        <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Lo sentimos, esta sesión ya alcanzó su capacidad máxima.</p>
-    </div>
+
+        {# Sin cupos: empty state amigable #}
+        {% include 'public/_components/_empty_state.html' with
+            icon='fa-circle-xmark'
+            title='Sesión sin cupos'
+            text='Lo sentimos, esta sesión ya alcanzó su capacidad máxima. Vuelve a la lista de eventos para ver otros disponibles.'
+            cta_url='/eventos/' cta_label='Ver otros eventos' cta_icon='fa-calendar-days' %}
+
     {% else %}
 
-    <!-- Step 1: Search / Question -->
-    <div id="step-search" class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
-        <h2 class="text-lg font-black text-gray-800 dark:text-white mb-1">
-            <i class="fa-solid fa-magnifying-glass text-[#F58830] mr-2"></i>
-            ¿Ya has participado en eventos anteriores?
-        </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Ingresa tu cédula o correo para buscarte en el sistema.</p>
+        {# ───── Step 1: búsqueda de participante existente ───── #}
+        <div id="step-search" class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
+            <h2 class="text-lg font-black text-gray-800 dark:text-white mb-1">
+                <i class="fa-solid fa-magnifying-glass text-[#F58830] mr-2"></i>
+                ¿Ya has participado en eventos anteriores?
+            </h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Ingresa tu cédula o correo para buscarte en el sistema.</p>
 
-        <div class="relative">
-            <input type="text" id="search-input" placeholder="Cédula, correo o nombre..."
-                class="w-full p-4 pl-12 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] focus:ring-2 focus:ring-[#F58830]/20 transition-all text-lg"
-                autocomplete="off">
-            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <div id="search-spinner" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
-                <i class="fa-solid fa-spinner fa-spin text-[#F58830]"></i>
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="Cédula, correo o nombre..." autocomplete="off"
+                    class="w-full p-4 pl-12 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830] focus:ring-2 focus:ring-[#F58830]/20 transition-all text-lg">
+                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div id="search-spinner" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
+                    <i class="fa-solid fa-spinner fa-spin text-[#F58830]"></i>
+                </div>
             </div>
-        </div>
 
-        <!-- Results List (Multi-match) -->
-        <div id="search-results-list" class="hidden mt-4 space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-            <!-- Items injected via JS -->
-        </div>
+            {# Resultados múltiples (lista) — poblada por JS #}
+            <div id="search-results-list" class="hidden mt-4 space-y-2 max-h-60 overflow-y-auto pr-1"></div>
 
-        <!-- Search Result: Found -->
-        <div id="result-found" class="hidden mt-5">
-            <div class="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <div id="found-icon-success" class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
-                        <i class="fa-solid fa-check"></i>
+            {# Resultado: encontrado #}
+            <div id="result-found" class="hidden mt-5">
+                <div class="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl p-5">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div id="found-icon-success" class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <div id="found-icon-warning" class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white hidden">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <p class="font-black text-gray-800 dark:text-white text-lg" id="found-nombre"></p>
+                            <p class="text-xs text-green-600 dark:text-green-400" id="found-msg-success">Ya existe un registro con tus datos</p>
+                            <p class="text-xs text-yellow-600 dark:text-yellow-500 font-bold hidden" id="found-msg-missing">Por favor, completa la información que falta</p>
+                        </div>
                     </div>
-                    <div id="found-icon-warning" class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white hidden">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                    <div>
-                        <p class="font-black text-gray-800 dark:text-white text-lg" id="found-nombre"></p>
-                        <p class="text-xs text-green-600 dark:text-green-400" id="found-msg-success">Ya existe un registro con tus datos</p>
-                        <p class="text-xs text-yellow-600 dark:text-yellow-500 font-bold hidden" id="found-msg-missing">Por favor, completa la información que falta</p>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 text-sm mb-4">
-                    <div id="col-cedula">
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Cédula</span>
-                        <p class="text-gray-800 dark:text-white font-medium" id="found-cedula-p">—</p>
-                        <input type="text" id="found-cedula-input" class="hidden w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0" placeholder="ID / Cédula">
-                    </div>
-                    <div id="col-email">
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Email</span>
-                        <p class="text-gray-800 dark:text-white font-medium" id="found-email-p">—</p>
-                        <input type="email" id="found-email-input" class="hidden w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0" placeholder="Email">
-                    </div>
-                    <div>
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Celular</span>
-                        <input type="text" id="found-celular" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white text-sm focus:outline-none focus:border-[#F58830]" placeholder="Actualizar celular">
-                    </div>
-                    <div>
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Eventos previos</span>
-                        <p class="text-gray-800 dark:text-white font-medium text-sm leading-tight" id="found-cursos">—</p>
-                    </div>
-                </div>
-                <!-- Hidden inputs for name if missing -->
-                <div id="found-names-extra" class="hidden grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Nombres</span>
-                        <input type="text" id="found-nombres-input" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0">
-                    </div>
-                    <div>
-                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Apellidos</span>
-                        <input type="text" id="found-apellidos-input" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0">
-                    </div>
-                </div>
-                <input type="hidden" id="found-participante-id">
 
-                <div id="found-ya-confirmado" class="hidden">
-                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-blue-700 dark:text-blue-300 text-sm">
-                        <i class="fa-solid fa-circle-info mr-1"></i> Ya estás registrado en esta sesión.
+                    <div class="grid grid-cols-2 gap-3 text-sm mb-4">
+                        <div id="col-cedula">
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Cédula</span>
+                            <p class="text-gray-800 dark:text-white font-medium" id="found-cedula-p">—</p>
+                            <input type="text" id="found-cedula-input" placeholder="Cédula" class="hidden w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0">
+                        </div>
+                        <div id="col-email">
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Email</span>
+                            <p class="text-gray-800 dark:text-white font-medium" id="found-email-p">—</p>
+                            <input type="email" id="found-email-input" placeholder="Email" class="hidden w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0">
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Celular</span>
+                            <input type="text" id="found-celular" placeholder="Actualizar celular" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white text-sm focus:outline-none focus:border-[#F58830]">
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Eventos previos</span>
+                            <p class="text-gray-800 dark:text-white font-medium text-sm leading-tight" id="found-cursos">—</p>
+                        </div>
                     </div>
-                </div>
 
-                <button id="btn-confirm-existing" onclick="confirmExisting()"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all mt-3">
-                    <i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme
+                    <div id="found-names-extra" class="hidden grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Nombres</span>
+                            <input type="text" id="found-nombres-input" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0">
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Apellidos</span>
+                            <input type="text" id="found-apellidos-input" class="w-full p-2 rounded-lg bg-white dark:bg-[#0F163A]/50 border-2 border-yellow-400 text-gray-800 dark:text-white text-sm focus:ring-0">
+                        </div>
+                    </div>
+                    <input type="hidden" id="found-participante-id">
+
+                    <div id="found-ya-confirmado" class="hidden">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-blue-700 dark:text-blue-300 text-sm">
+                            <i class="fa-solid fa-circle-info mr-1"></i> Ya estás registrado en esta sesión.
+                        </div>
+                    </div>
+
+                    {% include 'public/_components/_button.html' with
+                        id='btn-confirm-existing'
+                        variant='success' icon='fa-check-double'
+                        label='Usar estos datos y registrarme'
+                        full=True extra='mt-3'
+                        onclick='confirmExisting()' %}
+                </div>
+            </div>
+
+            {# Resultado: no encontrado #}
+            <div id="result-not-found" class="hidden mt-5">
+                <div class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-4 text-yellow-700 dark:text-yellow-300 text-sm">
+                    <i class="fa-solid fa-user-plus mr-2"></i>
+                    No encontramos un registro con esos datos. Completa el formulario para registrarte.
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <button type="button" onclick="showNewForm()" class="text-sm text-[#F58830] hover:underline font-bold">
+                    <i class="fa-solid fa-user-plus mr-1"></i> Soy nuevo, quiero registrarme
                 </button>
             </div>
         </div>
 
-        <!-- Search Result: Not Found -->
-        <div id="result-not-found" class="hidden mt-5">
-            <div class="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-4 text-yellow-700 dark:text-yellow-300 text-sm">
-                <i class="fa-solid fa-user-plus mr-2"></i>
-                No encontramos un registro con esos datos. Completa el formulario para registrarte.
-            </div>
-        </div>
+        {# ───── Step 2: registro nuevo ───── #}
+        <div id="step-new-form" class="hidden bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
+            <h2 class="text-lg font-black text-gray-800 dark:text-white mb-4">
+                <i class="fa-solid fa-user-plus text-[#F58830] mr-2"></i> Registro de participante
+            </h2>
 
-        <div class="mt-4 text-center">
-            <button onclick="showNewForm()" class="text-sm text-[#F58830] hover:underline font-bold">
-                <i class="fa-solid fa-user-plus mr-1"></i> Soy nuevo, quiero registrarme
-            </button>
-        </div>
-    </div>
-
-    <!-- Step 2: New Registration Form -->
-    <div id="step-new-form" class="hidden bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-6 mb-6">
-        <h2 class="text-lg font-black text-gray-800 dark:text-white mb-4">
-            <i class="fa-solid fa-user-plus text-[#F58830] mr-2"></i>
-            Registro de Participante
-        </h2>
-
-        <form id="new-form" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Cédula</label>
-                    <input type="text" id="new-cedula" name="cedula" placeholder="Ej: 0912345678" inputmode="numeric"
-                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+            <form id="new-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% include 'public/_components/_text_input.html' with name='cedula' id='new-cedula' label='Cédula' inputmode='numeric' placeholder='Ej: 0912345678' %}
+                    {% include 'public/_components/_text_input.html' with name='email' id='new-email' label='Email' type='email' required=True placeholder='correo@ejemplo.com' %}
                 </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Email <span class="text-red-500">*</span></label>
-                    <input type="email" id="new-email" name="email" required placeholder="correo@ejemplo.com"
-                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% include 'public/_components/_text_input.html' with name='nombres' id='new-nombres' label='Nombres' required=True placeholder='Tus nombres' %}
+                    {% include 'public/_components/_text_input.html' with name='apellidos' id='new-apellidos' label='Apellidos' required=True placeholder='Tus apellidos' %}
                 </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Nombres <span class="text-red-500">*</span></label>
-                    <input type="text" id="new-nombres" name="nombres" required placeholder="Tus nombres"
-                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Apellidos <span class="text-red-500">*</span></label>
-                    <input type="text" id="new-apellidos" name="apellidos" required placeholder="Tus apellidos"
-                        class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
-                </div>
-            </div>
-            <div>
-                <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-1">Celular</label>
-                <input type="tel" id="new-celular" name="celular" placeholder="Ej: 0997541322" inputmode="numeric" maxlength="10"
-                    class="w-full p-3 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border border-gray-200 dark:border-blue-900/30 text-gray-800 dark:text-white font-medium focus:outline-none focus:border-[#F58830]">
-            </div>
+                {% include 'public/_components/_text_input.html' with name='celular' id='new-celular' label='Celular' type='tel' inputmode='numeric' maxlength=10 placeholder='Ej: 0997541322' %}
 
-            <div id="new-form-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"></div>
+                <div id="new-form-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"></div>
 
-            <button type="submit" class="w-full bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3.5 rounded-xl transition-all text-lg">
-                <i class="fa-solid fa-check mr-1"></i> Registrarme
-            </button>
-        </form>
-
-        <button onclick="showSearch()" class="mt-3 w-full text-center text-sm text-gray-500 dark:text-gray-400 hover:text-[#F58830] transition-all">
-            <i class="fa-solid fa-arrow-left mr-1"></i> Volver a buscar
-        </button>
-    </div>
-
-    <!-- Step 3: Success -->
-    <div id="step-success" class="hidden">
-        <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-8 text-center">
-            <div class="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-5">
-                <i class="fa-solid fa-circle-check text-green-500 text-4xl"></i>
-            </div>
-            <h2 class="text-2xl font-black text-gray-800 dark:text-white mb-2">¡Registro Exitoso!</h2>
-            <p class="text-gray-500 dark:text-gray-400 mb-6" id="success-message">Tu asistencia ha sido confirmada.</p>
-
-            <div id="success-details" class="bg-gray-50 dark:bg-[#0F163A]/50 rounded-xl p-5 text-left space-y-2 mb-6">
-                <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-check mr-2 text-[#F58830]"></i><span id="success-titulo"></span></p>
-                <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-day mr-2 text-[#F58830]"></i><span id="success-fecha"></span></p>
-                <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-clock mr-2 text-[#F58830]"></i><span id="success-horario"></span></p>
-                <p class="text-sm text-gray-600 dark:text-gray-300" id="success-lugar-row"><i class="fa-solid fa-location-dot mr-2 text-[#F58830]"></i><span id="success-lugar"></span></p>
-                <p class="text-sm text-gray-600 dark:text-gray-300" id="success-plataforma-row"><i class="fa-solid fa-video mr-2 text-blue-500"></i><span id="success-plataforma"></span></p>
-            </div>
-
-            <!-- Virtual link banner (visible only if virtual) -->
-            <div id="success-virtual-link" class="hidden bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-700 rounded-xl p-5 mb-4 text-left">
-                <p class="font-black text-blue-700 dark:text-blue-300 mb-2">
-                    <i class="fa-solid fa-link mr-1"></i> Enlace para unirte al evento
-                </p>
-                <p class="text-xs text-blue-600 dark:text-blue-400 mb-3">Guarda este enlace. Úsalo el día del evento en el horario indicado.</p>
-                <a id="success-virtual-link-url" href="#" target="_blank" rel="noopener"
-                    class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-center transition-all break-all">
-                    <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>
-                    <span id="success-virtual-link-text">Abrir enlace</span>
-                </a>
-                <button onclick="copyVirtualLink()" class="mt-2 w-full text-center text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold">
-                    <i class="fa-solid fa-copy mr-1"></i> Copiar enlace
+                <button type="submit" class="w-full bg-[#F58830] hover:bg-[#D97520] text-white font-bold py-3.5 rounded-xl transition-all text-base">
+                    <i class="fa-solid fa-check mr-1"></i> Registrarme
                 </button>
-            </div>
+            </form>
 
-            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-blue-700 dark:text-blue-300 text-sm text-left">
-                <p class="font-bold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> Recuerda:</p>
-                <ul id="success-tips" class="list-disc list-inside space-y-1 text-xs">
-                    <li>Asiste puntualmente a la sesión</li>
-                    <li class="success-tip-presencial">Al llegar, escanea el código QR para confirmar tu asistencia</li>
-                    <li class="success-tip-virtual hidden">Ingresa al enlace 5 minutos antes del inicio</li>
-                    <li>Si no asistes, tu cuenta podría quedar bloqueada para eventos futuros</li>
-                </ul>
+            <button type="button" onclick="showSearch()" class="mt-3 w-full text-center text-sm text-gray-500 dark:text-gray-400 hover:text-[#F58830] transition-all">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Volver a buscar
+            </button>
+        </div>
+
+        {# ───── Step 3: éxito ───── #}
+        <div id="step-success" class="hidden">
+            <div class="bg-white dark:bg-[#162054] rounded-2xl shadow-lg border border-gray-100 dark:border-blue-900/30 p-8 text-center">
+                <div class="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <i class="fa-solid fa-circle-check text-green-500 text-4xl"></i>
+                </div>
+                <h2 class="text-2xl font-black text-gray-800 dark:text-white mb-2">¡Registro exitoso!</h2>
+                <p class="text-gray-500 dark:text-gray-400 mb-6" id="success-message">Tu asistencia ha sido confirmada.</p>
+
+                <div id="success-details" class="bg-gray-50 dark:bg-[#0F163A]/50 rounded-xl p-5 text-left space-y-2 mb-6">
+                    <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-check mr-2 text-[#F58830]"></i><span id="success-titulo"></span></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-calendar-day mr-2 text-[#F58830]"></i><span id="success-fecha"></span></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300"><i class="fa-solid fa-clock mr-2 text-[#F58830]"></i><span id="success-horario"></span></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300" id="success-lugar-row"><i class="fa-solid fa-location-dot mr-2 text-[#F58830]"></i><span id="success-lugar"></span></p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300" id="success-plataforma-row"><i class="fa-solid fa-video mr-2 text-blue-500"></i><span id="success-plataforma"></span></p>
+                </div>
+
+                {# Banner de enlace virtual (solo si virtual) #}
+                <div id="success-virtual-link" class="hidden bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-400 dark:border-blue-700 rounded-xl p-5 mb-4 text-left">
+                    <p class="font-black text-blue-700 dark:text-blue-300 mb-2"><i class="fa-solid fa-link mr-1"></i> Enlace para unirte al evento</p>
+                    <p class="text-xs text-blue-600 dark:text-blue-400 mb-3">Guarda este enlace. Úsalo el día del evento en el horario indicado.</p>
+                    <a id="success-virtual-link-url" href="#" target="_blank" rel="noopener"
+                        class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-center transition-all break-all">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>
+                        <span id="success-virtual-link-text">Abrir enlace</span>
+                    </a>
+                    <button type="button" onclick="copyVirtualLink()" class="mt-2 w-full text-center text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold">
+                        <i class="fa-solid fa-copy mr-1"></i> Copiar enlace
+                    </button>
+                </div>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-blue-700 dark:text-blue-300 text-sm text-left">
+                    <p class="font-bold mb-1"><i class="fa-solid fa-circle-info mr-1"></i> Recuerda:</p>
+                    <ul id="success-tips" class="list-disc list-inside space-y-1 text-xs">
+                        <li>Asiste puntualmente a la sesión</li>
+                        <li class="success-tip-presencial">Al llegar, escanea el código QR para confirmar tu asistencia</li>
+                        <li class="success-tip-virtual hidden">Ingresa al enlace 5 minutos antes del inicio</li>
+                        <li>Si no asistes, tu cuenta podría quedar bloqueada para eventos futuros</li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
 
     {% endif %}
 </div>
 
+{# Config + JS extraído #}
 <script>
-const SESSION_ID = {{ sesion.id }};
-const CSRF = '{{ csrf_token }}';
-let searchTimeout = null;
-
-// ─── Search Logic ──────────────────────────────────────────
-const searchInput = document.getElementById('search-input');
-if (searchInput) {
-    searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        const q = this.value.trim();
-
-        document.getElementById('result-found').classList.add('hidden');
-        document.getElementById('result-not-found').classList.add('hidden');
-
-        if (q.length < 3) return;
-
-        document.getElementById('search-spinner').classList.remove('hidden');
-
-        searchTimeout = setTimeout(() => {
-            fetch(`/api/v1/public/sessions/${SESSION_ID}/search-participant/?q=${encodeURIComponent(q)}`)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('search-spinner').classList.add('hidden');
-                    const resultsList = document.getElementById('search-results-list');
-                    resultsList.innerHTML = '';
-                    resultsList.classList.add('hidden');
-
-                    if (data.found) {
-                        if (data.count > 1) {
-                            // Multiple results found
-                            resultsList.classList.remove('hidden');
-                            data.results.forEach(p => {
-                                const item = document.createElement('div');
-                                item.className = 'flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#0F163A]/30 hover:bg-[#F58830]/10 border border-gray-100 dark:border-blue-900/20 rounded-xl cursor-pointer transition-all group';
-                                item.innerHTML = `
-                                    <div class="w-10 h-10 rounded-full bg-[#162054] text-white flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-[#F58830]">
-                                        ${p.nombres.charAt(0)}${p.apellidos.charAt(0)}
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-bold text-sm text-gray-800 dark:text-white truncate">${p.nombres} ${p.apellidos}</p>
-                                        <p class="text-[0.7rem] text-gray-400 truncate">
-                                            ${p.cedula ? '<i class="fa-solid fa-id-card mr-1"></i>'+p.cedula : ''} 
-                                            ${p.email ? ' · <i class="fa-solid fa-envelope mr-1"></i>'+p.email : ''}
-                                        </p>
-                                    </div>
-                                    <i class="fa-solid fa-chevron-right text-gray-300 group-hover:text-[#F58830] text-xs"></i>
-                                `;
-                                item.onclick = () => selectParticipant(p);
-                                resultsList.appendChild(item);
-                            });
-                        } else {
-                            // Single result
-                            selectParticipant(data.participante, data.ya_confirmado);
-                        }
-                    } else {
-                        document.getElementById('result-not-found').classList.remove('hidden');
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('search-spinner').classList.add('hidden');
-                });
-        }, 400);
-    });
-}
-
-function selectParticipant(p, yaConfirmado = null) {
-    document.getElementById('search-results-list').classList.add('hidden');
-    document.getElementById('result-found').classList.remove('hidden');
-    document.getElementById('result-not-found').classList.add('hidden');
-
-    document.getElementById('found-nombre').textContent = `${p.nombres} ${p.apellidos}`;
-    document.getElementById('found-cedula-p').textContent = p.cedula || '—';
-    document.getElementById('found-email-p').textContent = p.email || '—';
-    document.getElementById('found-cedula-input').value = p.cedula || '';
-    document.getElementById('found-email-input').value = p.email || '';
-    document.getElementById('found-celular').value = p.celular || '';
-    document.getElementById('found-participante-id').value = p.id;
-    document.getElementById('found-cursos').textContent = p.cursos && p.cursos.length > 0 ? p.cursos.join(', ') : 'Ninguno aún';
-
-    // Handle missing info
-    const missing = p.missing_info || [];
-    const hasMissing = missing.length > 0;
-    
-    // Toggle Cédula
-    if (p.cedula) {
-        document.getElementById('found-cedula-p').classList.remove('hidden');
-        document.getElementById('found-cedula-input').classList.add('hidden');
-    } else {
-        document.getElementById('found-cedula-p').classList.add('hidden');
-        document.getElementById('found-cedula-input').classList.remove('hidden');
-    }
-
-    // Toggle Email
-    if (p.email) {
-        document.getElementById('found-email-p').classList.remove('hidden');
-        document.getElementById('found-email-input').classList.add('hidden');
-    } else {
-        document.getElementById('found-email-p').classList.add('hidden');
-        document.getElementById('found-email-input').classList.remove('hidden');
-    }
-
-    // Toggle Names if missing
-    if (missing.includes('nombres') || missing.includes('apellidos')) {
-        document.getElementById('found-names-extra').classList.remove('hidden');
-        document.getElementById('found-nombres-input').value = p.nombres || '';
-        document.getElementById('found-apellidos-input').value = p.apellidos || '';
-        document.getElementById('found-nombre').classList.add('hidden');
-    } else {
-        document.getElementById('found-names-extra').classList.add('hidden');
-        document.getElementById('found-nombre').classList.remove('hidden');
-    }
-
-    // Toggle icons and messages
-    if (hasMissing) {
-        document.getElementById('found-icon-success').classList.add('hidden');
-        document.getElementById('found-icon-warning').classList.remove('hidden');
-        document.getElementById('found-msg-success').classList.add('hidden');
-        document.getElementById('found-msg-missing').classList.remove('hidden');
-    } else {
-        document.getElementById('found-icon-success').classList.remove('hidden');
-        document.getElementById('found-icon-warning').classList.add('hidden');
-        document.getElementById('found-msg-success').classList.remove('hidden');
-        document.getElementById('found-msg-missing').classList.add('hidden');
-    }
-
-    const confirmed = yaConfirmado !== null ? yaConfirmado : p.ya_confirmado;
-    if (confirmed) {
-        document.getElementById('found-ya-confirmado').classList.remove('hidden');
-        document.getElementById('btn-confirm-existing').classList.add('hidden');
-    } else {
-        document.getElementById('found-ya-confirmado').classList.add('hidden');
-        document.getElementById('btn-confirm-existing').classList.remove('hidden');
-    }
-}
-
-function confirmExisting() {
-    const btn = document.getElementById('btn-confirm-existing');
-    const participanteId = document.getElementById('found-participante-id').value;
-    
-    // Collect data
-    const celular = document.getElementById('found-celular').value.trim();
-    const cedula = document.getElementById('found-cedula-input').value.trim();
-    const email = document.getElementById('found-email-input').value.trim();
-    const nombres = document.getElementById('found-nombres-input').value.trim();
-    const apellidos = document.getElementById('found-apellidos-input').value.trim();
-
-    // Basic validation for missing fields if visible
-    if (!document.getElementById('found-cedula-input').classList.contains('hidden') && !cedula) {
-        showToast("Por favor ingresa tu cédula.", "warning"); return;
-    }
-    if (!document.getElementById('found-email-input').classList.contains('hidden') && !email) {
-        showToast("Por favor ingresa tu email.", "warning"); return;
-    }
-    if (!document.getElementById('found-names-extra').classList.contains('hidden')) {
-        if (!nombres || !apellidos) {
-            showToast("Por favor ingresa tus nombres y apellidos.", "warning"); return;
-        }
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Registrando...';
-
-    const formData = new FormData();
-    formData.append('participante_id', participanteId);
-    formData.append('celular', celular);
-    formData.append('cedula', cedula);
-    formData.append('email', email);
-    formData.append('nombres', nombres);
-    formData.append('apellidos', apellidos);
-
-    fetch(`/api/v1/public/sessions/${SESSION_ID}/confirm-participant/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': CSRF },
-        body: formData,
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok) {
-            if (data.already) {
-                Swal.fire({ icon: 'info', title: 'Ya registrado', text: data.message, confirmButtonColor: '#F58830' });
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme';
-            } else {
-                showSuccess(data);
-            }
-        } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#F58830' });
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme';
-        }
-    })
-    .catch(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-check-double mr-1"></i> Usar estos datos y registrarme';
-    });
-}
-
-// ─── New Registration Form ─────────────────────────────────
-function showNewForm() {
-    document.getElementById('step-search').classList.add('hidden');
-    document.getElementById('step-new-form').classList.remove('hidden');
-
-    // Pre-fill cedula/email from search if available
-    const searchVal = document.getElementById('search-input').value.trim();
-    if (searchVal.includes('@')) {
-        document.getElementById('new-email').value = searchVal;
-    } else if (/^\d+$/.test(searchVal)) {
-        document.getElementById('new-cedula').value = searchVal;
-    }
-}
-
-function showSearch() {
-    document.getElementById('step-new-form').classList.add('hidden');
-    document.getElementById('step-search').classList.remove('hidden');
-}
-
-const newForm = document.getElementById('new-form');
-if (newForm) {
-    newForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const errorDiv = document.getElementById('new-form-error');
-        errorDiv.classList.add('hidden');
-
-        const cedula = document.getElementById('new-cedula').value.trim();
-        const email = document.getElementById('new-email').value.trim();
-        const nombres = document.getElementById('new-nombres').value.trim();
-        const apellidos = document.getElementById('new-apellidos').value.trim();
-        const celular = document.getElementById('new-celular').value.trim();
-
-        if (!nombres || !apellidos) {
-            errorDiv.textContent = 'Nombres y apellidos son obligatorios.';
-            errorDiv.classList.remove('hidden');
-            return;
-        }
-        if (!cedula && !email) {
-            errorDiv.textContent = 'Debe proporcionar al menos cédula o correo electrónico.';
-            errorDiv.classList.remove('hidden');
-            return;
-        }
-
-        const btn = this.querySelector('button[type=submit]');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Registrando...';
-
-        const formData = new FormData();
-        formData.append('cedula', cedula);
-        formData.append('nombres', nombres);
-        formData.append('apellidos', apellidos);
-        formData.append('email', email);
-        formData.append('celular', celular);
-
-        fetch(`/api/v1/public/sessions/${SESSION_ID}/register-participant/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': CSRF },
-            body: formData,
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.ok) {
-                if (data.already) {
-                    Swal.fire({ icon: 'info', title: 'Ya registrado', text: data.message, confirmButtonColor: '#F58830' });
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Registrarme';
-                } else {
-                    showSuccess(data);
-                }
-            } else {
-                errorDiv.textContent = data.error;
-                errorDiv.classList.remove('hidden');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Registrarme';
-            }
-        })
-        .catch(() => {
-            errorDiv.textContent = 'Error de conexión. Intenta de nuevo.';
-            errorDiv.classList.remove('hidden');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Registrarme';
-        });
-    });
-}
-
-// ─── Show Success ──────────────────────────────────────────
-function showSuccess(data) {
-    document.getElementById('step-search').classList.add('hidden');
-    document.getElementById('step-new-form').classList.add('hidden');
-    document.getElementById('step-success').classList.remove('hidden');
-
-    document.getElementById('success-message').textContent = data.message;
-
-    if (data.sesion) {
-        document.getElementById('success-titulo').textContent = data.sesion.titulo;
-        document.getElementById('success-fecha').textContent = data.sesion.fecha;
-        document.getElementById('success-horario').textContent = data.sesion.horario;
-
-        const esVirtual = data.sesion.modalidad === 'virtual';
-        const lugarRow = document.getElementById('success-lugar-row');
-        const plataformaRow = document.getElementById('success-plataforma-row');
-        const virtualBlock = document.getElementById('success-virtual-link');
-
-        if (esVirtual) {
-            lugarRow.classList.add('hidden');
-            plataformaRow.classList.remove('hidden');
-            document.getElementById('success-plataforma').textContent = data.sesion.plataforma || 'Reunión virtual';
-
-            if (data.sesion.enlace_virtual) {
-                virtualBlock.classList.remove('hidden');
-                const urlA = document.getElementById('success-virtual-link-url');
-                urlA.href = data.sesion.enlace_virtual;
-                document.getElementById('success-virtual-link-text').textContent = data.sesion.enlace_virtual;
-            }
-
-            // Adjust tips
-            document.querySelectorAll('.success-tip-presencial').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.success-tip-virtual').forEach(el => el.classList.remove('hidden'));
-        } else {
-            plataformaRow.classList.add('hidden');
-            virtualBlock.classList.add('hidden');
-            if (data.sesion.lugar) {
-                document.getElementById('success-lugar').textContent = data.sesion.lugar;
-            } else {
-                lugarRow.classList.add('hidden');
-            }
-        }
-    }
-
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function copyVirtualLink() {
-    const url = document.getElementById('success-virtual-link-url').href;
-    navigator.clipboard.writeText(url).then(() => {
-        if (typeof showToast === 'function') {
-            showToast('Enlace copiado al portapapeles', 'success');
-        }
-    }).catch(() => {});
-}
+window.REGISTER_CONFIG = {
+    sessionId: {{ sesion.id }},
+    csrfToken: '{{ csrf_token }}'
+};
 </script>
+<script src="{% static 'js/session_register.js' %}"></script>
 {% endblock %}

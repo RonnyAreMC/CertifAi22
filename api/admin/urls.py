@@ -11,6 +11,5 @@ urlpatterns = [
     path('audit/', include('api.admin.audit.urls')),
     path('firmas/', include('api.admin.firmas.urls')),
     path('design/', include('api.admin.design.urls')),
-    path('landing/', include('api.admin.landing.urls')),
     path('ai/', include('api.admin.ai.urls')),
 ]

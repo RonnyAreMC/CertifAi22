@@ -1,0 +1,25 @@
+{% comment %}
+Componente reutilizable: sección del menú mobile (acordeón) — Liquid Glass + Neuromorfismo.
+Args:
+    group: dict con {label, icon, items}
+    pendientes_count: int
+{% endcomment %}
+<div class="border-b border-slate-200 dark:border-white/5 last:border-b-0">
+    <p class="px-4 pt-4 pb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+        <i class="fa-solid {{ group.icon }} mr-1.5 text-[var(--ds-brand)]"></i> {{ group.label }}
+    </p>
+    {% for item in group.items %}
+    <a href="{{ item.url }}"
+       class="nav-item nav-item--{{ item.color|default:'brand' }}
+              flex items-center gap-3 px-4 py-2.5 text-sm transition-all group/item">
+        <span class="nav-disc">
+            <i class="fa-solid {{ item.icon }} nav-disc-icon"></i>
+        </span>
+        <span class="flex-1 font-medium text-slate-700 group-hover/item:text-slate-900
+                     dark:text-slate-200 dark:group-hover/item:text-white transition-colors">{{ item.label }}</span>
+        {% if item.badge == 'pendientes_count' and pendientes_count > 0 %}
+        <span class="qp-badge !static !top-auto !right-auto">{{ pendientes_count }}</span>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>

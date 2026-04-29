@@ -47,15 +47,21 @@ def session_list(request):
 
 @admin_required
 def session_create(request):
-    """Legacy: el modal de create usa fetch directo al API. Solo redirige."""
-    return redirect('panel:session_list')
+    """Shell de creación de sesión (form completo con ponentes).
+
+    El submit hace POST a /api/v1/admin/sessions/ vía fetch (igual que edit).
+    """
+    return render(request, 'panel/sessions/create.html')
 
 
 @admin_required
 def session_edit(request, id):
     """Shell de edición: el submit va a PATCH /api/v1/admin/sessions/{id}/."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    ponentes = list(sesion.ponentes.values('nombre', 'titulo', 'afiliacion', 'bio'))
     return render(request, 'panel/sessions/edit.html', {
-        'sesion': get_object_or_404(SesionAsistencia, id=id),
+        'sesion': sesion,
+        'ponentes_json': ponentes,
     })
 
 

@@ -3,16 +3,15 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8 md:py-12 max-w-xl">
-    
-    <!-- iOS Style Back Button -->
-    <div class="mb-6 flex justify-start">
-        <a href="{% url 'public:landing' %}" class="w-10 h-10 rounded-full bg-white dark:bg-[#1e2b4d] flex items-center justify-center shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 transition-transform group">
-            <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
-        </a>
-    </div>
 
-    <div class="text-center mb-12">
-        <h1 class="text-4xl md:text-6xl font-black text-[#162054] dark:text-white tracking-tighter mb-4 leading-none">
+    {# Botón volver #}
+    <a href="{% url 'public:home' %}" class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-[#162054] shadow-md border border-gray-100 dark:border-blue-900/30 hover:scale-110 hover:text-[#F58830] transition-all group mb-6">
+        <i class="fa-solid fa-chevron-left text-gray-600 dark:text-gray-300 group-hover:text-[#F58830]"></i>
+    </a>
+
+    {# Header con eyebrow + título #}
+    <div class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-black text-[#162054] dark:text-white tracking-tighter mb-3 leading-none">
             Registro de <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#F58830] to-[#FF9100]">Asistencia</span>
         </h1>
         <p class="text-gray-500 dark:text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
@@ -20,419 +19,39 @@
         </p>
     </div>
 
-    <!-- Live Search Box -->
-    <div class="ios-search-wrapper">
-        <div class="ios-search-box" id="searchBox">
-            <i class="fa-solid fa-magnifying-glass ios-search-icon"></i>
-            <input type="text" 
-                   id="searchInput"
-                   autocomplete="off"
-                   placeholder="Cédula, nombre o correo..." 
-                   class="ios-search-input"
-                   value="{{ query|default:'' }}">
-            <div class="ios-search-spinner" id="spinner" style="display:none">
-                <i class="fa-solid fa-circle-notch fa-spin"></i>
-            </div>
-            <button type="button" id="clearBtn" class="ios-search-clear" style="display:none">
+    {# Search box #}
+    <div class="relative search-wrapper">
+        <div class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white/85 dark:bg-[#0F163A]/70 backdrop-blur-md border-[1.5px] border-gray-200 dark:border-white/10 shadow focus-within:border-[#F58830] focus-within:ring-4 focus-within:ring-[#F58830]/15 transition-all">
+            <i class="fa-solid fa-magnifying-glass text-gray-400 dark:text-gray-500"></i>
+            <input type="text" id="searchInput" autocomplete="off"
+                placeholder="Cédula, nombre o correo..."
+                value="{{ query|default:'' }}"
+                class="flex-1 bg-transparent border-0 outline-none text-gray-800 dark:text-white placeholder-gray-400 text-base font-medium">
+            <div id="spinner" class="hidden text-[#F58830]"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+            <button type="button" id="clearBtn" class="hidden w-7 h-7 rounded-full bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 flex items-center justify-center text-gray-500 dark:text-gray-300 text-xs">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
 
-        <!-- Hint -->
-        <p class="ios-search-hint" id="searchHint">
-            <i class="fa-solid fa-keyboard"></i>
-            Escribe mínimo 3 caracteres para buscar
+        <p id="searchHint" class="text-center text-xs text-gray-400 dark:text-gray-500 mt-3 transition-opacity">
+            <i class="fa-solid fa-keyboard mr-1"></i> Escribe mínimo 3 caracteres para buscar
         </p>
 
-        <!-- Results Dropdown -->
-        <div class="ios-results-dropdown" id="resultsDropdown" style="display:none">
-            <div class="ios-results-list" id="resultsList">
-                <!-- Populated by JS -->
-            </div>
+        {# Dropdown de resultados — poblado por JS #}
+        <div id="resultsDropdown" class="hidden absolute left-0 right-0 top-full mt-2 z-30 bg-white dark:bg-[#162054] rounded-2xl shadow-2xl border border-gray-100 dark:border-blue-900/30 overflow-hidden max-h-[60vh] overflow-y-auto">
+            <div id="resultsList"></div>
         </div>
     </div>
 
-    <!-- Info Card -->
-    <div class="mt-8 flex items-start gap-4 p-4 rounded-2xl text-sm ios-info-card">
+    {# Info card #}
+    <div class="mt-8 flex items-start gap-4 p-4 rounded-2xl bg-white/60 dark:bg-[#1e293b]/50 backdrop-blur-md border border-gray-100 dark:border-white/10 text-sm">
         <i class="fa-solid fa-circle-info text-[#162054] dark:text-blue-400 text-xl mt-0.5 flex-shrink-0"></i>
         <div class="text-gray-700 dark:text-gray-300">
             <p class="font-bold mb-1">Nota importante:</p>
             <p>Asegúrate de que tus datos coincidan con tu documento de identidad para evitar inconvenientes con tu certificación.</p>
         </div>
     </div>
-
 </div>
 
-<style>
-/* ===== iOS Search Box ===== */
-.ios-search-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.ios-search-box {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.25rem; /* Reduced padding from 1rem */
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1.5px solid rgba(0, 0, 0, 0.08);
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-}
-.dark .ios-search-box {
-    background: rgba(15, 22, 58, 0.7);
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-.ios-search-box:focus-within {
-    border-color: #F58830;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(245, 136, 48, 0.15);
-}
-.dark .ios-search-box:focus-within {
-    background: rgba(15, 22, 58, 0.9);
-    border-color: #F58830;
-    box-shadow: 0 0 0 4px rgba(245, 136, 48, 0.25);
-}
-
-.ios-search-icon {
-    color: #94a3b8;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.ios-search-input {
-    flex: 1;
-    background: transparent;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    -webkit-appearance: none;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #1e293b;
-    padding: 0;
-}
-.dark .ios-search-input { color: white; }
-.ios-search-input::placeholder { color: #94a3b8; font-weight: 400; }
-
-.ios-search-spinner {
-    color: #F58830;
-    font-size: 1rem;
-}
-
-.ios-search-clear {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.06);
-    color: #64748b;
-    border: none;
-    cursor: pointer;
-    font-size: 0.7rem;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-.dark .ios-search-clear { background: rgba(255, 255, 255, 0.15); color: #cbd5e1; }
-
-.ios-search-hint {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: #94a3b8;
-    padding: 0 0.5rem;
-    font-weight: 500;
-}
-.dark .ios-search-hint { color: #64748b; }
-
-/* ===== Results Dropdown ===== */
-.ios-results-dropdown {
-    position: absolute;
-    top: calc(100% + 12px);
-    left: 0;
-    right: 0;
-    z-index: 100;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    animation: iosDropIn 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-    max-height: 380px;
-    overflow-y: auto;
-}
-.dark .ios-results-dropdown {
-    background: rgba(15, 22, 58, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-@keyframes iosDropIn {
-    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.ios-results-list {
-    padding: 0.5rem;
-}
-
-/* Result Item */
-.ios-result-item {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    padding: 0.85rem 0.75rem;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-decoration: none;
-    color: inherit;
-}
-.ios-result-item:hover {
-    background: rgba(245, 136, 48, 0.08);
-}
-.dark .ios-result-item:hover {
-    background: rgba(245, 136, 48, 0.12);
-}
-
-.ios-result-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #162054, #1e3a8a);
-    color: white;
-    font-weight: 700;
-    font-size: 0.95rem;
-    flex-shrink: 0;
-}
-
-.ios-result-info {
-    flex: 1;
-    min-width: 0;
-}
-.ios-result-name {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: #1e293b;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.dark .ios-result-name { color: #f1f5f9; }
-
-.ios-result-meta {
-    font-size: 0.78rem;
-    color: #64748b;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 2px;
-}
-.dark .ios-result-meta { color: #94a3b8; }
-
-.ios-result-arrow {
-    color: #cbd5e1;
-    font-size: 0.75rem;
-    flex-shrink: 0;
-}
-.dark .ios-result-arrow { color: #475569; }
-
-/* No results state */
-.ios-no-results {
-    text-align: center;
-    padding: 2rem 1rem;
-    color: #94a3b8;
-}
-.ios-no-results i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    display: block;
-    color: #cbd5e1;
-}
-.dark .ios-no-results i { color: #475569; }
-
-/* Count badge */
-.ios-results-count {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.72rem;
-    color: #94a3b8;
-    text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-.dark .ios-results-count { border-bottom-color: rgba(255, 255, 255, 0.06); }
-
-/* Info Card */
-.ios-info-card {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-}
-.dark .ios-info-card {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('searchInput');
-    const dropdown = document.getElementById('resultsDropdown');
-    const resultsList = document.getElementById('resultsList');
-    const spinner = document.getElementById('spinner');
-    const clearBtn = document.getElementById('clearBtn');
-    const hint = document.getElementById('searchHint');
-
-    let debounceTimer = null;
-    let currentQuery = '';
-
-    function getInitials(nombres, apellidos) {
-        const n = (nombres || '').trim().charAt(0).toUpperCase();
-        const a = (apellidos || '').trim().charAt(0).toUpperCase();
-        return n + a;
-    }
-
-    function highlightMatch(text, query) {
-        if (!query) return text;
-        const tokens = query.toLowerCase().split(/\s+/);
-        let result = text;
-        tokens.forEach(token => {
-            if (token.length < 2) return;
-            const regex = new RegExp(`(${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-            result = result.replace(regex, '<mark style="background:rgba(245,136,48,0.2);color:inherit;border-radius:2px;padding:0 1px">$1</mark>');
-        });
-        return result;
-    }
-
-    function renderResults(data, query) {
-        const results = data.results;
-
-        if (results.length === 0) {
-            resultsList.innerHTML = `
-                <div class="ios-no-results">
-                    <i class="fa-solid fa-user-slash"></i>
-                    <p>No se encontraron resultados para "<strong>${query}</strong>"</p>
-                </div>
-            `;
-            dropdown.style.display = 'block';
-            return;
-        }
-
-        let html = `<div class="ios-results-count">${results.length} resultado${results.length > 1 ? 's' : ''}</div>`;
-        
-        results.forEach(p => {
-            const fullName = `${p.nombres} ${p.apellidos}`;
-            const initials = getInitials(p.nombres, p.apellidos);
-            const metaParts = [];
-            if (p.cedula) metaParts.push(`<i class="fa-solid fa-id-card"></i> ${highlightMatch(p.cedula, query)}`);
-            metaParts.push(`<i class="fa-solid fa-envelope"></i> ${highlightMatch(p.email, query)}`);
-            if (p.cursos_count) metaParts.push(`<i class="fa-solid fa-graduation-cap"></i> ${p.cursos_count}`);
-
-            html += `
-                <a href="/attendance/verify/?q=${encodeURIComponent(p.cedula)}" class="ios-result-item">
-                    <div class="ios-result-avatar">${initials}</div>
-                    <div class="ios-result-info">
-                        <div class="ios-result-name">${highlightMatch(fullName, query)}</div>
-                        <div class="ios-result-meta">${metaParts.join(' &nbsp;·&nbsp; ')}</div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right ios-result-arrow"></i>
-                </a>
-            `;
-        });
-
-        resultsList.innerHTML = html;
-        dropdown.style.display = 'block';
-    }
-
-    function doSearch(query) {
-        if (query.length < 3) {
-            dropdown.style.display = 'none';
-            hint.style.opacity = '1';
-            spinner.style.display = 'none';
-            return;
-        }
-
-        hint.style.opacity = '0';
-        spinner.style.display = 'block';
-
-        fetch(`/api/v1/public/attendance/search/?q=${encodeURIComponent(query)}`)
-            .then(r => r.json())
-            .then(data => {
-                spinner.style.display = 'none';
-                if (query === currentQuery) {
-                    renderResults(data, query);
-                }
-            })
-            .catch(() => {
-                spinner.style.display = 'none';
-            });
-    }
-
-    input.addEventListener('input', () => {
-        const val = input.value.trim();
-        currentQuery = val;
-        
-        clearBtn.style.display = val.length > 0 ? 'flex' : 'none';
-
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => doSearch(val), 300);
-    });
-
-    clearBtn.addEventListener('click', () => {
-        input.value = '';
-        currentQuery = '';
-        dropdown.style.display = 'none';
-        clearBtn.style.display = 'none';
-        hint.style.opacity = '1';
-        input.focus();
-    });
-
-    // Close dropdown on click outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.ios-search-wrapper')) {
-            dropdown.style.display = 'none';
-        }
-    });
-
-    // Reopen on focus if has results
-    input.addEventListener('focus', () => {
-        if (currentQuery.length >= 3) {
-            doSearch(currentQuery);
-        }
-    });
-
-    // Keyboard nav (Enter to go to first result)
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const firstLink = resultsList.querySelector('.ios-result-item');
-            if (firstLink) {
-                firstLink.click();
-            }
-        }
-    });
-
-    // Auto-search if query is pre-filled
-    if (input.value.trim().length >= 3) {
-        currentQuery = input.value.trim();
-        doSearch(currentQuery);
-    }
-});
-</script>
+<script src="{% static 'js/attendance_search.js' %}"></script>
 {% endblock %}
