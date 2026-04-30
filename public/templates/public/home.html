@@ -24,7 +24,7 @@
         :root {
             --ds-brand:      {{ design.color_brand|default:'#F58830' }};
             --ds-brand-dark: {{ design.color_brand_dark|default:'#D97520' }};
-            --ds-accent:     {{ design.color_accent|default:'#A855F7' }};
+            --ds-accent:     {{ design.color_accent|default:'#162054' }};
             --ds-bg-dark:    {{ design.color_bg_dark|default:'#0A1535' }};
         }
         @font-face {
@@ -41,11 +41,11 @@
         .brand-certif { font-family: 'Comfortaa', 'Outfit', sans-serif; font-weight: 700; text-transform: lowercase; letter-spacing: -0.01em; }
         .brand-ai {
             font-family: 'Comfortaa', 'Outfit', sans-serif; font-weight: 700; text-transform: lowercase; letter-spacing: -0.01em;
-            background: linear-gradient(135deg, var(--ds-brand) 0%, #ec4899 55%, var(--ds-accent) 100%);
+            background: linear-gradient(135deg, var(--ds-brand) 0%, #E8721C 55%, var(--ds-accent) 100%);
             -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
         }
         .gradient-text {
-            background: linear-gradient(135deg, var(--ds-brand), #ec4899, var(--ds-accent));
+            background: linear-gradient(135deg, var(--ds-brand), #E8721C, var(--ds-accent));
             -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
         }
 
@@ -58,7 +58,7 @@
         .lg-bg::before { width: 760px; height: 760px; top: -15%; left: -10%; background: radial-gradient(circle, var(--ds-brand) 0%, transparent 70%); }
         .lg-bg::after  { width: 860px; height: 860px; bottom: -20%; right: -15%; background: radial-gradient(circle, var(--ds-accent) 0%, transparent 70%); animation-delay: -7s; }
         .lg-bg > span  { width: 540px; height: 540px; top: 40%; left: 50%; transform: translateX(-50%);
-                         background: radial-gradient(circle, #ec4899 0%, transparent 70%); opacity: 0.22; animation-delay: -13s; }
+                         background: radial-gradient(circle, #E8721C 0%, transparent 70%); opacity: 0.22; animation-delay: -13s; }
         @keyframes lg-float { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(70px,-50px) scale(1.12); } }
         .light .lg-bg::before, .light .lg-bg::after, .light .lg-bg > span { opacity: 0.30; }
 
@@ -287,7 +287,7 @@
             right: 12.5%;
             height: 3px;
             border-radius: 999px;
-            background: linear-gradient(90deg, var(--ds-brand), #ec4899, var(--ds-accent));
+            background: linear-gradient(90deg, var(--ds-brand), #E8721C, var(--ds-accent));
             opacity: 0.50;
             z-index: 0;
             box-shadow: 0 0 16px rgba(245,136,48,0.30);
@@ -381,7 +381,7 @@
             font-family: 'Sora'; font-weight: 900;
             font-size: clamp(2.25rem, 5vw, 3.5rem);
             line-height: 1; letter-spacing: -0.03em;
-            background: linear-gradient(135deg, var(--ds-brand), #ec4899, var(--ds-accent));
+            background: linear-gradient(135deg, var(--ds-brand), #E8721C, var(--ds-accent));
             -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
         }
 
@@ -409,7 +409,7 @@
             padding: 56px 32px;
             background:
                 radial-gradient(circle at 20% 30%, rgba(245,136,48,0.30), transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(168,85,247,0.30), transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(22,32,84,0.30), transparent 50%),
                 linear-gradient(135deg, rgba(22,32,84,0.92), rgba(15,23,42,0.92));
             border: 1px solid rgba(255,255,255,0.10);
             color: white;
@@ -780,7 +780,7 @@
                 <div class="float-card fc-2">
                     <div class="flex items-center gap-2.5">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                             style="background: linear-gradient(135deg, var(--ds-accent), #7C3AED);">
+                             style="background: linear-gradient(135deg, var(--ds-accent), #0F163A);">
                             <i class="fa-solid fa-list-check text-sm"></i>
                         </div>
                         <div class="flex-1">
@@ -789,7 +789,7 @@
                         </div>
                     </div>
                     <div class="mt-2 h-1 bg-slate-200/60 dark:bg-white/10 rounded-full overflow-hidden">
-                        <div class="h-full w-3/4 rounded-full" style="background: linear-gradient(90deg, var(--ds-accent), #ec4899);"></div>
+                        <div class="h-full w-3/4 rounded-full" style="background: linear-gradient(90deg, var(--ds-accent), #E8721C);"></div>
                     </div>
                 </div>
 
@@ -797,7 +797,7 @@
                 <div class="float-card fc-3">
                     <div class="flex items-center gap-2.5">
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                             style="background: linear-gradient(135deg, #10B981, #059669);">
+                             style="background: linear-gradient(135deg, #1E40AF, #1E3A8A);">
                             <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
                         </div>
                         <div class="flex-1">
@@ -1034,7 +1034,7 @@
         <!-- Cuestionarios IA -->
         <div class="bento-cell bento-2-2">
             <div class="bento-decor" style="width:200px;height:200px;background:radial-gradient(circle, var(--ds-accent) 0%, transparent 70%); bottom:-80px; right:-60px;"></div>
-            <div class="bc-icon" style="background: linear-gradient(135deg, var(--ds-accent), #7C3AED);">
+            <div class="bc-icon" style="background: linear-gradient(135deg, var(--ds-accent), #0F163A);">
                 <i class="fa-solid fa-list-check"></i>
             </div>
             <h3>Cuestionarios automáticos</h3>
@@ -1043,8 +1043,8 @@
 
         <!-- Recomendaciones -->
         <div class="bento-cell bento-2-2">
-            <div class="bento-decor" style="width:200px;height:200px;background:radial-gradient(circle, #ec4899 0%, transparent 70%); top:-60px; left:-40px;"></div>
-            <div class="bc-icon" style="background: linear-gradient(135deg, #ec4899, #db2777);">
+            <div class="bento-decor" style="width:200px;height:200px;background:radial-gradient(circle, #E8721C 0%, transparent 70%); top:-60px; left:-40px;"></div>
+            <div class="bc-icon" style="background: linear-gradient(135deg, #E8721C, #db2777);">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
             </div>
             <h3>Recomendaciones personalizadas</h3>
@@ -1053,7 +1053,7 @@
 
         <!-- Verificación pública -->
         <div class="bento-cell bento-3">
-            <div class="bc-icon" style="background: linear-gradient(135deg, #10B981, #059669);">
+            <div class="bc-icon" style="background: linear-gradient(135deg, #1E40AF, #1E3A8A);">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <h3>Verificación pública en un clic</h3>
@@ -1089,7 +1089,7 @@
 
         <!-- Líder académico -->
         <div class="bento-cell bento-2-2">
-            <div class="bc-icon" style="background: linear-gradient(135deg, var(--ds-brand), #ec4899);">
+            <div class="bc-icon" style="background: linear-gradient(135deg, var(--ds-brand), #E8721C);">
                 <i class="fa-solid fa-graduation-cap"></i>
             </div>
             <h3>Modo organizador</h3>
@@ -1212,7 +1212,7 @@
         <!-- Organizador -->
         <div class="audience-card">
             <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl"
-                 style="background: linear-gradient(135deg, var(--ds-accent), #7C3AED); box-shadow: 0 8px 22px -4px rgba(168,85,247,0.45);">
+                 style="background: linear-gradient(135deg, var(--ds-accent), #0F163A); box-shadow: 0 8px 22px -4px rgba(22,32,84,0.45);">
                 <i class="fa-solid fa-users-gear"></i>
             </div>
             <h3 class="ds-display font-black text-xl text-slate-900 dark:text-white mt-4">Organizadores y docentes</h3>
@@ -1228,7 +1228,7 @@
         <!-- Empresa / verificador -->
         <div class="audience-card">
             <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl"
-                 style="background: linear-gradient(135deg, #10B981, #059669); box-shadow: 0 8px 22px -4px rgba(16,185,129,0.45);">
+                 style="background: linear-gradient(135deg, #1E40AF, #1E3A8A); box-shadow: 0 8px 22px -4px rgba(16,185,129,0.45);">
                 <i class="fa-solid fa-magnifying-glass-chart"></i>
             </div>
             <h3 class="ds-display font-black text-xl text-slate-900 dark:text-white mt-4">Empresas y empleadores</h3>
@@ -1324,124 +1324,9 @@
     </div>
 </footer>
 
-<script>
-// ────── Hero swiper ──────
-(function() {
-    const root = document.getElementById('heroSwiper');
-    if (!root) return;
-    const slides = root.querySelectorAll('.hero-slide');
-    const dots   = root.querySelectorAll('.hero-dot');
-    const arrows = root.querySelectorAll('.hero-arrow');
-    const total  = slides.length;
-    if (total <= 1) return;
-    let current = 0, timer = null;
-
-    function go(i) {
-        current = (i + total) % total;
-        slides.forEach((s, k) => s.classList.toggle('is-active', k === current));
-        dots.forEach((d, k) => d.classList.toggle('is-active', k === current));
-    }
-    const tick = () => go(current + 1);
-    const startAuto = () => { stopAuto(); timer = setInterval(tick, 5500); };
-    const stopAuto  = () => { if (timer) clearInterval(timer); timer = null; };
-
-    dots.forEach(d => d.addEventListener('click', () => { go(parseInt(d.dataset.go)); startAuto(); }));
-    arrows.forEach(a => a.addEventListener('click', () => { go(current + parseInt(a.dataset.dir)); startAuto(); }));
-    root.addEventListener('mouseenter', stopAuto);
-    root.addEventListener('mouseleave', startAuto);
-
-    let startX = null;
-    root.addEventListener('touchstart', e => { startX = e.touches[0].clientX; stopAuto(); });
-    root.addEventListener('touchend', e => {
-        if (startX === null) return;
-        const dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) go(current + (dx < 0 ? 1 : -1));
-        startX = null; startAuto();
-    });
-    startAuto();
-})();
-
-// ────── Reveal on scroll ──────
-(function() {
-    const els = document.querySelectorAll('.reveal');
-    const io = new IntersectionObserver(entries => {
-        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
-    els.forEach(el => io.observe(el));
-})();
-
-// ────── Smooth scroll para anchors internos ──────
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-        const target = document.querySelector(a.getAttribute('href'));
-        if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-    });
-});
-
-// ────── Theme toggle (claro/oscuro) ──────
-function toggleTheme() {
-    const root = document.documentElement;
-    const icon = document.getElementById('themeIcon');
-    if (root.classList.contains('dark')) {
-        root.classList.remove('dark'); root.classList.add('light');
-        localStorage.theme = 'light';
-        if (icon) icon.className = 'fa-solid fa-sun text-sm';
-    } else {
-        root.classList.remove('light'); root.classList.add('dark');
-        localStorage.theme = 'dark';
-        if (icon) icon.className = 'fa-solid fa-moon text-sm';
-    }
-}
-(function() {
-    const icon = document.getElementById('themeIcon');
-    if (!icon) return;
-    icon.className = document.documentElement.classList.contains('dark') ? 'fa-solid fa-moon text-sm' : 'fa-solid fa-sun text-sm';
-})();
-
-// ────── Search bar tabs (eventos · certificados) — a11y completo ──────
-(function() {
-    const bar = document.getElementById('searchBar');
-    if (!bar) return;
-    const tabs  = Array.from(bar.querySelectorAll('.search-tab'));
-    const formE = document.getElementById('searchEventos');
-    const formC = document.getElementById('searchCerts');
-
-    function activate(target, focusInput = true) {
-        tabs.forEach(t => {
-            const active = (t === target);
-            t.classList.toggle('is-active', active);
-            t.setAttribute('aria-selected', active ? 'true' : 'false');
-            t.setAttribute('tabindex', active ? '0' : '-1');
-        });
-        const isCerts = target.dataset.tab === 'certificados';
-        formE.classList.toggle('hidden', isCerts);
-        formC.classList.toggle('hidden', !isCerts);
-        formE.toggleAttribute('hidden', isCerts);
-        formC.toggleAttribute('hidden', !isCerts);
-        if (focusInput) {
-            const input = (isCerts ? formC : formE).querySelector('input');
-            if (input) input.focus();
-        }
-    }
-
-    tabs.forEach((t, i) => {
-        t.addEventListener('click', () => activate(t));
-        // Navegación con flechas izquierda/derecha entre tabs (patrón ARIA)
-        t.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                e.preventDefault();
-                const dir = e.key === 'ArrowRight' ? 1 : -1;
-                const next = tabs[(i + dir + tabs.length) % tabs.length];
-                activate(next);
-                next.focus();
-            } else if (e.key === 'Home') {
-                e.preventDefault(); activate(tabs[0]); tabs[0].focus();
-            } else if (e.key === 'End') {
-                e.preventDefault(); activate(tabs[tabs.length - 1]); tabs[tabs.length - 1].focus();
-            }
-        });
-    });
-})();
-</script>
+<script src="{% static 'js/components/theme.js' %}"></script>
+<script src="{% static 'js/components/carousel.js' %}"></script>
+<script src="{% static 'js/components/search-tabs.js' %}"></script>
+<script src="{% static 'js/pages/landing.js' %}"></script>
 </body>
 </html>

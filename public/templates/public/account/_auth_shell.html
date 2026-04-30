@@ -22,7 +22,7 @@
         :root {
             --ds-brand:      {{ design.color_brand|default:'#F58830' }};
             --ds-brand-dark: {{ design.color_brand_dark|default:'#D97520' }};
-            --ds-accent:     {{ design.color_accent|default:'#A855F7' }};
+            --ds-accent:     {{ design.color_accent|default:'#162054' }};
             --ds-bg-dark:    {{ design.color_bg_dark|default:'#0A1535' }};
         }
         @font-face {
@@ -259,7 +259,7 @@
         }
         .showcase-brand .b-text { font-size: 1.25rem; line-height: 1; }
 
-        /* Stage del carrusel — área central donde rota Certy + texto */
+        /* Stage del carrusel — área central donde rota la mascota + texto */
         .showcase-stage {
             flex: 1;
             position: relative;
@@ -283,17 +283,17 @@
             pointer-events: auto;
         }
 
-        /* Hero de Certy — flotando libre con drop-shadow */
-        .certy-hero {
+        /* Hero del tigrillo UNEMI — flotando libre con drop-shadow */
+        .mascot-hero {
             position: relative;
             width: clamp(200px, 24vw, 300px);
             height: clamp(200px, 24vw, 300px);
             margin-bottom: 24px;
             display: flex; align-items: center; justify-content: center;
-            animation: certy-bob 4.5s ease-in-out infinite alternate;
+            animation: mascot-bob 4.5s ease-in-out infinite alternate;
         }
-        @keyframes certy-bob { 0% { transform: translateY(0) rotate(-2deg); } 100% { transform: translateY(-12px) rotate(2deg); } }
-        .certy-hero img {
+        @keyframes mascot-bob { 0% { transform: translateY(0) rotate(-2deg); } 100% { transform: translateY(-12px) rotate(2deg); } }
+        .mascot-hero img {
             width: 100%; height: 100%;
             object-fit: contain;
             display: block;
@@ -301,13 +301,13 @@
                 drop-shadow(0 28px 50px rgba(245,136,48,0.45))
                 drop-shadow(0 8px 16px rgba(15,23,42,0.20));
         }
-        .dark .certy-hero img {
+        .dark .mascot-hero img {
             filter:
                 drop-shadow(0 28px 50px rgba(245,136,48,0.50))
                 drop-shadow(0 12px 24px rgba(0,0,0,0.50));
         }
-        /* Halo radial detrás de Certy */
-        .certy-hero::before {
+        /* Halo radial detrás del tigrillo */
+        .mascot-hero::before {
             content: '';
             position: absolute;
             inset: 8%;
@@ -315,9 +315,9 @@
             background: radial-gradient(circle, rgba(245,136,48,0.35) 0%, rgba(245,136,48,0) 70%);
             filter: blur(20px);
             z-index: -1;
-            animation: certy-halo 3.5s ease-in-out infinite;
+            animation: mascot-halo 3.5s ease-in-out infinite;
         }
-        @keyframes certy-halo {
+        @keyframes mascot-halo {
             0%, 100% { opacity: 0.6; transform: scale(0.95); }
             50%      { opacity: 0.95; transform: scale(1.08); }
         }
@@ -478,20 +478,20 @@
             <!-- Carrusel de slides -->
             <div class="showcase-stage" id="showcaseStage">
 
-                <!-- Slide 1 · Hola Certy -->
+                <!-- Slide 1 · Bienvenida UNEMI -->
                 <div class="showcase-slide is-active" data-slide="0">
-                    <div class="certy-hero">
-                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    <div class="mascot-hero">
+                        <img src="{% static 'tiger_chase_loader.png' %}" alt="UNEMI">
                     </div>
-                    <span class="showcase-tag"><i class="fa-solid fa-hand-sparkles"></i> Hola, soy Certy</span>
-                    <h2 class="showcase-headline">Tu compañero de<br>aprendizaje continuo.</h2>
-                    <p class="showcase-sub">Te aviso de los eventos que importan, te ayudo a estudiar con resúmenes automáticos y guardo cada certificado en su sitio.</p>
+                    <span class="showcase-tag"><i class="fa-solid fa-graduation-cap"></i> UNEMI · CertifAI</span>
+                    <h2 class="showcase-headline">Tu plataforma de<br>certificación académica.</h2>
+                    <p class="showcase-sub">Centralizá tus eventos, certificados y aprendizajes. La IA te ayuda a aprovechar cada reunión.</p>
                 </div>
 
                 <!-- Slide 2 · Certificados -->
                 <div class="showcase-slide" data-slide="1">
-                    <div class="certy-hero">
-                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    <div class="mascot-hero">
+                        <img src="{% static 'tiger_chase_loader.png' %}" alt="UNEMI">
                     </div>
                     <span class="showcase-tag"><i class="fa-solid fa-certificate"></i> Tus diplomas</span>
                     <h2 class="showcase-headline">Cada certificado, en un solo lugar.</h2>
@@ -500,8 +500,8 @@
 
                 <!-- Slide 3 · IA -->
                 <div class="showcase-slide" data-slide="2">
-                    <div class="certy-hero">
-                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    <div class="mascot-hero">
+                        <img src="{% static 'tiger_chase_loader.png' %}" alt="UNEMI">
                     </div>
                     <span class="showcase-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> Inteligencia artificial</span>
                     <h2 class="showcase-headline">Resúmenes y cuestionarios automáticos.</h2>
@@ -510,8 +510,8 @@
 
                 <!-- Slide 4 · Recomendaciones -->
                 <div class="showcase-slide" data-slide="3">
-                    <div class="certy-hero">
-                        <img src="{% static 'img/certy.png' %}" alt="Certy">
+                    <div class="mascot-hero">
+                        <img src="{% static 'tiger_chase_loader.png' %}" alt="UNEMI">
                     </div>
                     <span class="showcase-tag"><i class="fa-solid fa-compass"></i> Eventos para ti</span>
                     <h2 class="showcase-headline">Eventos pensados a tu medida.</h2>
@@ -560,53 +560,8 @@
     </main>
 </div>
 
-<script>
-function toggleTheme() {
-    const root = document.documentElement;
-    const icon = document.getElementById('themeIcon');
-    if (root.classList.contains('dark')) {
-        root.classList.remove('dark'); root.classList.add('light');
-        localStorage.theme = 'light';
-        if (icon) icon.className = 'fa-solid fa-sun';
-    } else {
-        root.classList.remove('light'); root.classList.add('dark');
-        localStorage.theme = 'dark';
-        if (icon) icon.className = 'fa-solid fa-moon';
-    }
-}
-(function() {
-    const icon = document.getElementById('themeIcon');
-    if (!icon) return;
-    icon.className = document.documentElement.classList.contains('dark') ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
-})();
-
-// Carrusel showcase — sincroniza slides + bg + watermark
-(function() {
-    const stage  = document.getElementById('showcaseStage');
-    if (!stage) return;
-    const slides = stage.querySelectorAll('.showcase-slide');
-    const bgs    = document.querySelectorAll('.showcase-bg');
-    const megas  = document.querySelectorAll('.showcase-mega');
-    const dots   = document.querySelectorAll('.showcase-dot');
-    const total  = slides.length;
-    if (total <= 1) return;
-    let current = 0, timer = null;
-
-    function go(i) {
-        current = (i + total) % total;
-        slides.forEach((s, k) => s.classList.toggle('is-active', k === current));
-        bgs.forEach   ((b, k) => b.classList.toggle('is-active', k === current));
-        megas.forEach ((m, k) => m.classList.toggle('is-active', k === current));
-        dots.forEach  ((d, k) => d.classList.toggle('is-active', k === current));
-    }
-    const tick = () => go(current + 1);
-    const start = () => { stop(); timer = setInterval(tick, 6000); };
-    const stop  = () => { if (timer) clearInterval(timer); timer = null; };
-    dots.forEach(d => d.addEventListener('click', () => { go(parseInt(d.dataset.go)); start(); }));
-    stage.addEventListener('mouseenter', stop);
-    stage.addEventListener('mouseleave', start);
-    start();
-})();
-</script>
+<script src="{% static 'js/components/theme.js' %}"></script>
+<script src="{% static 'js/components/carousel.js' %}"></script>
+<script src="{% static 'js/pages/auth-shell.js' %}"></script>
 </body>
 </html>

@@ -259,6 +259,22 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
 }
 
+# ─── Celery (tareas asíncronas) ─────────────────────────────────
+# Si CELERY_BROKER_URL no está seteado y DEBUG=True, las tareas corren
+# inmediatamente en el mismo proceso (eager mode) — útil en desarrollo
+# sin redis instalado. En producción se requiere Redis o RabbitMQ.
+CELERY_BROKER_URL     = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
+CELERY_TASK_ALWAYS_EAGER  = os.getenv('CELERY_TASK_ALWAYS_EAGER', 'False') == 'True' or DEBUG and not os.getenv('CELERY_BROKER_URL')
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TIMEZONE = 'America/Guayaquil'
+CELERY_TASK_TIME_LIMIT = 300       # 5 min hard kill
+CELERY_TASK_SOFT_TIME_LIMIT = 240  # 4 min soft kill (catch SoftTimeLimitExceeded)
+CELERY_BEAT_SCHEDULE = {}          # cron jobs aquí
+
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CertifAI API',
     'DESCRIPTION': 'API REST para el sistema de certificados UNEMI / CertifAI.',

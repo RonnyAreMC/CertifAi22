@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 
 urlpatterns = [
@@ -10,6 +11,11 @@ urlpatterns = [
 
     # API REST (JSON)
     path('api/', include('api.urls')),
+
+    # ── Documentación OpenAPI / Swagger ─────────────────────────
+    path('api/schema/',         SpectacularAPIView.as_view(),     name='schema'),
+    path('api/docs/',           SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/',          SpectacularRedocView.as_view(url_name='schema'),   name='redoc'),
 
     # Admin Panel (Django MVC)
     path('panel/', include(('admin_panel.urls', 'admin_panel'), namespace='panel')),

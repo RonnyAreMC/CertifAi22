@@ -19,7 +19,7 @@ from core.models import (
 from core.models._choices import Modalidad
 from core.services.pdf_service import generate_certificate_pdf
 from core.services.meet import calendar_client as meet_calendar
-from core.services.email import sender as email_sender
+from core.tasks.email_tasks import send_certificate_issued_bulk
 from api.common.viewsets import AuditedModelViewSet
 
 from .serializers import (
@@ -288,27 +288,16 @@ class SesionViewSet(AuditedModelViewSet):
             f'Lote "{lote.nombre_lote}" generado desde sesión {sesion.id} con {len(certs)} certificados',
         )
 
-        # ── Notificación por correo a cada participante ──
-        # Re-consultamos los certificados creados para tener pk + hash_verificacion
-        # (bulk_create no garantiza hidratar el hash autogenerado en algunas DBs).
-        sent = 0
-        certs_creados = (Certificado.objects
-            .filter(lote=lote)
-            .select_related('participante'))
-        for cert in certs_creados:
-            ok = email_sender.send_certificate_issued(
-                certificado=cert,
-                sesion=sesion,
-                participante=cert.participante,
-                request=request,
-            )
-            if ok:
-                sent += 1
+        # ── Notificación por correo a cada participante (async vía Celery) ──
+        # En vez de bloquear el request mientras se envían N correos, despachamos
+        # una task de Celery que itera y envía. En desarrollo sin Redis, EAGER
+        # mode hace que corra inmediatamente sincrónica (mismo comportamiento).
+        send_certificate_issued_bulk.delay(lote_id=lote.id)
 
         return Response({
             'ok': True,
             'lote_id': lote.id,
             'lote_nombre': lote.nombre_lote,
             'certificados_creados': len(certs),
-            'correos_enviados': sent,
+            'correos_encolados': len(certs),
         })

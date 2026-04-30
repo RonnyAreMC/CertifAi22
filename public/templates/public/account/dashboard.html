@@ -1,4 +1,5 @@
 {% extends 'public/account/_base.html' %}
+{% load static %}
 {% block page_title %}Mi cuenta{% endblock %}
 
 {% block extra_head %}
@@ -467,43 +468,9 @@
     </section>
 
 </div>
+{% endblock %}
 
-<script>
-// Countdown del próximo evento
-(function() {
-    const root = document.getElementById('countdown');
-    if (!root || !root.dataset.target) return;
-    const target = new Date(root.dataset.target).getTime();
-    const cells = {
-        d: root.querySelector('[data-cd="d"]'),
-        h: root.querySelector('[data-cd="h"]'),
-        m: root.querySelector('[data-cd="m"]'),
-        s: root.querySelector('[data-cd="s"]'),
-    };
-    function pad(n) { return String(Math.max(0, n)).padStart(2, '0'); }
-    function tick() {
-        const now = Date.now();
-        const diff = Math.max(0, target - now);
-        const d = Math.floor(diff / 86400000);
-        const h = Math.floor((diff % 86400000) / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        cells.d.textContent = pad(d);
-        cells.h.textContent = pad(h);
-        cells.m.textContent = pad(m);
-        cells.s.textContent = pad(s);
-    }
-    tick();
-    setInterval(tick, 1000);
-})();
-
-// Si entró desde un correo con ?day=YYYY-MM-DD, hace scroll al calendario
-(function() {
-    const highlighted = document.querySelector('.cal-day.is-highlight');
-    if (!highlighted) return;
-    setTimeout(() => {
-        highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-})();
-</script>
+{% block extra_scripts %}
+<script src="{% static 'js/components/countdown.js' %}"></script>
+<script src="{% static 'js/pages/dashboard.js' %}"></script>
 {% endblock %}

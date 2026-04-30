@@ -27,3 +27,7 @@ google-api-python-client>=2.100
 # AI providers (Claude / OpenAI / Groq via OpenAI-compatible API)
 anthropic>=0.40
 openai>=1.50
+# Async tasks (correos masivos, generación PDFs)
+celery>=5.4
+redis>=5.0
+django-celery-results>=2.5

@@ -26,7 +26,7 @@
         :root {
             --ds-brand:       {{ design.color_brand|default:'#F58830' }};
             --ds-brand-dark:  {{ design.color_brand_dark|default:'#D97520' }};
-            --ds-accent:      {{ design.color_accent|default:'#A855F7' }};
+            --ds-accent:      {{ design.color_accent|default:'#162054' }};
             --ds-bg-dark:     {{ design.color_bg_dark|default:'#0A1535' }};
             --ds-bg-light:    {{ design.color_bg_light|default:'#F8FAFC' }};
             --ds-card-dark:   {{ design.color_card_dark|default:'#152448' }};
@@ -364,25 +364,7 @@
     </a>
 </nav>
 
-<script>
-function toggleTheme() {
-    const root = document.documentElement;
-    if (root.classList.contains('dark')) {
-        root.classList.remove('dark'); root.classList.add('light');
-        localStorage.theme = 'light';
-        document.getElementById('theme-icon').className = 'fa-solid fa-sun text-sm';
-    } else {
-        root.classList.remove('light'); root.classList.add('dark');
-        localStorage.theme = 'dark';
-        document.getElementById('theme-icon').className = 'fa-solid fa-moon text-sm';
-    }
-}
-// init icon
-(function() {
-    const isDark = document.documentElement.classList.contains('dark');
-    document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-moon text-sm' : 'fa-solid fa-sun text-sm';
-})();
-</script>
+<script src="{% static 'js/components/theme.js' %}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

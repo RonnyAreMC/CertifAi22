@@ -1,0 +1,70 @@
+# Configuración consolidada de herramientas Python (PEP 518).
+# Reemplaza pytest.ini y ruff.toml en un solo archivo, según el estándar
+# moderno. Las dependencias siguen en requirements.txt para compatibilidad
+# con Railway / Heroku que esperan ese archivo en root.
+
+[project]
+name = "certifai"
+version = "1.0.0"
+description = "Plataforma de certificación digital con IA · Universidad Estatal de Milagro"
+requires-python = ">=3.10"
+readme = "README.md"
+
+# ─── pytest ────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["tests"]
+addopts = "--reuse-db -ra"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+# ─── ruff (linter + formatter) ─────────────────────────────────
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = [
+    ".venv",
+    "migrations",
+    "staticfiles",
+    "media",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # bugbear
+]
+ignore = [
+    "E501",  # line too long (lo maneja el formatter)
+    "B008",  # function calls in argument defaults (común en Django)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]            # unused imports OK en fixtures
+"**/__init__.py" = ["F401"]     # re-exports
+
+# ─── Coverage (opcional, para CI) ──────────────────────────────
+[tool.coverage.run]
+source = ["core", "api", "public", "admin_panel"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/test_*.py",
+    "manage.py",
+    "config/wsgi.py",
+    "config/asgi.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

@@ -29,8 +29,8 @@ class UIDesignTokens(SingletonModel, TimestampedModel):
     )
     color_accent = models.CharField(
         max_length=9,
-        default='#A855F7',
-        help_text='Acento secundario (badges decorativos)',
+        default='#162054',
+        help_text='Acento secundario · UNEMI azul institucional',
     )
 
     # ─── Colores de superficie ────────────────────────────────
@@ -46,10 +46,11 @@ class UIDesignTokens(SingletonModel, TimestampedModel):
     color_text_muted_light = models.CharField(max_length=9, default='#64748B', help_text='Texto secundario modo claro')
 
     # ─── Estado (semánticos) ──────────────────────────────────
-    color_success = models.CharField(max_length=9, default='#10B981')
-    color_danger = models.CharField(max_length=9, default='#EF4444')
-    color_warning = models.CharField(max_length=9, default='#F59E0B')
-    color_info = models.CharField(max_length=9, default='#3B82F6')
+    # Estado · sólo paleta UNEMI (naranja/azul) + rojo para errores críticos
+    color_success = models.CharField(max_length=9, default='#1E40AF', help_text='Estado positivo · azul')
+    color_danger  = models.CharField(max_length=9, default='#DC2626', help_text='Errores críticos · rojo')
+    color_warning = models.CharField(max_length=9, default='#F58830', help_text='Aviso · naranja brand')
+    color_info    = models.CharField(max_length=9, default='#3B82F6', help_text='Información · azul claro')
 
     # ─── Tipografía ───────────────────────────────────────────
     font_sans = models.CharField(
