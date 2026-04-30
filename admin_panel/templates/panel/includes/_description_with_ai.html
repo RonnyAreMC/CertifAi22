@@ -1,5 +1,5 @@
 {% comment %}
-Componente reutilizable: textarea de descripción con CKEditor 5 + asistente IA.
+Componente reutilizable: textarea de descripción con CKEditor 5 + asistente Betto (IA).
 
 Uso:
     {% include 'panel/includes/_description_with_ai.html' with
@@ -19,49 +19,53 @@ el HTML actual del editor — útil al construir el FormData del submit.
 {% load static %}
 {% with title_name=title_input_name|default:"titulo" desc_name=description_name|default:"descripcion" %}
 <div>
-    <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <label class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             <i class="fa-solid fa-align-left mr-1 text-[#F58830]"></i> Descripción
         </label>
-        <button type="button" onclick="openAIModal()" class="group inline-flex items-center gap-3 pl-1.5 pr-5 py-1.5 rounded-full bg-gradient-to-r from-[#F58830]/15 to-blue-500/15 hover:from-[#F58830]/25 hover:to-blue-500/25 border-2 border-[#F58830]/30 hover:border-[#F58830]/50 text-gray-800 dark:text-white text-sm font-bold transition-all hover:shadow-lg hover:-translate-y-0.5">
-            <span class="relative">
-                <img src="{% static 'tiger_chase_loader.png' %}" alt="UNEMI" class="w-12 h-12 rounded-full ring-2 ring-white dark:ring-[#162054] shadow-md group-hover:scale-110 transition-transform bg-white">
-                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#162054] flex items-center justify-center">
+        <button type="button" onclick="openAIModal()"
+                class="betto-btn group inline-flex items-center gap-3 pl-2 pr-5 py-2 rounded-full text-sm font-bold transition-all">
+            <span class="betto-avatar relative flex-shrink-0">
+                <img src="{% static 'tiger_chase_loader.png' %}" alt="Betto"
+                     class="w-10 h-10 rounded-full bg-white object-cover ring-2 ring-white shadow-md group-hover:scale-110 transition-transform">
+                <span class="betto-status absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#F58830] ring-2 ring-white flex items-center justify-center">
                     <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
                 </span>
             </span>
-            <span class="flex flex-col items-start leading-tight">
-                <span class="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Asistente IA</span>
-                <span class="text-sm">Pedir ayuda a la <span class="bg-gradient-to-r from-[#F58830] to-[#162054] bg-clip-text text-transparent">IA</span></span>
+            <span class="flex flex-col items-start leading-tight pr-1 min-w-0">
+                <span class="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-[0.12em]">Asistente IA</span>
+                <span class="text-sm whitespace-nowrap font-medium">
+                    Pedir ayuda a <span class="font-black text-[#F58830]">Betto</span>
+                </span>
             </span>
-            <i class="fa-solid fa-sparkles text-[#F58830] text-xs"></i>
+            <i class="fa-solid fa-arrow-right text-[#F58830] text-xs group-hover:translate-x-0.5 transition-transform"></i>
         </button>
     </div>
     <textarea id="description-editor" name="{{ desc_name }}">{{ description_value|default:'' }}</textarea>
-    <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Usá la barra para dar formato (negritas, listas, encabezados) o el asistente IA para generarla.</p>
+    <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Usá la barra para dar formato (negritas, listas, encabezados) o pídele a Betto que la genere.</p>
 </div>
 
-<!-- Modal asistente IA -->
+<!-- Modal asistente Betto -->
 <div id="ai-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
     <div class="fixed inset-0 bg-gray-900/75 backdrop-blur-sm" onclick="closeAIModal()"></div>
-    <div class="relative bg-white dark:bg-[#162054] rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-100 dark:border-blue-900/30 max-h-[90vh] overflow-hidden flex flex-col">
-        <!-- Header del asistente IA -->
-        <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-blue-900/30 bg-gradient-to-r from-[#F58830]/10 to-blue-500/10">
+    <div class="relative bg-white dark:bg-[#162054] rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-100 dark:border-blue-900/30 max-h-[88vh] overflow-hidden flex flex-col">
+        <!-- Header de Betto · sólido, sin transparencias que dejen pasar la página -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-blue-900/40 bg-white dark:bg-[#162054] flex-shrink-0">
             <div class="flex items-center gap-3">
-                <div class="relative">
-                    <img src="{% static 'tiger_chase_loader.png' %}" alt="UNEMI" class="w-14 h-14 rounded-2xl shadow-lg ring-2 ring-white dark:ring-[#162054] bg-white dark:bg-[#0F163A]">
-                    <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#162054] flex items-center justify-center">
-                        <i class="fa-solid fa-sparkles text-white text-[7px]"></i>
+                <div class="relative flex-shrink-0">
+                    <img src="{% static 'tiger_chase_loader.png' %}" alt="Betto" class="w-12 h-12 rounded-2xl shadow-md ring-2 ring-[#F58830]/30 bg-white">
+                    <span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#F58830] ring-2 ring-white dark:ring-[#162054] flex items-center justify-center">
+                        <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
                     </span>
                 </div>
                 <div>
-                    <h3 class="text-lg font-black text-gray-800 dark:text-white">
-                        Asistente <span class="bg-gradient-to-r from-[#F58830] to-[#162054] bg-clip-text text-transparent">IA</span>
+                    <h3 class="text-lg text-gray-800 dark:text-white font-medium tracking-tight leading-tight">
+                        Hola, soy <span class="font-black text-[#F58830]">Betto</span>
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Te ayuda a escribir descripciones de eventos</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tu asistente para escribir descripciones de eventos</p>
                 </div>
             </div>
-            <button type="button" onclick="closeAIModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" onclick="closeAIModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 flex-shrink-0 transition-colors"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <!-- Body -->
@@ -77,7 +81,7 @@ el HTML actual del editor — útil al construir el FormData del submit.
 
             <!-- Pedido en lenguaje natural -->
             <div>
-                <label class="text-sm font-bold text-gray-700 dark:text-gray-200 block mb-2">¿Qué querés que escriba la IA?</label>
+                <label class="text-sm font-bold text-gray-700 dark:text-gray-200 block mb-2">¿Qué querés que escriba Betto?</label>
                 <textarea id="ai-context" rows="4"
                     placeholder="Ej: una descripción amigable para médicos sobre IA en salud, duración 2 horas, con la temática de diagnóstico asistido…"
                     class="w-full p-4 rounded-xl bg-gray-50 dark:bg-[#0F163A]/50 border-2 border-gray-200 dark:border-blue-900/30 focus:border-[#F58830] text-gray-800 dark:text-white text-sm focus:outline-none resize-none transition-colors"></textarea>
@@ -109,21 +113,21 @@ el HTML actual del editor — útil al construir el FormData del submit.
             <!-- Resultado generado -->
             <div id="ai-result" class="hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider"><i class="fa-solid fa-circle-check mr-1"></i> La IA escribió esto:</p>
+                    <p class="text-xs font-bold text-[#F58830] uppercase tracking-wider"><i class="fa-solid fa-circle-check mr-1"></i> Betto escribió esto:</p>
                     <button type="button" onclick="regenerateAI()" class="text-xs text-gray-500 hover:text-[#F58830] font-bold"><i class="fa-solid fa-arrows-rotate"></i> Otra vez</button>
                 </div>
-                <div id="ai-result-content" class="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/40 text-gray-800 dark:text-gray-200 text-sm leading-relaxed max-h-[300px] overflow-y-auto"></div>
+                <div id="ai-result-content" class="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl bg-[#F58830]/5 dark:bg-[#F58830]/10 border border-[#F58830]/30 dark:border-[#F58830]/40 text-gray-800 dark:text-gray-200 text-sm leading-relaxed max-h-[300px] overflow-y-auto"></div>
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="p-5 border-t border-gray-100 dark:border-blue-900/30 bg-gray-50/50 dark:bg-[#0F163A]/30 flex flex-wrap gap-3">
-            <button type="button" id="ai-generate-btn" onclick="generateAI()" class="flex-1 min-w-[180px] bg-gradient-to-r from-[#F58830] to-blue-500 hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2">
+        <!-- Footer (sticky, siempre visible) -->
+        <div class="px-5 py-4 border-t border-gray-100 dark:border-blue-900/30 bg-white dark:bg-[#162054] flex flex-wrap gap-2 flex-shrink-0">
+            <button type="button" id="ai-generate-btn" onclick="generateAI()" class="flex-1 min-w-[150px] bg-gradient-to-r from-[#F58830] to-[#D97520] hover:opacity-90 text-white font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md">
                 <i class="fa-solid fa-sparkles"></i>
-                <span>Generar con IA</span>
+                <span>Generar con Betto</span>
             </button>
-            <button type="button" id="ai-apply-btn" onclick="applyAI()" disabled class="hidden flex-1 min-w-[180px] bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-all">
-                <i class="fa-solid fa-check mr-1"></i> Usar este texto
+            <button type="button" id="ai-apply-btn" onclick="applyAI()" disabled class="hidden flex-1 min-w-[150px] bg-[#162054] hover:bg-[#0F163A] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                <i class="fa-solid fa-check"></i> <span>Usar este texto</span>
             </button>
             <button type="button" onclick="closeAIModal()" class="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-blue-900/30 text-gray-500 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-[#0F163A]/50 transition-all">
                 Cancelar
@@ -135,35 +139,120 @@ el HTML actual del editor — útil al construir el FormData del submit.
 <!-- CKEditor 5 desde CDN -->
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
 <style>
+/* ── CKEditor · padding generoso + tipografía legible ── */
 .ck-editor__editable_inline {
-    min-height: 200px !important;
-    background: transparent !important;
-    color: inherit !important;
-    border: 1px solid rgba(229, 231, 235, 1) !important;
+    min-height: 240px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e5e7eb !important;
     border-radius: 0 0 .75rem .75rem !important;
 }
 .dark .ck-editor__editable_inline {
     border-color: rgba(30, 64, 175, 0.3) !important;
-    background: rgba(15, 22, 58, 0.5) !important;
+    background: rgba(15, 22, 58, 0.45) !important;
+    color: #f1f5f9 !important;
 }
-.ck.ck-editor__main > .ck-editor__editable {
-    padding: 12px !important;
+
+/* Espacio amplio dentro del editor para que el texto respire */
+.ck.ck-editor__main > .ck-editor__editable,
+.ck-content {
+    padding: 20px 24px !important;
+    line-height: 1.65 !important;
+    font-size: 14.5px !important;
 }
+
+/* Primer y último elemento sin margin extra (el padding ya da aire) */
+.ck-content > :first-child { margin-top: 0 !important; }
+.ck-content > :last-child  { margin-bottom: 0 !important; }
+.ck-content p              { margin: 0 0 12px !important; }
+.ck-content h2             { font-size: 1.15rem !important; font-weight: 800 !important; margin: 18px 0 10px !important; color: #0f172a !important; }
+.dark .ck-content h2       { color: #fff !important; }
+.ck-content h3             { font-size: 1rem !important; font-weight: 700 !important; margin: 14px 0 8px !important; }
+.ck-content ul, .ck-content ol { padding-left: 22px !important; margin: 8px 0 14px !important; }
+.ck-content li             { margin-bottom: 4px !important; }
+.ck-content strong         { font-weight: 700 !important; color: #0f172a !important; }
+.dark .ck-content strong   { color: #fff !important; }
+
+/* Toolbar superior */
 .ck.ck-toolbar {
     border-radius: .75rem .75rem 0 0 !important;
-    border: 1px solid rgba(229, 231, 235, 1) !important;
-    background: rgba(249, 250, 251, 1) !important;
+    border: 1px solid #e5e7eb !important;
+    border-bottom: 0 !important;
+    background: #f9fafb !important;
+    padding: 8px 10px !important;
 }
 .dark .ck.ck-toolbar {
-    background: rgba(15, 22, 58, 0.5) !important;
+    background: rgba(15, 22, 58, 0.6) !important;
     border-color: rgba(30, 64, 175, 0.3) !important;
 }
-.dark .ck-content { color: white !important; }
-.dark .ck.ck-button { color: rgba(229, 231, 235, 1) !important; }
-.dark .ck.ck-button:hover, .dark .ck.ck-button.ck-on { background: rgba(245, 136, 48, 0.15) !important; }
+.dark .ck.ck-button { color: #e5e7eb !important; }
+.dark .ck.ck-button:hover, .dark .ck.ck-button.ck-on { background: rgba(245, 136, 48, 0.20) !important; color: #F58830 !important; }
+.ck.ck-button:hover { background: rgba(245, 136, 48, 0.10) !important; color: #F58830 !important; }
+
+/* ── Botón Betto · pill liquid glass con glow naranja ── */
+.betto-btn {
+    position: relative;
+    color: #0f172a;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.80));
+    border: 1px solid rgba(245,136,48,0.35);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,1),
+        inset 0 -1px 0 rgba(245,136,48,0.10),
+        0 6px 18px -4px rgba(245,136,48,0.25),
+        0 2px 6px -2px rgba(15,23,42,0.10);
+}
+.dark .betto-btn {
+    color: #fff;
+    background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+    border-color: rgba(245,136,48,0.40);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.10),
+        inset 0 -1px 0 rgba(0,0,0,0.20),
+        0 8px 24px -6px rgba(245,136,48,0.30),
+        0 2px 6px -2px rgba(0,0,0,0.40);
+}
+.betto-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(245,136,48,0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,1),
+        0 12px 28px -6px rgba(245,136,48,0.40),
+        0 4px 10px -2px rgba(15,23,42,0.12);
+}
+.dark .betto-btn:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        0 14px 32px -8px rgba(245,136,48,0.45),
+        0 4px 10px -2px rgba(0,0,0,0.50);
+}
+.betto-btn:active { transform: translateY(0); }
+
+/* Avatar de Betto con halo naranja sutil */
+.betto-avatar::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,136,48,0.35) 0%, transparent 70%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity .25s;
+}
+.betto-btn:hover .betto-avatar::before { opacity: 1; }
+.betto-avatar img { border-color: rgba(245,136,48,0.30); }
+.dark .betto-avatar img { box-shadow: 0 0 0 2px rgba(255,255,255,0.10); }
+
+/* Modal Betto */
 #ai-modal { display: none; }
 #ai-modal.show { display: flex; }
 #ai-modal .ck-editor__editable_inline { min-height: 120px !important; }
+
+/* Cuando Betto está abierto, ocultamos cualquier barra sticky del form
+   (ej: footer "Guardar Cambios" de create/edit) para que no compita
+   visualmente con los CTAs del modal. */
+body.betto-modal-open .sticky.bottom-0 {
+    visibility: hidden;
+}
 </style>
 
 <script>
@@ -190,7 +279,7 @@ window.getDescriptionHTML = function () {
     return ckEditorInstance ? ckEditorInstance.getData() : '';
 };
 
-// ── Modal asistente IA ──────────────────────────────────────
+// ── Modal asistente Betto ──────────────────────────────────
 function openAIModal() {
     const titleInput = document.querySelector(TITLE_INPUT_SELECTOR);
     const title = (titleInput?.value || '').trim();
@@ -207,6 +296,7 @@ function openAIModal() {
     document.getElementById('ai-apply-btn').classList.add('hidden');
     document.getElementById('ai-modal-error').classList.add('hidden');
     document.getElementById('ai-modal').classList.add('show');
+    document.body.classList.add('betto-modal-open');
     document.body.style.overflow = 'hidden';
     // Auto-focus en el textarea para que el admin tipee directo
     setTimeout(() => document.getElementById('ai-context').focus(), 100);
@@ -226,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 function closeAIModal() {
     document.getElementById('ai-modal').classList.remove('show');
+    document.body.classList.remove('betto-modal-open');
     document.body.style.overflow = '';
 }
 
@@ -262,7 +353,7 @@ async function generateAI(forceAction) {
 
     const btn = document.getElementById('ai-generate-btn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>La IA está pensando...</span>';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Betto está pensando…</span>';
 
     try {
         const res = await fetch('/api/v1/admin/ai/event-description/', {
@@ -290,7 +381,7 @@ async function generateAI(forceAction) {
         errBox.classList.remove('hidden');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-sparkles"></i><span>Generar con IA</span>';
+        btn.innerHTML = '<i class="fa-solid fa-sparkles"></i><span>Generar con Betto</span>';
     }
 }
 
