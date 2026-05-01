@@ -67,9 +67,20 @@ def session_edit(request, id):
 
 @admin_required
 def session_qr_display(request, id):
-    """Shell; URL de check-in y feed se cargan desde el API."""
+    """Pantalla de QR: muestra el código que apunta a /checkin/<codigo_qr>/.
+
+    El template usa qrcodejs (cliente) para renderizarlo. El feed en vivo se
+    consulta vía /api/v1/admin/sessions/<id>/attendees/.
+    """
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+    checkin_url = request.build_absolute_uri(
+        f'/checkin/{sesion.codigo_qr}/'
+    )
+    total_registros = sesion.registros.count()
     return render(request, 'panel/sessions/qr.html', {
-        'sesion': get_object_or_404(SesionAsistencia, id=id),
+        'sesion':           sesion,
+        'checkin_url':      checkin_url,
+        'total_registros':  total_registros,
     })
 
 

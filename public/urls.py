@@ -31,6 +31,8 @@ urlpatterns = [
     path('cuenta/perfil/',        account_views.perfil_view,       name='account_perfil'),
     path('cuenta/eventos/<int:sesion_id>/inscribir/',
          account_views.evento_inscribir, name='account_evento_inscribir'),
+    path('cuenta/escanear/',           account_views.escanear_view,      name='account_escanear'),
+    path('cuenta/escanear/registrar/', account_views.escanear_registrar, name='account_escanear_registrar'),
 
     # ── Google Sign-In ──────────────────────────────────────
     path('cuenta/google/start/',    account_views.google_signin_start,    name='account_google_start'),

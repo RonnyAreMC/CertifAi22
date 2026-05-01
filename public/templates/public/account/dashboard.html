@@ -223,12 +223,22 @@
                     {% if eventos_proximos %}Tienes {{ eventos_proximos|length }} evento{{ eventos_proximos|length|pluralize:"s" }} próximo{{ eventos_proximos|length|pluralize:"s" }}.{% else %}Hoy es un buen día para descubrir un evento nuevo.{% endif %}
                 </p>
             </div>
-            <a href="{% url 'public:account_eventos' %}?tab=disponibles" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold
-                    bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)] text-white
-                    shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_14px_-4px_rgba(245,136,48,0.40)]
-                    hover:brightness-110 transition-all">
-                <i class="fa-solid fa-compass"></i> Explorar eventos
-            </a>
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{% url 'public:account_escanear' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold
+                        bg-white/85 dark:bg-white/10 text-[var(--ds-accent)] dark:text-white
+                        border border-[var(--ds-brand)]/30
+                        shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_12px_-4px_rgba(15,23,42,0.10)]
+                        dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_4px_12px_-4px_rgba(0,0,0,0.30)]
+                        hover:border-[var(--ds-brand)] transition-all">
+                    <i class="fa-solid fa-qrcode text-[var(--ds-brand)]"></i> Escanear QR
+                </a>
+                <a href="{% url 'public:account_eventos' %}?tab=disponibles" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold
+                        bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)] text-white
+                        shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_6px_14px_-4px_rgba(245,136,48,0.40)]
+                        hover:brightness-110 transition-all">
+                    <i class="fa-solid fa-compass"></i> Explorar eventos
+                </a>
+            </div>
         </div>
     </section>
 

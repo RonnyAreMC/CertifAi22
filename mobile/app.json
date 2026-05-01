@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "CertifAI",
+    "slug": "certifai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "certifai",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0A1535"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ec.unemi.certifai"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0A1535"
+      },
+      "package": "ec.unemi.certifai"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "CertifAI usa la cámara para escanear el QR de los eventos y registrar tu asistencia."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "http://192.168.0.104:8500",
+      "_": "Para OAuth con Google necesitamos URL pública HTTPS (Google bloquea IPs privadas).",
+      "webBaseUrl": "https://REEMPLAZA-CON-TU-NGROK.ngrok-free.app"
+    }
+  }
+}

@@ -1,0 +1,213 @@
+{% extends 'public/account/_base.html' %}
+{% load static %}
+{% block page_title %}Escanear QR{% endblock %}
+
+{% block extra_head %}
+<style>
+  .scan-card {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(28px);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 28px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.95),
+      0 24px 60px -16px rgba(15,23,42,0.16);
+  }
+  .dark .scan-card {
+    background: rgba(22,32,84,0.78);
+    border-color: rgba(255,255,255,0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.10),
+      0 30px 70px -16px rgba(0,0,0,0.55);
+  }
+
+  /* Frame con esquinas para guiar el encuadre */
+  #qr-reader {
+    border: 0 !important;
+    background: #000;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+  }
+  #qr-reader video {
+    border-radius: 20px;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+  }
+  #qr-reader__dashboard_section_csr,
+  #qr-reader__dashboard_section_swaplink,
+  #qr-reader__camera_selection {
+    background: rgba(255,255,255,0.92) !important;
+    border-radius: 12px !important;
+    padding: 6px !important;
+    color: #0f172a !important;
+    font-size: 12px !important;
+  }
+  #qr-reader__dashboard_section_csr button,
+  #qr-reader__dashboard_section_swaplink {
+    background: var(--ds-brand) !important;
+    color: white !important;
+    border: 0 !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+  }
+
+  .qr-corner {
+    position: absolute;
+    width: 36px; height: 36px;
+    border: 4px solid var(--ds-brand);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .qr-corner.tl { top: 18px;    left: 18px;    border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
+  .qr-corner.tr { top: 18px;    right: 18px;   border-left: 0;  border-bottom: 0; border-top-right-radius: 8px; }
+  .qr-corner.bl { bottom: 18px; left: 18px;    border-right: 0; border-top: 0;    border-bottom-left-radius: 8px; }
+  .qr-corner.br { bottom: 18px; right: 18px;   border-left: 0;  border-top: 0;    border-bottom-right-radius: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+    <div class="mb-6">
+        <span class="eyebrow"><i class="fa-solid fa-qrcode text-[10px]"></i> ASISTENCIA</span>
+        <h1 class="ds-display mt-3 text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+            Escanear QR del evento
+        </h1>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            Apuntá la cámara al QR que mostró el organizador. Tu asistencia se registra automáticamente.
+        </p>
+    </div>
+
+    <div class="scan-card p-4 sm:p-6">
+        <!-- Camera viewport -->
+        <div class="relative">
+            <div id="qr-reader" style="width: 100%; aspect-ratio: 1;"></div>
+            <div class="qr-corner tl"></div>
+            <div class="qr-corner tr"></div>
+            <div class="qr-corner bl"></div>
+            <div class="qr-corner br"></div>
+        </div>
+
+        <!-- Estado (oculto inicialmente) -->
+        <div id="status-box" class="hidden mt-4 p-4 rounded-2xl border" role="status">
+            <div id="status-content" class="flex items-center gap-3"></div>
+        </div>
+
+        <!-- Hint -->
+        <p id="status-hint" class="text-xs text-slate-500 dark:text-slate-400 mt-4 text-center">
+            <i class="fa-solid fa-circle-info"></i>
+            Si no se abre la cámara, comprobá los permisos del navegador.
+        </p>
+    </div>
+
+    <div class="text-center mt-6">
+        <a href="{% url 'public:account_dashboard' %}" class="text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-[var(--ds-brand)]">
+            ← Volver a mi cuenta
+        </a>
+    </div>
+</section>
+
+<!-- html5-qrcode -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function() {
+  const READER_ID  = 'qr-reader';
+  const POST_URL   = "{% url 'public:account_escanear_registrar' %}";
+  const CSRF_TOKEN = "{{ csrf_token }}";
+
+  let scanner = null;
+  let busy = false;
+
+  function showStatus(kind, title, message) {
+    const box     = document.getElementById('status-box');
+    const content = document.getElementById('status-content');
+    const palette = {
+      success: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-200 dark:border-emerald-800/40', icon: 'fa-circle-check text-emerald-600 dark:text-emerald-400' },
+      info:    { bg: 'bg-blue-50 dark:bg-blue-900/20',       border: 'border-blue-200 dark:border-blue-800/40',       icon: 'fa-circle-info text-blue-600 dark:text-blue-400' },
+      error:   { bg: 'bg-red-50 dark:bg-red-900/20',         border: 'border-red-200 dark:border-red-800/40',         icon: 'fa-circle-xmark text-red-600 dark:text-red-400' },
+    }[kind] || palette.info;
+    box.className = 'mt-4 p-4 rounded-2xl border ' + palette.bg + ' ' + palette.border;
+    content.innerHTML = `
+      <i class="fa-solid ${palette.icon} text-2xl"></i>
+      <div class="flex-1">
+        <p class="text-sm font-black text-slate-900 dark:text-white">${title}</p>
+        <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">${message}</p>
+      </div>
+    `;
+    box.classList.remove('hidden');
+  }
+
+  async function handleScan(decodedText) {
+    if (busy) return;
+    busy = true;
+
+    // Pausar el scan visual mientras procesa
+    try { await scanner.pause(true); } catch (_) {}
+
+    try {
+      const res = await fetch(POST_URL, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF_TOKEN,
+        },
+        body: JSON.stringify({ codigo_qr: decodedText }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.ok) {
+        showStatus('error', 'No pudimos validar el QR', data.error || 'Inténtalo de nuevo.');
+        // Reanudar para reintentar
+        setTimeout(() => { busy = false; try { scanner.resume(); } catch (_) {} }, 1500);
+        return;
+      }
+
+      if (data.already_registered) {
+        showStatus('info',
+          'Ya tenías asistencia registrada',
+          `${data.sesion_titulo} · ${data.sesion_fecha} ${data.sesion_hora}`);
+      } else {
+        showStatus('success',
+          '¡Asistencia registrada!',
+          `${data.sesion_titulo} · ${data.sesion_fecha} ${data.sesion_hora}`);
+      }
+      // Detener cámara — flujo completado
+      try { await scanner.stop(); } catch (_) {}
+      // Redirigir al dashboard tras 2 segundos
+      setTimeout(() => window.location.href = "{% url 'public:account_dashboard' %}", 2200);
+    } catch (err) {
+      showStatus('error', 'Error de red', 'Revisá tu conexión e intentá de nuevo.');
+      setTimeout(() => { busy = false; try { scanner.resume(); } catch (_) {} }, 1500);
+    }
+  }
+
+  function start() {
+    scanner = new Html5Qrcode(READER_ID);
+    const config = {
+      fps: 10,
+      qrbox: { width: 240, height: 240 },
+      aspectRatio: 1,
+    };
+    scanner.start(
+      { facingMode: 'environment' },
+      config,
+      handleScan,
+      () => {}, // ignoramos errores frame-a-frame (normal)
+    ).catch((err) => {
+      showStatus('error',
+        'No pudimos abrir la cámara',
+        err?.message || 'Permitir el acceso en la barra del navegador y recargar.');
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+</script>
+{% endblock %}

@@ -5,7 +5,9 @@
       "Bash(curl -sL -o static/fonts/KaushanScript-Regular.ttf \"https://github.com/google/fonts/raw/main/ofl/kaushanscript/KaushanScript-Regular.ttf\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8001/)",
       "Bash(curl -s -o /dev/null --max-time 1 http://localhost:8600/)",
-      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\\\\n\" http://localhost:8600/)"
+      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\\\\n\" http://localhost:8600/)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT=$?\")"
     ]
   }
 }

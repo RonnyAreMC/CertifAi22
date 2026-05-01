@@ -7,7 +7,7 @@ imports existentes como `from core.models import Usuario`.
 from ._choices import FACULTADES_CHOICES
 from .usuarios import Usuario, SolicitudAcceso
 from .firmas import FirmaInstitucional, DisenoGlobal
-from .participantes import Participante
+from .participantes import Participante, ParticipanteToken
 from .certificados import LoteCertificados, Certificado
 from .sesiones import SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia, Ponente
 from .auditoria import Auditoria
@@ -21,6 +21,7 @@ __all__ = [
     'FirmaInstitucional',
     'DisenoGlobal',
     'Participante',
+    'ParticipanteToken',
     'LoteCertificados',
     'Certificado',
     'SesionAsistencia',

@@ -7,7 +7,7 @@ para evitar la dependencia de JS al inicio.
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
@@ -412,6 +412,74 @@ def evento_inscribir(request, sesion_id: int):
 
 
 # ════════════════════════════════════════════════════════════════
+# Escanear QR desde la cuenta (web — usa cámara del navegador)
+# ════════════════════════════════════════════════════════════════
+
+@account_auth.login_required
+def escanear_view(request):
+    """Pantalla con la cámara del navegador para escanear el QR de un evento."""
+    return render(request, 'public/account/escanear.html')
+
+
+@account_auth.login_required
+@require_POST
+def escanear_registrar(request):
+    """Recibe el codigo_qr (de un POST JSON o form) y registra asistencia.
+
+    Idempotente: si ya estaba registrado, devuelve `already_registered=True`.
+    Si nunca se inscribió, lo inscribe automáticamente al escanear.
+    """
+    import json
+    p: Participante = request.participante
+
+    # Aceptar tanto JSON como form
+    codigo_qr = ''
+    if request.content_type and 'json' in request.content_type:
+        try:
+            data = json.loads(request.body or b'{}')
+            codigo_qr = (data.get('codigo_qr') or '').strip()
+        except Exception:
+            return JsonResponse({'ok': False, 'error': 'Body inválido.'}, status=400)
+    else:
+        codigo_qr = (request.POST.get('codigo_qr') or '').strip()
+
+    if not codigo_qr:
+        return JsonResponse({'ok': False, 'error': 'Falta el código QR.'}, status=400)
+
+    # Si vino una URL completa, extraemos el último segmento
+    if '/' in codigo_qr:
+        parts = [s for s in codigo_qr.rstrip('/').split('/') if s]
+        if parts:
+            codigo_qr = parts[-1]
+
+    try:
+        sesion = SesionAsistencia.objects.get(codigo_qr=codigo_qr, activa=True)
+    except SesionAsistencia.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': 'QR inválido o sesión no activa.'}, status=404)
+
+    # Inscribir al vuelo si no estaba inscrito
+    ConfirmacionAsistencia.objects.get_or_create(participante=p, sesion=sesion)
+
+    # Registrar asistencia (unique constraint asegura idempotencia)
+    ip = (
+        request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+        or request.META.get('REMOTE_ADDR')
+    )
+    _, created = RegistroAsistencia.objects.get_or_create(
+        participante=p, sesion=sesion,
+        defaults={'ip_address': ip},
+    )
+    return JsonResponse({
+        'ok': True,
+        'created': created,
+        'already_registered': not created,
+        'sesion_titulo': sesion.titulo or sesion.dia_semana,
+        'sesion_fecha':  sesion.fecha.strftime('%Y-%m-%d'),
+        'sesion_hora':   sesion.hora_inicio.strftime('%H:%M'),
+    })
+
+
+# ════════════════════════════════════════════════════════════════
 # Landing pública (rediseñada) — datos para el carousel/swiper
 # ════════════════════════════════════════════════════════════════
 
@@ -501,7 +569,6 @@ def google_signin_callback(request):
         p.save()
         created = True
     else:
-        # Si vino sin nombres, completar con los de Google
         if not p.nombres and info.get('given_name'):
             p.nombres = info['given_name']
         if not p.apellidos and info.get('family_name'):

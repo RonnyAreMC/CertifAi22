@@ -140,12 +140,14 @@ class SesionViewSet(AuditedModelViewSet):
         for r in registros:
             p = r.participante
             c = r.certificado
+            # Convertir a hora local antes de formatear (la BDD guarda UTC)
+            local_dt = timezone.localtime(r.fecha_registro)
             attendees.append({
                 'id': r.id,
                 'nombre': f'{p.nombres} {p.apellidos}' if p else (f'{c.nombres} {c.apellidos}' if c else '?'),
                 'cedula': p.cedula if p else (c.cedula if c else ''),
                 'email': p.email if p else (c.email if c else ''),
-                'hora': r.fecha_registro.strftime('%H:%M:%S'),
+                'hora': local_dt.strftime('%H:%M:%S'),
                 'timestamp': r.fecha_registro.isoformat(),
             })
 

@@ -1,7 +1,11 @@
 """Modelo de participantes/estudiantes del sistema."""
+import secrets
+from datetime import timedelta
+
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from core.base.models import TimestampedModel
 from core.managers import ParticipanteManager
@@ -99,3 +103,41 @@ class Participante(TimestampedModel):
         if not self.password_hash:
             return False
         return check_password(raw_password, self.password_hash)
+
+
+class ParticipanteToken(TimestampedModel):
+    """Token bearer para auth de la app móvil / clientes API.
+
+    Cada login en mobile crea un token nuevo. El cliente lo envía como
+    `Authorization: Token <key>` en cada request. Renovación = nuevo login
+    o endpoint /refresh (a implementar más adelante).
+    """
+    participante = models.ForeignKey(
+        Participante, on_delete=models.CASCADE, related_name='tokens',
+    )
+    key = models.CharField(max_length=64, unique=True, db_index=True)
+    expires_at = models.DateTimeField()
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        verbose_name = 'Token de participante'
+        verbose_name_plural = 'Tokens de participantes'
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['expires_at'])]
+
+    def __str__(self):
+        return f'Token<{self.participante_id}, …{self.key[-6:]}>'
+
+    @classmethod
+    def generate_for(cls, participante: 'Participante', *, days: int = 30, user_agent: str = '') -> 'ParticipanteToken':
+        return cls.objects.create(
+            participante=participante,
+            key=secrets.token_urlsafe(40),
+            expires_at=timezone.now() + timedelta(days=days),
+            user_agent=user_agent[:255],
+        )
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() >= self.expires_at
