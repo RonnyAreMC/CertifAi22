@@ -68,8 +68,9 @@ el HTML actual del editor — útil al construir el FormData del submit.
             <button type="button" onclick="closeAIModal()" class="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 flex-shrink-0 transition-colors"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <!-- Body -->
-        <div class="p-5 space-y-4 overflow-y-auto flex-1">
+        <!-- Body — min-h-0 es CLAVE: sin esto el flex-1 no se contrae y el
+             contenido desborda empujando el modal fuera del viewport. -->
+        <div class="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
             <div id="ai-modal-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"></div>
 
             <!-- Título detectado (chip pequeño, no card) -->
@@ -116,7 +117,7 @@ el HTML actual del editor — útil al construir el FormData del submit.
                     <p class="text-xs font-bold text-[#F58830] uppercase tracking-wider"><i class="fa-solid fa-circle-check mr-1"></i> Betto escribió esto:</p>
                     <button type="button" onclick="regenerateAI()" class="text-xs text-gray-500 hover:text-[#F58830] font-bold"><i class="fa-solid fa-arrows-rotate"></i> Otra vez</button>
                 </div>
-                <div id="ai-result-content" class="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl bg-[#F58830]/5 dark:bg-[#F58830]/10 border border-[#F58830]/30 dark:border-[#F58830]/40 text-gray-800 dark:text-gray-200 text-sm leading-relaxed max-h-[300px] overflow-y-auto"></div>
+                <div id="ai-result-content" class="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl bg-[#F58830]/5 dark:bg-[#F58830]/10 border border-[#F58830]/30 dark:border-[#F58830]/40 text-gray-800 dark:text-gray-200 text-sm leading-relaxed max-h-[40vh] overflow-y-auto"></div>
             </div>
         </div>
 

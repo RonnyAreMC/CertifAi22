@@ -38,7 +38,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "http://192.168.0.104:8500",
+      "apiBaseUrl": "http://192.168.0.102:8500",
       "_": "Para OAuth con Google necesitamos URL pública HTTPS (Google bloquea IPs privadas).",
       "webBaseUrl": "https://REEMPLAZA-CON-TU-NGROK.ngrok-free.app"
     }

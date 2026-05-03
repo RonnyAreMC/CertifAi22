@@ -10,6 +10,7 @@ from .firmas import FirmaInstitucional, DisenoGlobal
 from .participantes import Participante, ParticipanteToken
 from .certificados import LoteCertificados, Certificado
 from .sesiones import SesionAsistencia, RegistroAsistencia, ConfirmacionAsistencia, Ponente
+from .resumenes import ResumenSesion, EstadoProcesamiento, IntentoCuestionario
 from .auditoria import Auditoria
 from .integrations import GoogleCredential, AIConfig, AIProvider, PROVIDER_MODELS
 from .design_system import UIDesignTokens
@@ -28,6 +29,9 @@ __all__ = [
     'RegistroAsistencia',
     'ConfirmacionAsistencia',
     'Ponente',
+    'ResumenSesion',
+    'EstadoProcesamiento',
+    'IntentoCuestionario',
     'Auditoria',
     'GoogleCredential',
     'AIConfig',

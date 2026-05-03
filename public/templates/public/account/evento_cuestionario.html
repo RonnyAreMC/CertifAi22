@@ -1,0 +1,585 @@
+{% extends 'public/account/_base.html' %}
+{% load static %}
+{% block page_title %}Cuestionario · {{ sesion.titulo|default:sesion.dia_semana }}{% endblock %}
+
+{% block content %}
+{{ resumen.cuestionario|json_script:"quizData" }}
+
+<style>
+    /* Background animado tipo Quizizz */
+    .quiz-shell {
+        position: relative;
+        min-height: calc(100vh - 140px);
+        border-radius: 32px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background:
+            radial-gradient(circle at 15% 20%, rgba(245,136,48,0.18) 0%, transparent 50%),
+            radial-gradient(circle at 85% 75%, rgba(168,85,247,0.18) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(59,130,246,0.10) 0%, transparent 60%),
+            linear-gradient(135deg, #0F1A4D 0%, #162054 50%, #0F1A4D 100%);
+    }
+    /* El body toma el resto y centra su contenido vertical */
+    #quizBody {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .quiz-shell::before {
+        content: ''; position: absolute; inset: 0;
+        background-image:
+            radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+        background-size: 24px 24px;
+        pointer-events: none;
+    }
+
+    /* Top bar */
+    .quiz-topbar {
+        display: flex; align-items: center; gap: 12px;
+        padding: 16px 22px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .quiz-progress-bar {
+        flex: 1; height: 8px;
+        background: rgba(255,255,255,0.10);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+    }
+    .quiz-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--ds-brand) 0%, #E8721C 50%, #A855F7 100%);
+        border-radius: 999px;
+        transition: width .5s cubic-bezier(.34,1.56,.64,1);
+        box-shadow: 0 0 12px rgba(245,136,48,0.55);
+    }
+    .quiz-counter {
+        font-weight: 800; font-size: 13px; color: white;
+        font-variant-numeric: tabular-nums;
+        background: rgba(255,255,255,0.10);
+        padding: 6px 12px; border-radius: 999px;
+        ring: 1px solid rgba(255,255,255,0.20);
+    }
+
+    /* Pregunta — distribuye en altura y centra horizontal */
+    .quiz-question-wrap {
+        padding: 40px 24px;
+        display: flex; flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 36px;
+        width: 100%;
+    }
+    .quiz-question {
+        font-size: clamp(20px, 2.6vw, 30px);
+        font-weight: 900;
+        line-height: 1.25;
+        text-align: center;
+        color: white;
+        letter-spacing: -0.5px;
+        max-width: 760px;
+        animation: q-pop .55s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes q-pop {
+        0%   { opacity: 0; transform: translateY(20px) scale(0.95); }
+        100% { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    .quiz-options {
+        width: 100%; max-width: 720px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    @media (max-width: 640px) {
+        .quiz-options { grid-template-columns: 1fr; }
+    }
+
+    .quiz-opt {
+        display: flex; align-items: center; gap: 14px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        font-weight: 700; font-size: 15px;
+        text-align: left;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: transform .15s, box-shadow .25s;
+        animation: opt-in .45s cubic-bezier(.34,1.56,.64,1) backwards;
+        color: white;
+        border: 2px solid transparent;
+    }
+    .quiz-opt:nth-child(1) { animation-delay: .05s; background: linear-gradient(135deg, #EF4444, #DC2626); }
+    .quiz-opt:nth-child(2) { animation-delay: .12s; background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+    .quiz-opt:nth-child(3) { animation-delay: .19s; background: linear-gradient(135deg, #F59E0B, #D97706); }
+    .quiz-opt:nth-child(4) { animation-delay: .26s; background: linear-gradient(135deg, #10B981, #059669); }
+
+    @keyframes opt-in {
+        from { opacity: 0; transform: translateY(20px) scale(0.92); }
+        to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+    .quiz-opt::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent 40%);
+        pointer-events: none;
+    }
+    .quiz-opt:hover:not(:disabled):not(.is-locked) {
+        transform: translateY(-3px) scale(1.01);
+        box-shadow: 0 14px 30px -8px rgba(0,0,0,0.40);
+    }
+    .quiz-opt:disabled, .quiz-opt.is-locked { cursor: default; }
+
+    /* Estados post-respuesta */
+    .quiz-opt.is-correct {
+        outline: 4px solid #10B981;
+        outline-offset: 2px;
+        background: linear-gradient(135deg, #10B981, #059669) !important;
+        animation: pulse-correct .8s ease-in-out;
+    }
+    .quiz-opt.is-wrong {
+        outline: 4px solid #EF4444;
+        outline-offset: 2px;
+        opacity: 0.85;
+        animation: shake-wrong .5s;
+    }
+    .quiz-opt.is-faded {
+        opacity: 0.30;
+        filter: grayscale(60%);
+    }
+    @keyframes pulse-correct {
+        0%, 100% { transform: scale(1); }
+        40%      { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(16,185,129,0.30); }
+    }
+    @keyframes shake-wrong {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+    }
+
+    .quiz-letter {
+        flex-shrink: 0;
+        width: 38px; height: 38px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(10px);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 900; font-size: 16px;
+        color: white;
+        ring: 1px solid rgba(255,255,255,0.30);
+    }
+    .quiz-opt-text { flex: 1; line-height: 1.35; }
+    .quiz-opt-icon {
+        margin-left: auto;
+        opacity: 0;
+        transition: opacity .3s;
+        font-size: 22px;
+    }
+    .quiz-opt.is-correct .quiz-opt-icon,
+    .quiz-opt.is-wrong .quiz-opt-icon { opacity: 1; }
+
+    /* Feedback (explicación) */
+    .quiz-feedback {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: rgba(0,0,0,0.30);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.10);
+        color: white;
+        font-size: 14px; line-height: 1.55;
+        display: flex; align-items: flex-start; gap: 12px;
+        animation: q-pop .35s ease-out;
+    }
+    .quiz-feedback-icon {
+        flex-shrink: 0;
+        width: 36px; height: 36px;
+        border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 16px;
+    }
+    .quiz-feedback.is-correct .quiz-feedback-icon { background: rgba(16,185,129,0.20); color: #6EE7B7; }
+    .quiz-feedback.is-wrong   .quiz-feedback-icon { background: rgba(239,68,68,0.20); color: #FCA5A5; }
+    .quiz-feedback-eyebrow {
+        font-size: 10px; font-weight: 900;
+        text-transform: uppercase; letter-spacing: 1.5px;
+        opacity: 0.85;
+        margin-bottom: 4px;
+    }
+
+    /* Botón siguiente */
+    .quiz-next {
+        margin: 18px auto 0;
+        padding: 14px 32px;
+        border-radius: 999px;
+        font-weight: 900; font-size: 15px;
+        background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+        color: white;
+        box-shadow: 0 10px 24px -6px rgba(245,136,48,0.55), inset 0 1px 0 rgba(255,255,255,0.45);
+        transition: all .2s;
+        display: inline-flex; align-items: center; gap: 10px;
+    }
+    .quiz-next:hover { transform: translateY(-2px); filter: brightness(1.10); }
+
+    /* Timer */
+    .quiz-timer {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 900; font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        color: white;
+        background: rgba(255,255,255,0.10);
+        ring: 1px solid rgba(255,255,255,0.20);
+    }
+    .quiz-timer.is-warning { background: rgba(245,158,11,0.25); color: #FBBF24; }
+    .quiz-timer.is-danger  { background: rgba(239,68,68,0.30);  color: #FCA5A5; animation: pulse-danger 1s infinite; }
+    @keyframes pulse-danger {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.08); }
+    }
+
+    /* Pantalla final */
+    .quiz-result {
+        padding: 60px 24px;
+        text-align: center;
+        animation: q-pop .6s cubic-bezier(.34,1.56,.64,1);
+    }
+    .quiz-result-trophy {
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        margin: 0 auto 24px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 56px;
+        background: radial-gradient(circle, rgba(245,136,48,0.30), transparent 70%);
+        position: relative;
+    }
+    .quiz-result-trophy img {
+        width: 96px; height: 96px;
+        border-radius: 24px;
+        background: white;
+        ring: 3px solid rgba(245,136,48,0.60);
+    }
+    .quiz-result-score {
+        font-size: clamp(48px, 8vw, 84px);
+        font-weight: 900;
+        color: white;
+        letter-spacing: -2px;
+        line-height: 1;
+        margin: 16px 0 8px;
+        background: linear-gradient(135deg, var(--ds-brand) 0%, #A855F7 100%);
+        background-clip: text; -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .quiz-result-msg {
+        font-size: 18px; font-weight: 800;
+        color: white;
+        margin-bottom: 8px;
+    }
+    .quiz-result-stats {
+        display: flex; justify-content: center; gap: 32px;
+        margin: 32px 0;
+        flex-wrap: wrap;
+    }
+    .quiz-stat {
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .quiz-stat-num { font-size: 32px; font-weight: 900; color: white; line-height: 1; }
+    .quiz-stat-lbl { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.65); }
+    .quiz-result-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .quiz-btn {
+        padding: 14px 24px;
+        border-radius: 14px;
+        font-weight: 900; font-size: 14px;
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: all .2s;
+    }
+    .quiz-btn-primary {
+        background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+        color: white;
+        box-shadow: 0 10px 24px -6px rgba(245,136,48,0.55);
+    }
+    .quiz-btn-primary:hover { transform: translateY(-2px); }
+    .quiz-btn-ghost {
+        background: rgba(255,255,255,0.10);
+        color: white;
+        ring: 1px solid rgba(255,255,255,0.20);
+    }
+    .quiz-btn-ghost:hover { background: rgba(255,255,255,0.18); }
+</style>
+
+<div class="space-y-4">
+    <a href="{% url 'public:account_evento_resumen' sesion.id %}" class="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-[var(--ds-brand)] transition-colors">
+        <i class="fa-solid fa-arrow-left"></i> Volver al resumen
+    </a>
+
+    <div class="quiz-shell" id="quizShell"
+         data-submit-url="{% url 'public:account_evento_cuestionario_submit' sesion.id %}"
+         data-resumen-url="{% url 'public:account_evento_resumen' sesion.id %}"
+         data-csrf="{{ csrf_token }}">
+        <!-- Top bar: avatar Betto + progreso + timer -->
+        <div class="quiz-topbar">
+            <img src="{% static 'tiger_chase_loader.png' %}" alt="Betto"
+                 class="w-11 h-11 rounded-2xl bg-white/95 ring-2 ring-[var(--ds-brand)]/40 shadow flex-shrink-0">
+            <div class="flex-1 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="quiz-counter" id="quizCounter">1 / 5</span>
+                        <span class="quiz-counter" style="background: rgba(245,136,48,0.20); color: #FBBF24;">
+                            Intento {{ intento_numero }} / 2
+                        </span>
+                    </div>
+                    <span class="quiz-timer" id="quizTimer"><i class="fa-solid fa-clock"></i> <span id="quizTime">30</span>s</span>
+                </div>
+                <div class="quiz-progress-bar">
+                    <div class="quiz-progress-fill" id="quizProgress" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body que se actualiza pregunta por pregunta -->
+        <div id="quizBody" class="relative"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ── Datos ──────────────────────────────────────────────────────
+    const dataEl = document.getElementById('quizData');
+    let preguntas = [];
+    try { preguntas = JSON.parse(dataEl.textContent || '[]'); }
+    catch (e) { console.error('quiz parse', e); preguntas = []; }
+
+    const TOTAL = preguntas.length;
+    const TIME_PER_Q = 30;          // segundos por pregunta
+    const AUTO_NEXT_DELAY = 2500;   // ms tras responder antes del avance auto
+
+    // ── Estado ─────────────────────────────────────────────────────
+    let idx = 0;
+    let answers = new Array(TOTAL).fill(null);  // index elegido (puede ser null = no respondió)
+    let timesUsed = new Array(TOTAL).fill(TIME_PER_Q);
+    let currentTimer = null;
+    let currentTime = TIME_PER_Q;
+    let autoNextHandle = null;
+
+    // ── DOM refs ───────────────────────────────────────────────────
+    const body = document.getElementById('quizBody');
+    const counter = document.getElementById('quizCounter');
+    const progress = document.getElementById('quizProgress');
+    const timerEl = document.getElementById('quizTimer');
+    const timeEl = document.getElementById('quizTime');
+
+    // ── Render pregunta ────────────────────────────────────────────
+    function renderQuestion() {
+        clearTimers();
+        if (idx >= TOTAL) return renderResult();
+        const q = preguntas[idx];
+        counter.textContent = `${idx + 1} / ${TOTAL}`;
+        progress.style.width = ((idx) / TOTAL * 100) + '%';
+        startTimer();
+
+        const opts = (q.opciones || []).map((opt, i) => `
+            <button type="button" class="quiz-opt" data-opt="${i}">
+                <span class="quiz-letter">${String.fromCharCode(65 + i)}</span>
+                <span class="quiz-opt-text">${escapeHtml(opt)}</span>
+                <span class="quiz-opt-icon"><i class="fa-solid fa-check"></i></span>
+            </button>
+        `).join('');
+
+        body.innerHTML = `
+            <div class="quiz-question-wrap">
+                <h2 class="quiz-question">${escapeHtml(q.pregunta)}</h2>
+                <div class="quiz-options">${opts}</div>
+                <div id="quizFeedbackHost"></div>
+            </div>
+        `;
+        body.querySelectorAll('.quiz-opt').forEach(el => {
+            el.addEventListener('click', () => pick(+el.dataset.opt));
+        });
+    }
+
+    // ── Timer ──────────────────────────────────────────────────────
+    function startTimer() {
+        currentTime = TIME_PER_Q;
+        updateTimerUI();
+        currentTimer = setInterval(() => {
+            currentTime -= 1;
+            timesUsed[idx] = TIME_PER_Q - currentTime;
+            updateTimerUI();
+            if (currentTime <= 0) {
+                clearTimers();
+                pick(null);  // tiempo agotado = sin respuesta
+            }
+        }, 1000);
+    }
+    function updateTimerUI() {
+        timeEl.textContent = currentTime;
+        timerEl.classList.toggle('is-warning', currentTime <= 10 && currentTime > 5);
+        timerEl.classList.toggle('is-danger',  currentTime <= 5);
+    }
+    function clearTimers() {
+        if (currentTimer) { clearInterval(currentTimer); currentTimer = null; }
+        if (autoNextHandle) { clearTimeout(autoNextHandle); autoNextHandle = null; }
+    }
+
+    // ── Responder ──────────────────────────────────────────────────
+    function pick(optIdx) {
+        if (answers[idx] !== null) return;
+        clearTimers();
+        answers[idx] = optIdx;
+        const q = preguntas[idx];
+        const correctIdx = q.correcta_idx;
+        const wasCorrect = optIdx === correctIdx;
+
+        // Aplicar estados a los botones
+        body.querySelectorAll('.quiz-opt').forEach((el, i) => {
+            el.classList.add('is-locked');
+            el.disabled = true;
+            if (i === correctIdx) el.classList.add('is-correct');
+            else if (i === optIdx) el.classList.add('is-wrong');
+            else el.classList.add('is-faded');
+        });
+
+        // Feedback con explicación
+        const host = document.getElementById('quizFeedbackHost');
+        if (host) {
+            host.innerHTML = `
+                <div class="quiz-feedback ${wasCorrect ? 'is-correct' : 'is-wrong'}">
+                    <div class="quiz-feedback-icon">
+                        <i class="fa-solid ${wasCorrect ? 'fa-lightbulb' : 'fa-circle-info'}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="quiz-feedback-eyebrow">${wasCorrect ? '¡Correcto!' : (optIdx === null ? 'Tiempo agotado' : 'Incorrecto')}</p>
+                        ${q.explicacion ? `<p>${escapeHtml(q.explicacion)}</p>` : '<p>Seguí adelante.</p>'}
+                    </div>
+                </div>
+                <button type="button" class="quiz-next" id="quizNextBtn">
+                    ${idx + 1 < TOTAL ? 'Siguiente pregunta' : 'Ver resultado'}
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            `;
+            const nextBtn = document.getElementById('quizNextBtn');
+            if (nextBtn) nextBtn.addEventListener('click', goNext);
+        }
+
+        // Auto-avance tras N segundos
+        autoNextHandle = setTimeout(goNext, AUTO_NEXT_DELAY);
+    }
+
+    function goNext() {
+        clearTimers();
+        idx += 1;
+        renderQuestion();
+    }
+
+    // ── Pantalla final ─────────────────────────────────────────────
+    async function renderResult() {
+        progress.style.width = '100%';
+        timerEl.style.display = 'none';
+        const correct = answers.reduce((acc, a, i) => acc + (a === preguntas[i].correcta_idx ? 1 : 0), 0);
+        const pct = Math.round(correct / TOTAL * 100);
+        const avgTime = Math.round(timesUsed.reduce((a, b) => a + b, 0) / TOTAL);
+        const tiempoTotal = timesUsed.reduce((a, b) => a + b, 0);
+
+        let msg = '';
+        let emoji = '';
+        if (pct === 100)      { msg = '¡Perfecto! Dominas el tema.'; emoji = '🏆'; }
+        else if (pct >= 80)   { msg = '¡Excelente! Casi perfecto.'; emoji = '🎯'; }
+        else if (pct >= 60)   { msg = '¡Bien! Sigue practicando.'; emoji = '👏'; }
+        else if (pct >= 40)   { msg = 'Vas mejorando, repasá el resumen.'; emoji = '📚'; }
+        else                  { msg = 'Volvé a leer el resumen y reintentá.'; emoji = '💪'; }
+
+        // Render inicial sin saber intentos restantes (se actualiza tras submit)
+        body.innerHTML = `
+            <div class="quiz-result">
+                <div class="quiz-result-trophy">
+                    <img src="{% static 'tiger_chase_loader.png' %}" alt="Betto">
+                </div>
+                <p class="quiz-result-score">${correct}/${TOTAL}</p>
+                <p class="quiz-result-msg">${emoji} ${msg}</p>
+                <div class="quiz-result-stats">
+                    <div class="quiz-stat">
+                        <span class="quiz-stat-num">${pct}%</span>
+                        <span class="quiz-stat-lbl">Aciertos</span>
+                    </div>
+                    <div class="quiz-stat">
+                        <span class="quiz-stat-num">${correct}</span>
+                        <span class="quiz-stat-lbl">Correctas</span>
+                    </div>
+                    <div class="quiz-stat">
+                        <span class="quiz-stat-num">${TOTAL - correct}</span>
+                        <span class="quiz-stat-lbl">Fallaste</span>
+                    </div>
+                    <div class="quiz-stat">
+                        <span class="quiz-stat-num">${avgTime}s</span>
+                        <span class="quiz-stat-lbl">Promedio</span>
+                    </div>
+                </div>
+                <p id="intentosInfo" class="text-sm text-white/70 mt-4">Guardando resultado…</p>
+                <div class="quiz-result-actions" id="quizActions" style="opacity: 0.5; pointer-events: none;">
+                    <a href="{% url 'public:account_evento_resumen' sesion.id %}" class="quiz-btn quiz-btn-ghost">
+                        <i class="fa-solid fa-book"></i> Volver al resumen
+                    </a>
+                </div>
+            </div>
+        `;
+
+        // POST al endpoint para guardar el intento
+        const shell = document.getElementById('quizShell');
+        const submitUrl = shell.dataset.submitUrl;
+        const csrf = shell.dataset.csrf;
+        let intentosRestantes = 0;
+        try {
+            const res = await fetch(submitUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+                body: JSON.stringify({ respuestas: answers, tiempo_total_seg: tiempoTotal }),
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+                intentosRestantes = data.intentos_restantes ?? 0;
+            }
+        } catch (e) { console.warn('No pudimos guardar el intento:', e); }
+
+        // Actualizar info + botones según intentos restantes
+        const info = document.getElementById('intentosInfo');
+        const actions = document.getElementById('quizActions');
+        if (intentosRestantes > 0) {
+            info.innerHTML = `Te queda <strong class="text-white">${intentosRestantes}</strong> intento${intentosRestantes > 1 ? 's' : ''} más.`;
+            actions.innerHTML = `
+                <button type="button" class="quiz-btn quiz-btn-primary" id="quizRestart">
+                    <i class="fa-solid fa-rotate-right"></i> Volver a intentar
+                </button>
+                <a href="{% url 'public:account_evento_resumen' sesion.id %}" class="quiz-btn quiz-btn-ghost">
+                    <i class="fa-solid fa-book"></i> Volver al resumen
+                </a>
+            `;
+            const rb = document.getElementById('quizRestart');
+            if (rb) rb.addEventListener('click', () => window.location.reload());
+        } else {
+            info.innerHTML = `<i class="fa-solid fa-flag-checkered"></i> Usaste todos tus intentos. Tu mejor resultado se guardó en el resumen.`;
+            actions.innerHTML = `
+                <a href="{% url 'public:account_evento_resumen' sesion.id %}" class="quiz-btn quiz-btn-primary">
+                    <i class="fa-solid fa-arrow-right"></i> Ver mis resultados
+                </a>
+            `;
+        }
+        actions.style.opacity = '1';
+        actions.style.pointerEvents = '';
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    if (TOTAL === 0) {
+        body.innerHTML = '<div class="quiz-result"><p class="quiz-result-msg">No hay preguntas disponibles.</p></div>';
+    } else {
+        renderQuestion();
+    }
+})();
+</script>
+{% endblock %}

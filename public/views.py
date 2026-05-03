@@ -15,8 +15,11 @@ from django.views.decorators.http import require_http_methods, require_POST
 from core.models import (
     Certificado,
     ConfirmacionAsistencia,
+    EstadoProcesamiento,
+    IntentoCuestionario,
     Participante,
     RegistroAsistencia,
+    ResumenSesion,
     SesionAsistencia,
 )
 from public.services import auth as account_auth
@@ -340,6 +343,13 @@ def eventos_view(request):
             .prefetch_related('ponentes')
             .order_by('-fecha', '-hora_inicio'))
 
+    # Sesiones con resumen IA listo (para mostrar el badge "Betto" en la card)
+    resumen_listo_ids = set(
+        ResumenSesion.objects
+        .filter(estado=EstadoProcesamiento.LISTO, sesion_id__in=[e.id for e in eventos])
+        .values_list('sesion_id', flat=True)
+    )
+
     # Anotar estado de cada evento para el participante
     eventos_data = []
     for e in eventos:
@@ -351,7 +361,11 @@ def eventos_view(request):
                 status = 'no_asisti'
             else:
                 status = 'inscrito'
-        eventos_data.append({'e': e, 'status': status})
+        eventos_data.append({
+            'e': e,
+            'status': status,
+            'has_resumen': e.id in resumen_listo_ids,
+        })
 
     return render(request, 'public/account/eventos.html', {
         'p': p,
@@ -395,6 +409,173 @@ def perfil_view(request):
 # ════════════════════════════════════════════════════════════════
 # Acción: registrarse a un evento desde la cuenta (1 click)
 # ════════════════════════════════════════════════════════════════
+
+@account_auth.login_required
+def evento_resumen_view(request, sesion_id: int):
+    """Pantalla web del resumen IA del evento (Betto).
+
+    Visible para cualquier participante que se haya INSCRITO (haya asistido o
+    no). Idea: si al participante se le fue la luz o tuvo problemas técnicos,
+    igual puede ponerse al día con el resumen + ver la grabación.
+    Muestra resumen Markdown, puntos clave, próximos pasos y cuestionario.
+    """
+    p: Participante = request.participante
+    try:
+        sesion = SesionAsistencia.objects.get(pk=sesion_id, activa=True)
+    except SesionAsistencia.DoesNotExist:
+        raise Http404
+
+    # Acceso para inscritos (cualquier estado: asistió, no asistió, confirmado)
+    inscrito = ConfirmacionAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    asistio  = RegistroAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    if not (inscrito or asistio):
+        messages.error(request, 'Solo podés ver el resumen si te inscribiste al evento.')
+        return redirect('public:account_eventos')
+
+    resumen = ResumenSesion.objects.filter(sesion=sesion).first()
+
+    # Buscar grabación en Drive (lazy, no la persistimos aún)
+    recording = None
+    if resumen and resumen.estado == EstadoProcesamiento.LISTO:
+        try:
+            from core.services.meet.drive_client import find_recording_for_session
+            recording = find_recording_for_session(sesion)
+        except Exception:
+            recording = None  # silencioso — el resumen no depende del video
+
+    # Intentos previos del cuestionario (este participante en esta sesión)
+    intentos = list(IntentoCuestionario.objects.filter(participante=p, sesion=sesion))
+    mejor_intento = max(intentos, key=lambda x: x.correctas, default=None)
+    intentos_disponibles = max(0, IntentoCuestionario.MAX_INTENTOS - len(intentos))
+
+    return render(request, 'public/account/evento_resumen.html', {
+        'p': p,
+        'sesion': sesion,
+        'resumen': resumen,
+        'recording': recording,
+        'asistio': asistio,
+        'intentos': intentos,
+        'mejor_intento': mejor_intento,
+        'intentos_disponibles': intentos_disponibles,
+        'max_intentos': IntentoCuestionario.MAX_INTENTOS,
+        'is_ready': resumen.estado == EstadoProcesamiento.LISTO if resumen else False,
+        'is_processing': (
+            resumen.estado in (
+                EstadoProcesamiento.PENDIENTE,
+                EstadoProcesamiento.BUSCANDO,
+                EstadoProcesamiento.PROCESANDO,
+            ) if resumen else False
+        ),
+    })
+
+
+@account_auth.login_required
+def evento_cuestionario_view(request, sesion_id: int):
+    """Pantalla inmersiva del cuestionario IA, estilo Quizizz/Wayground.
+
+    Acceso: cualquier inscrito al evento. Si no hay cuestionario o el
+    resumen aún no está LISTO, redirige al resumen para mostrar el estado.
+    """
+    p: Participante = request.participante
+    try:
+        sesion = SesionAsistencia.objects.get(pk=sesion_id, activa=True)
+    except SesionAsistencia.DoesNotExist:
+        raise Http404
+
+    inscrito = ConfirmacionAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    asistio  = RegistroAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    if not (inscrito or asistio):
+        messages.error(request, 'Solo podés acceder al cuestionario si te inscribiste al evento.')
+        return redirect('public:account_eventos')
+
+    resumen = ResumenSesion.objects.filter(sesion=sesion).first()
+    if not resumen or resumen.estado != EstadoProcesamiento.LISTO or not resumen.cuestionario:
+        return redirect('public:account_evento_resumen', sesion_id=sesion.id)
+
+    # Bloqueo de intentos: máximo MAX_INTENTOS por participante por sesión
+    intentos_count = IntentoCuestionario.objects.filter(participante=p, sesion=sesion).count()
+    if intentos_count >= IntentoCuestionario.MAX_INTENTOS:
+        messages.info(
+            request,
+            f'Ya completaste tus {IntentoCuestionario.MAX_INTENTOS} intentos del cuestionario. '
+            'Mirá tus resultados acá abajo.',
+        )
+        return redirect('public:account_evento_resumen', sesion_id=sesion.id)
+
+    return render(request, 'public/account/evento_cuestionario.html', {
+        'p': p,
+        'sesion': sesion,
+        'resumen': resumen,
+        'intento_numero': intentos_count + 1,
+        'intentos_restantes_tras': IntentoCuestionario.MAX_INTENTOS - (intentos_count + 1),
+    })
+
+
+@account_auth.login_required
+@require_POST
+def evento_cuestionario_submit(request, sesion_id: int):
+    """Guarda el resultado de un intento del cuestionario.
+
+    Body JSON: { respuestas: [int|null], tiempo_total_seg: int }
+    Devuelve: { ok, intento_id, correctas, total, intentos_restantes }
+    """
+    import json
+    p: Participante = request.participante
+    try:
+        sesion = SesionAsistencia.objects.get(pk=sesion_id, activa=True)
+    except SesionAsistencia.DoesNotExist:
+        raise Http404
+
+    inscrito = ConfirmacionAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    asistio  = RegistroAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    if not (inscrito or asistio):
+        return JsonResponse({'ok': False, 'error': 'Sin acceso al cuestionario.'}, status=403)
+
+    resumen = ResumenSesion.objects.filter(sesion=sesion).first()
+    if not resumen or resumen.estado != EstadoProcesamiento.LISTO or not resumen.cuestionario:
+        return JsonResponse({'ok': False, 'error': 'Cuestionario no disponible.'}, status=400)
+
+    intentos_count = IntentoCuestionario.objects.filter(participante=p, sesion=sesion).count()
+    if intentos_count >= IntentoCuestionario.MAX_INTENTOS:
+        return JsonResponse({
+            'ok': False,
+            'error': f'Ya alcanzaste el máximo de {IntentoCuestionario.MAX_INTENTOS} intentos.',
+        }, status=409)
+
+    try:
+        body = json.loads(request.body or b'{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'error': 'JSON inválido.'}, status=400)
+
+    respuestas = body.get('respuestas') or []
+    tiempo_total = int(body.get('tiempo_total_seg') or 0)
+
+    preguntas = resumen.cuestionario
+    total = len(preguntas)
+    correctas = 0
+    for i, q in enumerate(preguntas):
+        if i < len(respuestas) and respuestas[i] is not None:
+            if respuestas[i] == q.get('correcta_idx'):
+                correctas += 1
+
+    intento = IntentoCuestionario.objects.create(
+        participante=p,
+        sesion=sesion,
+        correctas=correctas,
+        total=total,
+        tiempo_total_seg=tiempo_total,
+        respuestas=respuestas,
+    )
+    intentos_restantes = IntentoCuestionario.MAX_INTENTOS - (intentos_count + 1)
+    return JsonResponse({
+        'ok': True,
+        'intento_id': intento.id,
+        'correctas': correctas,
+        'total': total,
+        'porcentaje': intento.porcentaje,
+        'intentos_restantes': intentos_restantes,
+    })
+
 
 @account_auth.login_required
 @require_POST

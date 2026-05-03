@@ -4,9 +4,14 @@ Args:
     e: SesionAsistencia (con prefetch de ponentes recomendado)
     show_inscribir: bool — si True el modal mostrará un botón "Inscribirme"
     status: 'inscrito' | 'asisti' | 'no_asisti' | 'disponible' (opcional)
+    has_resumen: bool — si True, muestra badge "Betto IA" + CTA al resumen
 {% endcomment %}
 {% load json_tags %}{% spaceless %}
 {% with ponentes_json=e.ponentes.all|ponentes_json %}
+{% if has_resumen and status and status != 'disponible' %}
+<a href="{% url 'public:account_evento_resumen' e.id %}"
+   class="ev-card lg-card rounded-3xl overflow-hidden flex flex-col hover:-translate-y-1 transition-all group text-left w-full p-0 no-underline">
+{% else %}
 <button type="button"
         class="ev-card lg-card rounded-3xl overflow-hidden flex flex-col hover:-translate-y-1 transition-all group text-left w-full p-0"
         data-ev-id="{{ e.id }}"
@@ -26,6 +31,7 @@ Args:
         data-ev-inscribir-url="{% url 'public:account_evento_inscribir' e.id %}"
         data-ev-can-inscribir="{% if show_inscribir %}1{% else %}0{% endif %}"
         onclick="window.openEventModal && window.openEventModal(this)">
+{% endif %}
 {% endwith %}
 {% endspaceless %}
     <!-- Hero más grande -->
@@ -63,6 +69,7 @@ Args:
                 {{ e.dia_semana|truncatechars:3 }} {{ e.fecha|date:"d M" }} · {{ e.hora_inicio|time:"H:i" }}
             </span>
         </div>
+
     </div>
 
     <!-- Body más generoso -->
@@ -105,6 +112,23 @@ Args:
 
         <!-- Footer con CTA -->
         <div class="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-between">
+            {% if has_resumen and status and status != 'disponible' %}
+            {% load static %}
+            <span class="flex items-center gap-2 min-w-0">
+                <img src="{% static 'tiger_chase_loader.png' %}" alt="Betto"
+                     class="w-9 h-9 rounded-full bg-white ring-2 ring-[var(--ds-brand)]/40 shadow-sm flex-shrink-0">
+                <span class="flex flex-col leading-tight min-w-0">
+                    <span class="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--ds-brand)]/80">Asistente IA</span>
+                    <span class="text-[13px] font-black tracking-tight text-slate-900 dark:text-white truncate">Resumen de Betto</span>
+                </span>
+            </span>
+            <span class="w-9 h-9 rounded-full inline-flex items-center justify-center flex-shrink-0
+                         bg-gradient-to-br from-[var(--ds-brand)] to-[var(--ds-brand-dark)] text-white
+                         shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_4px_10px_-3px_rgba(245,136,48,0.50)]
+                         transition-all group-hover:translate-x-0.5 group-hover:scale-105">
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+            {% else %}
             <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 group-hover:text-[var(--ds-brand)] transition-colors">
                 Ver detalles
             </span>
@@ -114,6 +138,8 @@ Args:
                          transition-all group-hover:translate-x-0.5">
                 <i class="fa-solid fa-arrow-right text-xs"></i>
             </span>
+            {% endif %}
         </div>
     </div>
-</button>
+{% if has_resumen and status and status != 'disponible' %}</a>{% else %}</button>{% endif %}
+

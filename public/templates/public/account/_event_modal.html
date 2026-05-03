@@ -61,7 +61,7 @@ Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
 
                 <!-- CTAs -->
                 <div class="ev-modal-actions" id="evModalActions">
-                    <a id="evModalMeetBtn" href="#" target="_blank" rel="noopener" class="nm-btn nm-btn-primary hidden">
+                    <a id="evModalMeetBtn" href="#" target="_blank" rel="noopener" class="nm-btn nm-btn-meet hidden">
                         <i class="fa-solid fa-video"></i> Entrar a la reunión
                     </a>
                     <form id="evModalInscribirForm" action="" method="post" class="hidden" style="flex:1;margin:0;">
@@ -85,14 +85,34 @@ Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
         backdrop-filter: blur(8px);
         animation: ev-fade-in .25s ease;
     }
-    .ev-modal-card {
+    /* Doble selector .ev-modal-card.ev-modal-card es un truco para subir
+       especificidad sin !important — gana sobre `.nm-card` aunque se
+       cargue después. La opacidad debe ser 1, sin backdrop-filter. */
+    .ev-modal-card.ev-modal-card {
         position: relative;
-        width: 100%; max-width: 580px;
+        width: 100%; max-width: 940px;
         max-height: calc(100vh - 32px);
         overflow: hidden;
         display: flex; flex-direction: column;
         animation: ev-pop-in .35s cubic-bezier(.34,1.56,.64,1);
         border-radius: 24px;
+        background: #ffffff;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border: 1px solid rgba(15,23,42,0.08);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,1),
+            inset 0 -1px 0 rgba(15,23,42,0.05),
+            0 28px 70px -20px rgba(15,23,42,0.30),
+            0 8px 24px -8px rgba(15,23,42,0.15);
+    }
+    .dark .ev-modal-card.ev-modal-card {
+        background: #162054;
+        border-color: rgba(255,255,255,0.10);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.10),
+            inset 0 -1px 0 rgba(0,0,0,0.30),
+            0 30px 70px -16px rgba(0,0,0,0.60);
     }
     @keyframes ev-fade-in { from { opacity: 0; } to { opacity: 1; } }
     @keyframes ev-pop-in {
@@ -100,15 +120,30 @@ Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
         to   { opacity: 1; transform: translateY(0) scale(1); }
     }
 
+    /* En desktop el modal es horizontal: hero a la izquierda + body
+       scrolleable a la derecha. En mobile vuelve a stack vertical. */
     .ev-modal-scroll {
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
         max-height: calc(100vh - 32px);
+        overflow: hidden;
         scrollbar-width: thin;
     }
-    .ev-modal-scroll::-webkit-scrollbar { width: 8px; }
-    .ev-modal-scroll::-webkit-scrollbar-track { background: transparent; }
-    .ev-modal-scroll::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.15); border-radius: 4px; }
-    .dark .ev-modal-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+    @media (min-width: 768px) {
+        .ev-modal-scroll {
+            flex-direction: row;
+            height: min(calc(100vh - 32px), 600px);
+        }
+    }
+    .ev-modal-body {
+        flex: 1;
+        min-width: 0; min-height: 0;
+        overflow-y: auto;
+    }
+    .ev-modal-body::-webkit-scrollbar { width: 8px; }
+    .ev-modal-body::-webkit-scrollbar-track { background: transparent; }
+    .ev-modal-body::-webkit-scrollbar-thumb { background: rgba(15,23,42,0.15); border-radius: 4px; }
+    .dark .ev-modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
 
     /* Botón cerrar (top-right, icon only) */
     .ev-modal-close {
@@ -127,11 +162,18 @@ Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
     }
     .ev-modal-close:hover { transform: scale(1.05); background: white; }
 
-    /* Hero */
+    /* Hero — banner arriba en mobile, columna izquierda en desktop */
     .ev-modal-hero {
         position: relative;
-        height: 180px;
+        height: 200px;
         overflow: hidden;
+        flex-shrink: 0;
+    }
+    @media (min-width: 768px) {
+        .ev-modal-hero {
+            width: 360px;
+            height: 100%;
+        }
     }
     .ev-modal-hero-fallback {
         position: absolute; inset: 0;
@@ -286,7 +328,7 @@ Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
 
     /* Actions */
     .ev-modal-actions {
-        display: flex; gap: 8px; flex-wrap: wrap;
+        display: flex; gap: 10px; flex-wrap: wrap;
         margin-top: 24px;
         padding-top: 20px;
         border-top: 1px solid rgba(15,23,42,0.06);
@@ -296,7 +338,63 @@ Lo abre cualquier botón con onclick="openEventModal(this)" + data-ev-* attrs.
     .ev-modal-actions:not(:has(> :not(.hidden))) {
         display: none;
     }
-    .ev-modal-actions .nm-btn { width: auto; flex: 1; min-width: 0; }
+
+    /* CTAs del modal — definidos local porque .nm-btn vive en _auth_shell
+       y el modal se incluye desde otras pantallas que no lo cargan. */
+    .ev-modal-actions .nm-btn {
+        flex: 1; min-width: 160px;
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 0.5rem;
+        padding: 14px 20px;
+        border-radius: 14px;
+        font-weight: 800; font-size: 14px;
+        letter-spacing: -0.1px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .2s cubic-bezier(.34,1.56,.64,1),
+                    filter .2s, box-shadow .2s;
+    }
+    .ev-modal-actions .nm-btn i { font-size: 14px; }
+    .ev-modal-actions .nm-btn:active { transform: translateY(0) scale(0.98); }
+
+    .ev-modal-actions .nm-btn-primary {
+        background: linear-gradient(135deg, var(--ds-brand), var(--ds-brand-dark));
+        color: #ffffff;
+        border: 1px solid rgba(255,255,255,0.35);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.55),
+            inset 0 -1px 0 rgba(0,0,0,0.10),
+            0 10px 28px -6px rgba(245,136,48,0.55),
+            0 4px 10px -3px rgba(245,136,48,0.30);
+    }
+    .ev-modal-actions .nm-btn-primary:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.6),
+            0 14px 34px -6px rgba(245,136,48,0.65),
+            0 6px 14px -3px rgba(245,136,48,0.40);
+    }
+
+    /* Variante secundaria (link Meet) — azul institucional */
+    .ev-modal-actions .nm-btn-meet {
+        background: linear-gradient(135deg, #3B82F6, #1E40AF);
+        color: #ffffff;
+        border: 1px solid rgba(255,255,255,0.30);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.45),
+            inset 0 -1px 0 rgba(0,0,0,0.12),
+            0 10px 28px -6px rgba(59,130,246,0.55),
+            0 4px 10px -3px rgba(30,64,175,0.30);
+    }
+    .ev-modal-actions .nm-btn-meet:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.10);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.5),
+            0 14px 34px -6px rgba(59,130,246,0.65),
+            0 6px 14px -3px rgba(30,64,175,0.40);
+    }
 </style>
 
 {% load static %}<script src="{% static 'js/components/event-modal.js' %}"></script>

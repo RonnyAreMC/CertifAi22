@@ -202,10 +202,13 @@ export default function EventDetailScreen() {
                 </View>
               </View>
 
-              {/* Si ya asistió → botón Resumen Betto (IA) */}
-              {data.status === 'asisti' ? (
-                <BettoSummaryButton />
-              ) : (
+              {/* Resumen de Betto — visible para cualquier inscrito (asisti / inscrito / no_asisti) */}
+              {(data.status === 'asisti' || data.status === 'inscrito' || data.status === 'no_asisti') ? (
+                <BettoSummaryButton sesionId={data.id} />
+              ) : null}
+
+              {/* Acciones del día del evento (Meet / QR) si aún no se cerró */}
+              {data.status !== 'asisti' ? (
                 <>
                   {/* MEET — para virtuales que aún no asistieron */}
                   {data.es_virtual && data.enlace_virtual ? (
@@ -236,7 +239,7 @@ export default function EventDetailScreen() {
                     </Button>
                   ) : null}
                 </>
-              )}
+              ) : null}
             </View>
           </View>
         ) : null}
@@ -405,15 +408,11 @@ export default function EventDetailScreen() {
  * Solo se muestra cuando el participante YA registró asistencia. Por ahora
  * el resumen está en construcción → toast "aún estamos cargando".
  */
-function BettoSummaryButton() {
+function BettoSummaryButton({ sesionId }: { sesionId: number }) {
   const t = themed(useTheme());
-  const toast = useToast();
 
   function handlePress() {
-    toast.info(
-      'Betto aún está procesando la sesión. Volvé en unos minutos para ver el resumen y el cuestionario.',
-      'Cargando información',
-    );
+    router.push(`/event/resumen/${sesionId}`);
   }
 
   return (

@@ -31,6 +31,12 @@ urlpatterns = [
     path('cuenta/perfil/',        account_views.perfil_view,       name='account_perfil'),
     path('cuenta/eventos/<int:sesion_id>/inscribir/',
          account_views.evento_inscribir, name='account_evento_inscribir'),
+    path('cuenta/eventos/<int:sesion_id>/resumen/',
+         account_views.evento_resumen_view, name='account_evento_resumen'),
+    path('cuenta/eventos/<int:sesion_id>/cuestionario/',
+         account_views.evento_cuestionario_view, name='account_evento_cuestionario'),
+    path('cuenta/eventos/<int:sesion_id>/cuestionario/submit/',
+         account_views.evento_cuestionario_submit, name='account_evento_cuestionario_submit'),
     path('cuenta/escanear/',           account_views.escanear_view,      name='account_escanear'),
     path('cuenta/escanear/registrar/', account_views.escanear_registrar, name='account_escanear_registrar'),
 

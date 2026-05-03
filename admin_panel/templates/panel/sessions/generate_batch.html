@@ -113,9 +113,14 @@
             // Éxito → redirigir a configuración del lote
             const loteId = data.lote_id;
             const sent = data.correos_enviados || 0;
-            // Pequeño feedback antes del redirect
-            btn.querySelector('.btn-loading i').className = 'fa-solid fa-circle-check';
-            btn.querySelector('.btn-loading').innerHTML = `<i class="fa-solid fa-circle-check"></i> Lote creado · ${sent} correo${sent === 1 ? '' : 's'} enviado${sent === 1 ? '' : 's'}`;
+            // Pequeño feedback antes del redirect.
+            // OJO: NO usar querySelector('.btn-loading i') aquí — si Font Awesome
+            // está en modo SVG, ya reemplazó el <i> con <svg> y devuelve null.
+            // El innerHTML reemplaza todo, así que con esto basta.
+            const loading = btn.querySelector('.btn-loading');
+            if (loading) {
+                loading.innerHTML = `<i class="fa-solid fa-circle-check"></i> Lote creado · ${sent} correo${sent === 1 ? '' : 's'} enviado${sent === 1 ? '' : 's'}`;
+            }
             setTimeout(() => {
                 window.location.href = `/panel/batches/${loteId}/configure/`;
             }, 800);

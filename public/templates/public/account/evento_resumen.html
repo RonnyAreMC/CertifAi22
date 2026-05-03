@@ -1,0 +1,586 @@
+{% extends 'public/account/_base.html' %}
+{% load static %}
+{% block page_title %}Resumen IA · {{ sesion.titulo|default:sesion.dia_semana }}{% endblock %}
+
+{% block content %}
+<style>
+    .betto-hero {
+        background: linear-gradient(135deg, var(--ds-brand) 0%, #E8721C 50%, var(--ds-brand-dark) 100%);
+        position: relative; overflow: hidden;
+    }
+    .betto-hero::before {
+        content: ''; position: absolute; inset: 0;
+        background:
+            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.18) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(0,0,0,0.20) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .betto-card {
+        background: white;
+        border: 1px solid rgba(15,23,42,0.06);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,1),
+            0 8px 24px -8px rgba(15,23,42,0.10);
+    }
+    .dark .betto-card {
+        background: #162054;
+        border-color: rgba(255,255,255,0.08);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.06),
+            0 8px 24px -8px rgba(0,0,0,0.40);
+    }
+    .markdown h1, .markdown h2, .markdown h3 {
+        font-weight: 800; letter-spacing: -0.3px; color: #0f172a;
+        margin: 18px 0 8px;
+    }
+    .dark .markdown h1, .dark .markdown h2, .dark .markdown h3 { color: #fff; }
+    .markdown h1 { font-size: 1.25rem; }
+    .markdown h2 { font-size: 1.10rem; }
+    .markdown h3 { font-size: 1.00rem; }
+    .markdown p { margin: 0 0 12px; line-height: 1.65; color: #475569; }
+    .dark .markdown p { color: #cbd5e1; }
+    .markdown ul, .markdown ol { padding-left: 22px; margin: 8px 0 14px; }
+    .markdown li { margin-bottom: 4px; line-height: 1.55; color: #475569; }
+    .dark .markdown li { color: #cbd5e1; }
+    .markdown strong { color: #0f172a; font-weight: 700; }
+    .dark .markdown strong { color: #fff; }
+
+    .quiz-opt {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1.5px solid rgba(15,23,42,0.10);
+        background: rgba(15,23,42,0.02);
+        cursor: pointer;
+        transition: all .2s;
+        width: 100%; text-align: left;
+        font-weight: 500; font-size: 14px;
+        color: #0f172a;
+    }
+    .dark .quiz-opt {
+        border-color: rgba(255,255,255,0.10);
+        background: rgba(255,255,255,0.03);
+        color: #fff;
+    }
+    .quiz-opt:hover:not(:disabled) {
+        border-color: var(--ds-brand);
+        background: rgba(245,136,48,0.05);
+        transform: translateY(-1px);
+    }
+    .quiz-opt:disabled { cursor: default; }
+    .quiz-opt.is-correct {
+        border-color: rgba(16,185,129,0.55);
+        background: rgba(16,185,129,0.08);
+    }
+    .quiz-opt.is-wrong {
+        border-color: rgba(239,68,68,0.55);
+        background: rgba(239,68,68,0.08);
+    }
+    .quiz-letter {
+        flex-shrink: 0;
+        width: 26px; height: 26px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(15,23,42,0.18);
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 11px;
+        color: #475569;
+    }
+    .dark .quiz-letter { border-color: rgba(255,255,255,0.20); color: #cbd5e1; }
+    .quiz-feedback {
+        margin-top: 10px;
+        padding: 10px 12px; border-radius: 10px;
+        font-size: 13px; line-height: 1.5;
+        display: flex; align-items: flex-start; gap: 8px;
+    }
+    .quiz-feedback.is-correct {
+        background: rgba(16,185,129,0.08);
+        border: 1px solid rgba(16,185,129,0.30);
+        color: #059669;
+    }
+    .dark .quiz-feedback.is-correct { color: #34d399; }
+    .quiz-feedback.is-wrong {
+        background: rgba(239,68,68,0.08);
+        border: 1px solid rgba(239,68,68,0.30);
+        color: #dc2626;
+    }
+    .dark .quiz-feedback.is-wrong { color: #f87171; }
+</style>
+
+<div class="space-y-5">
+    <a href="{% url 'public:account_eventos' %}" class="inline-flex items-center gap-1.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-[var(--ds-brand)] transition-colors">
+        <i class="fa-solid fa-arrow-left"></i> Volver a mis eventos
+    </a>
+
+    {% if not asistio %}
+    <!-- Banner ausencia ARRIBA del título (más visible al primer pantallazo) -->
+    <div class="rounded-2xl p-4 flex items-start gap-3
+                bg-gradient-to-r from-amber-50 to-amber-100/50 border border-amber-200
+                dark:from-amber-900/20 dark:to-amber-800/10 dark:border-amber-800/40">
+        <div class="flex-shrink-0 w-9 h-9 rounded-full bg-amber-500/15 inline-flex items-center justify-center">
+            <i class="fa-solid fa-circle-info text-amber-600 dark:text-amber-400"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold text-amber-800 dark:text-amber-200">No registramos tu asistencia</p>
+            <p class="text-xs text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
+                Igual te dejamos el resumen y la grabación para que te pongas al día.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Hero limpio: avatar + título con badge "Resumen de Betto" en gradient -->
+    <div class="flex items-center gap-4">
+        <div class="relative flex-shrink-0">
+            <img src="{% static 'tiger_chase_loader.png' %}" alt="Betto"
+                 class="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white/95 ring-2 ring-[var(--ds-brand)]/40
+                        shadow-[0_10px_30px_-8px_rgba(245,136,48,0.55)]">
+            <span class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-[var(--ds-brand)] to-[var(--ds-brand-dark)]
+                         ring-2 ring-white dark:ring-[#0A1535] inline-flex items-center justify-center">
+                <i class="fa-solid fa-sparkles text-[11px] text-white"></i>
+            </span>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em]
+                      bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)] bg-clip-text text-transparent">
+                <i class="fa-solid fa-sparkles text-[var(--ds-brand)]"></i> Resumen de Betto
+            </p>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight leading-tight mt-1
+                       text-slate-900 dark:text-white">
+                {{ sesion.titulo|default:sesion.dia_semana }}
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 flex items-center gap-3 flex-wrap">
+                <span class="inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-calendar-day text-[var(--ds-brand)]"></i>
+                    {{ sesion.fecha|date:"l, d \d\e F" }}
+                </span>
+                <span class="inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-clock text-[var(--ds-brand)]"></i>
+                    {{ sesion.hora_inicio|time:"H:i" }}–{{ sesion.hora_fin|time:"H:i" }}
+                </span>
+                {% if asistio %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                             bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                    <i class="fa-solid fa-circle-check text-[9px]"></i> Asististe
+                </span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    {% if not resumen or is_processing %}
+    <!-- Estado: en proceso o sin resumen -->
+    <div class="betto-card rounded-3xl p-8 text-center" id="processingPanel" data-auto-refresh="1">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--ds-brand)]/10 mb-3">
+            {% if is_processing %}
+            <i class="fa-solid fa-spinner fa-spin text-[var(--ds-brand)] text-2xl"></i>
+            {% else %}
+            <i class="fa-solid fa-sparkles text-[var(--ds-brand)] text-2xl"></i>
+            {% endif %}
+        </div>
+        <h2 class="text-lg font-black text-slate-900 dark:text-white">
+            {% if is_processing %}Betto está procesando…{% else %}Aún no se generó el resumen{% endif %}
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md mx-auto">
+            {% if is_processing %}
+            Esto toma unos segundos. La página se actualiza sola.
+            {% else %}
+            Buscamos el transcript en Drive y lo procesamos con IA. En unos minutos vas a poder ver el resumen acá.
+            {% endif %}
+        </p>
+    </div>
+    {% if is_processing %}
+    <script>
+        // Auto-refresh cada 8s mientras está procesando
+        setTimeout(() => window.location.reload(), 8000);
+    </script>
+    {% endif %}
+
+    {% elif resumen.estado == 'fallido' or resumen.estado == 'sin_transcript' %}
+    <!-- Estado: error -->
+    <div class="betto-card rounded-3xl p-8 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-500/10 mb-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-2xl"></i>
+        </div>
+        <h2 class="text-lg font-black text-slate-900 dark:text-white">
+            {% if resumen.estado == 'sin_transcript' %}El transcript todavía no aparece{% else %}No pudimos generar el resumen{% endif %}
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md mx-auto">
+            {% if resumen.estado == 'sin_transcript' %}
+            Google Meet tarda 5-30 minutos en publicar el transcript. Volvé a intentarlo en un rato.
+            {% else %}
+            Algo no salió bien. El admin puede reintentarlo desde el panel.
+            {% endif %}
+        </p>
+    </div>
+
+    {% else %}
+    <!-- Estado: LISTO — layout 12-col ──────────────────────────────── -->
+
+    {{ resumen.cuestionario|json_script:"quizData" }}
+
+    <!-- Grid principal: main (8/12) + sidebar (4/12) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- ═══ COLUMNA PRINCIPAL ═══ -->
+        <div class="lg:col-span-8 space-y-5 min-w-0">
+
+            <!-- Resumen ejecutivo -->
+            {% if resumen.resumen_md %}
+            <div class="betto-card rounded-3xl p-6">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-[var(--ds-brand)]/10 text-[var(--ds-brand)]">
+                        <i class="fa-solid fa-feather text-xs"></i>
+                    </span>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-[var(--ds-brand)]">Resumen ejecutivo</p>
+                </div>
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-4">De qué se habló</h2>
+                <div class="markdown" id="resumenMd" data-md="{{ resumen.resumen_md|escape }}"></div>
+            </div>
+            {% endif %}
+
+            <!-- ═══ CUESTIONARIO: CTA y/o resultados de intentos previos ═══ -->
+            {% if resumen.cuestionario %}
+                {% if intentos %}
+                <!-- Tarjeta de resultados con intentos previos -->
+                <div class="rounded-3xl p-6 sm:p-7 text-white relative overflow-hidden"
+                     style="background:
+                         radial-gradient(circle at 90% 10%, rgba(168,85,247,0.45) 0%, transparent 50%),
+                         linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4C1D95 100%);">
+                    <div class="absolute -right-12 -bottom-12 opacity-10 pointer-events-none">
+                        <i class="fa-solid fa-trophy text-[200px]"></i>
+                    </div>
+                    <div class="relative">
+                        <div class="flex items-start gap-4 mb-5">
+                            <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md inline-flex items-center justify-center ring-2 ring-white/30">
+                                <i class="fa-solid fa-trophy text-2xl text-amber-300"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/85">Tus resultados</p>
+                                <h3 class="text-xl font-black tracking-tight leading-tight mt-0.5">Cuestionario · Repaso</h3>
+                                <p class="text-xs text-white/70 mt-1">
+                                    {{ intentos|length }} de {{ max_intentos }} intentos usados
+                                    {% if mejor_intento %}· Mejor: <strong>{{ mejor_intento.correctas }}/{{ mejor_intento.total }}</strong> ({{ mejor_intento.porcentaje }}%){% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Lista de intentos -->
+                        <div class="space-y-2 mb-5">
+                            {% for intento in intentos %}
+                            <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 ring-1 ring-white/10">
+                                <span class="flex-shrink-0 w-9 h-9 rounded-full bg-white/15 inline-flex items-center justify-center text-xs font-black">
+                                    #{{ forloop.counter }}
+                                </span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-black">
+                                        {{ intento.correctas }}/{{ intento.total }} correctas
+                                        <span class="text-[11px] font-bold text-white/70 ml-2">{{ intento.porcentaje }}%</span>
+                                    </p>
+                                    <p class="text-[11px] text-white/60 mt-0.5">
+                                        <i class="fa-regular fa-clock"></i> {{ intento.tiempo_total_seg }}s ·
+                                        {{ intento.created_at|date:"d M, H:i" }}
+                                    </p>
+                                </div>
+                                <!-- Mini barra de aciertos -->
+                                <div class="flex-shrink-0 w-20 sm:w-32 h-2 rounded-full bg-white/10 overflow-hidden">
+                                    <div class="h-full rounded-full transition-all"
+                                         style="width: {{ intento.porcentaje }}%;
+                                                background: linear-gradient(90deg,
+                                                  {% if intento.porcentaje >= 80 %}#10B981, #059669
+                                                  {% elif intento.porcentaje >= 50 %}#F59E0B, #D97706
+                                                  {% else %}#EF4444, #DC2626{% endif %});"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if intentos_disponibles > 0 %}
+                        <a href="{% url 'public:account_evento_cuestionario' sesion.id %}"
+                           class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 rounded-full
+                                  bg-gradient-to-r from-[var(--ds-brand)] to-[var(--ds-brand-dark)]
+                                  text-white font-black text-sm
+                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_8px_18px_-4px_rgba(245,136,48,0.55)]
+                                  hover:scale-[1.02] hover:brightness-110 transition-all">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            Volver a intentar ({{ intentos_disponibles }} restante{{ intentos_disponibles|pluralize:"s" }})
+                        </a>
+                        {% else %}
+                        <div class="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/5 ring-1 ring-white/10 text-xs font-bold text-white/80">
+                            <i class="fa-solid fa-flag-checkered"></i> Completaste tus {{ max_intentos }} intentos
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <!-- Sin intentos aún → CTA para empezar -->
+                <a href="{% url 'public:account_evento_cuestionario' sesion.id %}"
+                   class="block rounded-3xl p-6 sm:p-7 text-white relative overflow-hidden group transition-all hover:-translate-y-1"
+                   style="background:
+                       radial-gradient(circle at 80% 20%, rgba(245,136,48,0.45) 0%, transparent 50%),
+                       linear-gradient(135deg, #6D28D9 0%, #7C3AED 50%, #A855F7 100%);">
+                    <div class="absolute -right-10 -bottom-10 opacity-15 pointer-events-none">
+                        <i class="fa-solid fa-graduation-cap text-[200px]"></i>
+                    </div>
+                    <div class="relative flex items-center gap-5">
+                        <div class="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-white/15 backdrop-blur-md
+                                    inline-flex items-center justify-center ring-2 ring-white/30 shadow-lg">
+                            <i class="fa-solid fa-graduation-cap text-3xl sm:text-4xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/85">Repaso interactivo</p>
+                            <h3 class="text-xl sm:text-2xl font-black tracking-tight leading-tight mt-0.5">
+                                Probá lo que aprendiste
+                            </h3>
+                            <p class="text-xs sm:text-sm text-white/85 mt-1">
+                                {{ resumen.cuestionario|length }} preguntas · 30 seg c/u · {{ max_intentos }} intentos
+                            </p>
+                        </div>
+                        <div class="hidden sm:inline-flex flex-shrink-0 w-12 h-12 rounded-full bg-white text-violet-700
+                                    items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </div>
+                    </div>
+                    <div class="relative mt-5 flex items-center gap-3 flex-wrap">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider
+                                     bg-white/15 backdrop-blur-md ring-1 ring-white/30">
+                            <i class="fa-solid fa-bolt"></i> Empezar
+                        </span>
+                        <span class="text-[11px] text-white/70">Tenés {{ max_intentos }} intentos · tu mejor resultado se guarda</span>
+                    </div>
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- ═══ SIDEBAR ═══ -->
+        <aside class="lg:col-span-4 space-y-5 lg:sticky lg:top-4 lg:self-start">
+
+            {% if recording %}
+            <!-- Grabación destacada -->
+            <a href="{{ recording.web_link }}" target="_blank" rel="noopener"
+               class="block rounded-3xl p-5 text-white relative overflow-hidden group transition-all hover:-translate-y-1"
+               style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 50%, #0F1F4D 100%);">
+                <div class="absolute -right-6 -bottom-6 opacity-15 pointer-events-none">
+                    <i class="fa-solid fa-video text-[120px]"></i>
+                </div>
+                <div class="relative">
+                    <div class="flex items-start gap-3 mb-3">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md inline-flex items-center justify-center ring-1 ring-white/30">
+                            <i class="fa-solid fa-circle-play text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-white/85">Grabación · Meet</p>
+                            <p class="font-black text-base tracking-tight leading-tight mt-0.5">Ver el video</p>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-white/80 line-clamp-2 leading-snug">{{ recording.name }}</p>
+                    <div class="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-white/95 group-hover:text-white">
+                        <span>Abrir en Drive</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+
+            <!-- Puntos clave -->
+            {% if resumen.puntos_clave %}
+            <div class="betto-card rounded-3xl p-5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-[var(--ds-brand)]/10 text-[var(--ds-brand)]">
+                        <i class="fa-solid fa-bullseye text-[10px]"></i>
+                    </span>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-[var(--ds-brand)]">Hallazgos</p>
+                </div>
+                <h3 class="text-base font-black text-slate-900 dark:text-white tracking-tight mb-3">Puntos clave</h3>
+                <ol class="space-y-2.5">
+                    {% for p in resumen.puntos_clave %}
+                    <li class="flex items-start gap-2.5">
+                        <span class="flex-shrink-0 w-5 h-5 rounded-full inline-flex items-center justify-center
+                                     bg-gradient-to-br from-[var(--ds-brand)] to-[var(--ds-brand-dark)] text-white
+                                     text-[10px] font-black shadow-sm mt-0.5">{{ forloop.counter }}</span>
+                        <span class="text-[13px] text-slate-600 dark:text-slate-300 leading-snug flex-1">{{ p }}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% endif %}
+
+            <!-- Próximos pasos -->
+            {% if resumen.proximos_pasos %}
+            <div class="betto-card rounded-3xl p-5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <i class="fa-solid fa-list-check text-[10px]"></i>
+                    </span>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Acciones</p>
+                </div>
+                <h3 class="text-base font-black text-slate-900 dark:text-white tracking-tight mb-3">Próximos pasos</h3>
+                <ul class="space-y-2.5">
+                    {% for p in resumen.proximos_pasos %}
+                    <li class="flex items-start gap-2.5">
+                        <span class="flex-shrink-0 w-5 h-5 rounded-full inline-flex items-center justify-center
+                                     bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
+                            <i class="fa-solid fa-check text-[9px]"></i>
+                        </span>
+                        <span class="text-[13px] text-slate-600 dark:text-slate-300 leading-snug flex-1">{{ p }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Metadata IA -->
+            <div class="betto-card rounded-2xl p-4 flex items-center gap-3">
+                <div class="flex-shrink-0 w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/5 inline-flex items-center justify-center">
+                    <i class="fa-solid fa-microchip text-slate-500 dark:text-slate-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Generado con IA</p>
+                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 mt-0.5 truncate">{{ resumen.ai_model }}</p>
+                    {% if resumen.duracion_minutos %}
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{{ resumen.duracion_minutos }} min de transcript</p>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    // ── Render Markdown nativo (sin lib externa) ──────────────────
+    const mdEl = document.getElementById('resumenMd');
+    if (mdEl) {
+        const raw = mdEl.dataset.md || '';
+        mdEl.innerHTML = renderMarkdown(raw);
+    }
+
+    function renderMarkdown(src) {
+        const lines = src.split(/\r?\n/);
+        const out = [];
+        let i = 0;
+        while (i < lines.length) {
+            const line = lines[i].trim();
+            if (!line) { i++; continue; }
+
+            const h3 = line.match(/^###\s+(.+)$/);
+            if (h3) { out.push('<h3>' + escapeHtml(h3[1]) + '</h3>'); i++; continue; }
+            const h2 = line.match(/^##\s+(.+)$/);
+            if (h2) { out.push('<h2>' + escapeHtml(h2[1]) + '</h2>'); i++; continue; }
+            const h1 = line.match(/^#\s+(.+)$/);
+            if (h1) { out.push('<h1>' + escapeHtml(h1[1]) + '</h1>'); i++; continue; }
+
+            if (/^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
+                const items = [];
+                while (i < lines.length) {
+                    const m = lines[i].trim().match(/^(?:[-*]|\d+\.)\s+(.+)$/);
+                    if (!m) break;
+                    items.push('<li>' + inline(m[1]) + '</li>');
+                    i++;
+                }
+                out.push('<ul>' + items.join('') + '</ul>');
+                continue;
+            }
+
+            const para = [lines[i]];
+            i++;
+            while (i < lines.length && lines[i].trim() && !/^#{1,3}\s+/.test(lines[i].trim()) && !/^[-*]\s+/.test(lines[i].trim()) && !/^\d+\.\s+/.test(lines[i].trim())) {
+                para.push(lines[i]);
+                i++;
+            }
+            out.push('<p>' + inline(para.join(' ')) + '</p>');
+        }
+        return out.join('\n');
+    }
+    function inline(t) {
+        t = escapeHtml(t);
+        t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        t = t.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        return t;
+    }
+    function escapeHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // El cuestionario interactivo se movió a una pantalla aparte
+    // (account_evento_cuestionario). Nada que hacer acá.
+    return;
+
+    const body = document.getElementById('quizBody');
+    const scoreBox = document.getElementById('quizScore');
+    const scoreNum = document.getElementById('quizScoreNum');
+    const restartBtn = document.getElementById('quizRestart');
+    const answers = new Array(preguntas.length).fill(null);
+
+    function render() {
+        body.innerHTML = '';
+        preguntas.forEach((q, qIdx) => {
+            const pickedIdx = answers[qIdx];
+            const responded = pickedIdx !== null;
+            const card = document.createElement('div');
+            card.className = 'space-y-3';
+            const opts = (q.opciones || []).map((opt, optIdx) => {
+                const isCorrect = optIdx === q.correcta_idx;
+                const isPicked = optIdx === pickedIdx;
+                let cls = 'quiz-opt';
+                let icon = '';
+                if (responded) {
+                    if (isCorrect) { cls += ' is-correct'; icon = '<i class="fa-solid fa-circle-check ml-auto text-emerald-500"></i>'; }
+                    else if (isPicked) { cls += ' is-wrong'; icon = '<i class="fa-solid fa-circle-xmark ml-auto text-red-500"></i>'; }
+                }
+                return `<button type="button" class="${cls}" ${responded ? 'disabled' : ''} data-q="${qIdx}" data-opt="${optIdx}">
+                    <span class="quiz-letter">${String.fromCharCode(65 + optIdx)}</span>
+                    <span class="flex-1">${escapeHtml(opt)}</span>
+                    ${icon}
+                </button>`;
+            }).join('');
+            const feedback = responded && q.explicacion ? `
+                <div class="quiz-feedback ${pickedIdx === q.correcta_idx ? 'is-correct' : 'is-wrong'}">
+                    <i class="fa-solid ${pickedIdx === q.correcta_idx ? 'fa-lightbulb' : 'fa-circle-info'} mt-0.5"></i>
+                    <span>${escapeHtml(q.explicacion)}</span>
+                </div>` : '';
+            card.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <span class="flex-shrink-0 w-7 h-7 rounded-full bg-violet-500/15 text-violet-600 dark:text-violet-400 inline-flex items-center justify-center font-black text-xs">${qIdx + 1}</span>
+                    <p class="flex-1 font-bold text-slate-900 dark:text-white text-base leading-snug">${escapeHtml(q.pregunta)}</p>
+                </div>
+                <div class="space-y-2">${opts}</div>
+                ${feedback}
+            `;
+            body.appendChild(card);
+        });
+        body.querySelectorAll('.quiz-opt').forEach(el => {
+            el.addEventListener('click', () => {
+                const qIdx = +el.dataset.q;
+                const optIdx = +el.dataset.opt;
+                if (answers[qIdx] !== null) return;
+                answers[qIdx] = optIdx;
+                render();
+                checkComplete();
+            });
+        });
+    }
+
+    function checkComplete() {
+        const total = preguntas.length;
+        const responded = answers.filter(a => a !== null).length;
+        if (responded === total) {
+            const correct = answers.filter((a, i) => a === preguntas[i].correcta_idx).length;
+            scoreNum.textContent = `${correct} / ${total}`;
+            scoreBox.classList.remove('hidden');
+        }
+    }
+
+    if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+            answers.fill(null);
+            scoreBox.classList.add('hidden');
+            render();
+        });
+    }
+
+    render();
+})();
+</script>
+{% endblock %}

@@ -273,7 +273,14 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TIMEZONE = 'America/Guayaquil'
 CELERY_TASK_TIME_LIMIT = 300       # 5 min hard kill
 CELERY_TASK_SOFT_TIME_LIMIT = 240  # 4 min soft kill (catch SoftTimeLimitExceeded)
-CELERY_BEAT_SCHEDULE = {}          # cron jobs aquí
+CELERY_BEAT_SCHEDULE = {
+    # Cada 30 min revisa sesiones recién terminadas y dispara el pipeline
+    # Drive → transcript → IA. Idempotente: skip si ya está LISTO.
+    'procesar-sesiones-pasadas': {
+        'task': 'core.tasks.transcript_tasks.procesar_sesiones_pasadas',
+        'schedule': 60 * 30,   # 30 minutos
+    },
+}
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CertifAI API',

@@ -12,3 +12,8 @@ __pycache__/
 *.log
 .env
 staticfiles/
+
+# Celery Beat scheduler (estado regenerable, no commitear)
+celerybeat-schedule
+celerybeat-schedule.*
+celerybeat.pid

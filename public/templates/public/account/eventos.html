@@ -2,6 +2,15 @@
 {% block page_title %}Eventos{% endblock %}
 
 {% block content %}
+<style>
+    .ev-betto-pulse {
+        animation: ev-betto-glow 2.4s ease-in-out infinite;
+    }
+    @keyframes ev-betto-glow {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50%      { transform: scale(1.04); filter: brightness(1.10); }
+    }
+</style>
 <div class="space-y-5">
 
     <!-- Header -->
@@ -35,9 +44,9 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {% for item in eventos_data %}
             {% if tab == 'disponibles' %}
-                {% include 'public/account/_event_mini.html' with e=item.e status=item.status show_inscribir=True %}
+                {% include 'public/account/_event_mini.html' with e=item.e status=item.status has_resumen=item.has_resumen show_inscribir=True %}
             {% else %}
-                {% include 'public/account/_event_mini.html' with e=item.e status=item.status %}
+                {% include 'public/account/_event_mini.html' with e=item.e status=item.status has_resumen=item.has_resumen %}
             {% endif %}
         {% endfor %}
     </div>

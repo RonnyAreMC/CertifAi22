@@ -23,6 +23,15 @@ class AIRuntime:
     system_prefix: str = ''
 
 
+@dataclass
+class AIResponse:
+    """Respuesta enriquecida con tracking de tokens (uso/costo)."""
+    text: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    model: str = ''
+
+
 def _runtime_from_db() -> AIRuntime | None:
     try:
         from core.models import AIConfig
@@ -102,14 +111,68 @@ def _call_openai_compatible(rt: AIRuntime, system: str, user: str, base_url: str
 
 def call_ai_with_runtime(rt: AIRuntime, system: str, user: str) -> str:
     """Llama al proveedor del runtime dado. No lee DB — útil para tests."""
+    return call_ai_full(rt, system, user).text
+
+
+def call_ai_full(rt: AIRuntime, system: str, user: str) -> AIResponse:
+    """Como `call_ai_with_runtime` pero devuelve tokens también.
+
+    Útil cuando se quiere registrar el uso/costo (ej. resumen de transcript).
+    """
     full_system = (rt.system_prefix + '\n\n' + system).strip() if rt.system_prefix else system
     if rt.provider == 'claude':
-        return _call_claude(rt, full_system, user)
+        return _call_claude_full(rt, full_system, user)
     if rt.provider == 'openai':
-        return _call_openai_compatible(rt, full_system, user)
+        return _call_openai_full(rt, full_system, user)
     if rt.provider == 'groq':
-        return _call_openai_compatible(rt, full_system, user, base_url='https://api.groq.com/openai/v1')
+        return _call_openai_full(rt, full_system, user, base_url='https://api.groq.com/openai/v1')
     raise NotImplementedError(f'Proveedor no soportado: {rt.provider}')
+
+
+def _call_claude_full(rt: AIRuntime, system: str, user: str) -> AIResponse:
+    try:
+        from anthropic import Anthropic
+    except ImportError as exc:
+        raise RuntimeError('SDK `anthropic` no instalado. Ejecutá: pip install anthropic') from exc
+    client = Anthropic(api_key=rt.api_key)
+    resp = client.messages.create(
+        model=rt.model,
+        max_tokens=rt.max_tokens,
+        temperature=rt.temperature,
+        system=[{'type': 'text', 'text': system, 'cache_control': {'type': 'ephemeral'}}],
+        messages=[{'role': 'user', 'content': user}],
+    )
+    usage = getattr(resp, 'usage', None)
+    return AIResponse(
+        text=resp.content[0].text,
+        input_tokens=getattr(usage, 'input_tokens', 0) if usage else 0,
+        output_tokens=getattr(usage, 'output_tokens', 0) if usage else 0,
+        model=rt.model,
+    )
+
+
+def _call_openai_full(rt: AIRuntime, system: str, user: str, base_url: str | None = None) -> AIResponse:
+    try:
+        from openai import OpenAI
+    except ImportError as exc:
+        raise RuntimeError('SDK `openai` no instalado. Ejecutá: pip install openai') from exc
+    client = OpenAI(api_key=rt.api_key, base_url=base_url)
+    resp = client.chat.completions.create(
+        model=rt.model,
+        max_tokens=rt.max_tokens,
+        temperature=rt.temperature,
+        messages=[
+            {'role': 'system', 'content': system},
+            {'role': 'user', 'content': user},
+        ],
+    )
+    usage = getattr(resp, 'usage', None)
+    return AIResponse(
+        text=resp.choices[0].message.content or '',
+        input_tokens=getattr(usage, 'prompt_tokens', 0) if usage else 0,
+        output_tokens=getattr(usage, 'completion_tokens', 0) if usage else 0,
+        model=rt.model,
+    )
 
 
 def call_ai(system: str, user: str) -> str:
