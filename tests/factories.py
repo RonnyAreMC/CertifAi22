@@ -66,7 +66,6 @@ class SesionFactory(DjangoModelFactory):
     titulo = factory.Sequence(lambda n: f'Sesión Test {n}')
     descripcion = 'Descripción de prueba'
     fecha = factory.LazyFunction(lambda: date.today() + timedelta(days=7))
-    dia_semana = 'Viernes'
     hora_inicio = time(10, 0)
     hora_fin = time(12, 0)
     capacidad = 50

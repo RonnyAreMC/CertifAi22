@@ -4,7 +4,7 @@ from django.db import models
 
 from core.managers import SesionManager
 
-from ._choices import DiaSemana, Modalidad, PlataformaVirtual
+from ._choices import Modalidad, PlataformaVirtual
 
 
 class SesionAsistencia(models.Model):
@@ -46,9 +46,6 @@ class SesionAsistencia(models.Model):
     )
     lugar = models.CharField(max_length=300, blank=True, default='', verbose_name='Lugar')
     fecha = models.DateField(verbose_name='Fecha de la Sesión')
-    dia_semana = models.CharField(
-        max_length=12, choices=DiaSemana.choices, verbose_name='Día'
-    )
     hora_inicio = models.TimeField(verbose_name='Hora Inicio')
     hora_fin = models.TimeField(verbose_name='Hora Fin')
     codigo_qr = models.CharField(
@@ -92,6 +89,17 @@ class SesionAsistencia(models.Model):
             f"{self.dia_semana} {self.fecha} "
             f"({self.hora_inicio:%H:%M}–{self.hora_fin:%H:%M})"
         )
+
+    @property
+    def dia_semana(self) -> str:
+        """Día de la semana derivado de `fecha` (ya no se persiste).
+
+        Se calcula con `strftime` para evitar dependencia de la locale del SO.
+        """
+        _DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+        if not self.fecha:
+            return ''
+        return _DIAS[self.fecha.weekday()]
 
     @property
     def label(self):

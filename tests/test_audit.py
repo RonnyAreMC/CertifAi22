@@ -12,7 +12,6 @@ class TestAuditedCRUD:
             'modalidad': 'presencial',
             'lugar': 'Test',
             'fecha': '2030-01-15',
-            'dia_semana': 'Lunes',
             'hora_inicio': '10:00',
             'hora_fin': '12:00',
             'capacidad': 50,

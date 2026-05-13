@@ -57,10 +57,11 @@ class SesionWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SesionAsistencia
+        # `dia_semana` es property derivada de `fecha` — no se envía en writes
         fields = [
             'titulo', 'descripcion', 'imagen_banner',
             'modalidad', 'plataforma_virtual', 'enlace_virtual',
-            'lugar', 'fecha', 'dia_semana', 'hora_inicio', 'hora_fin',
+            'lugar', 'fecha', 'hora_inicio', 'hora_fin',
             'capacidad', 'solo_lideres', 'activa', 'lote',
             'ponentes_json',
         ]

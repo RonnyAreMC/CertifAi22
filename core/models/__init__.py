@@ -4,7 +4,7 @@ Modelos del app core agrupados por dominio.
 Todos los modelos se re-exportan aquí para mantener compatibilidad con
 imports existentes como `from core.models import Usuario`.
 """
-from ._choices import FACULTADES_CHOICES
+from .catalogos import FACULTADES_CHOICES, Facultad
 from .usuarios import Usuario, SolicitudAcceso
 from .firmas import FirmaInstitucional, DisenoGlobal
 from .participantes import Participante, ParticipanteToken
@@ -17,6 +17,7 @@ from .design_system import UIDesignTokens
 
 __all__ = [
     'FACULTADES_CHOICES',
+    'Facultad',
     'Usuario',
     'SolicitudAcceso',
     'FirmaInstitucional',

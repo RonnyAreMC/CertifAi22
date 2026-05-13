@@ -10,6 +10,7 @@ tocar `.env`.
 """
 from django.db import models
 
+from core.base.fields import EncryptedCharField, EncryptedTextField
 from core.base.models import SingletonModel, TimestampedModel
 
 
@@ -19,13 +20,16 @@ class GoogleCredential(TimestampedModel):
     Convención: existe **una sola fila** con la cuenta institucional
     (rarellanou@unemi.edu.ec). Si en el futuro hace falta multi-cuenta,
     se quita el unique=True del email.
+
+    Tokens y client_secret están **cifrados at-rest** con Fernet (AES-128 +
+    HMAC) derivado de SECRET_KEY. La lectura/escritura es transparente.
     """
     email = models.EmailField(unique=True, help_text='Cuenta Google conectada')
-    access_token = models.TextField()
-    refresh_token = models.TextField(help_text='Token de larga duración para auto-refrescar')
+    access_token = EncryptedTextField()
+    refresh_token = EncryptedTextField(help_text='Token de larga duración para auto-refrescar')
     token_uri = models.URLField(default='https://oauth2.googleapis.com/token')
     client_id = models.CharField(max_length=200)
-    client_secret = models.CharField(max_length=200, help_text='TODO Fase 11: cifrar con django-cryptography')
+    client_secret = EncryptedCharField(max_length=500, help_text='Cifrado at-rest con Fernet')
     scopes = models.JSONField(default=list)
     expiry = models.DateTimeField(null=True, blank=True, help_text='Cuándo expira el access_token')
 
@@ -86,9 +90,9 @@ class AIConfig(SingletonModel, TimestampedModel):
         verbose_name='Modelo',
         help_text='Identificador del modelo según el proveedor (ej. claude-haiku-4-5-20251001).',
     )
-    api_key = models.CharField(
-        max_length=500, blank=True, default='',
-        help_text='TODO Fase 11: cifrar con django-cryptography.',
+    api_key = EncryptedCharField(
+        max_length=1000, blank=True, default='',
+        help_text='Cifrado at-rest con Fernet. Solo visible para Python (no SQL).',
     )
     temperature = models.FloatField(
         default=0.7,
