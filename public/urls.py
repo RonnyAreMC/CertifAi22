@@ -33,6 +33,8 @@ urlpatterns = [
          account_views.evento_inscribir, name='account_evento_inscribir'),
     path('cuenta/eventos/<int:sesion_id>/resumen/',
          account_views.evento_resumen_view, name='account_evento_resumen'),
+    path('cuenta/eventos/<int:sesion_id>/resumen/pdf/',
+         account_views.evento_resumen_pdf_view, name='account_evento_resumen_pdf'),
     path('cuenta/eventos/<int:sesion_id>/cuestionario/',
          account_views.evento_cuestionario_view, name='account_evento_cuestionario'),
     path('cuenta/eventos/<int:sesion_id>/cuestionario/submit/',

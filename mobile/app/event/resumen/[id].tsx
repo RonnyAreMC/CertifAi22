@@ -21,6 +21,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as SecureStore from 'expo-secure-store';
 
 import { api, APIError } from '@/api/client';
 import {
@@ -295,6 +298,53 @@ function FallidoView({ triggering, onRetry }: { triggering: boolean; onRetry: ()
 
 function ListoView({ data, sesionId }: { data: ResumenPayload; sesionId: string }) {
   const t = themed(useTheme());
+  const toast = useToast();
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  /**
+   * Descarga el PDF al cache local del dispositivo y abre el share sheet
+   * nativo (guardar en Drive, mandar por WhatsApp, imprimir, etc.).
+   */
+  async function descargarPdf() {
+    if (downloadingPdf) return;
+    setDownloadingPdf(true);
+    try {
+      const token = await SecureStore.getItemAsync('certifai.token');
+      if (!token) {
+        toast.error('Sesión expirada. Volvé a iniciar sesión.', 'Auth');
+        return;
+      }
+
+      const url = `${api.baseUrl}/api/v1/public/sessions/${sesionId}/resumen/pdf/`;
+      const filename = `Resumen-Betto-sesion-${sesionId}.pdf`;
+      // Cache directory en SDK 54+: usa la nueva API File (no documentDirectory legacy)
+      const dest = `${FileSystem.Paths.cache.uri}${filename}`;
+
+      const result = await FileSystem.downloadAsync(url, dest, {
+        headers: { Authorization: `Token ${token}` },
+      });
+
+      if (result.status !== 200) {
+        toast.error(`Error ${result.status} descargando el PDF.`, 'Descarga');
+        return;
+      }
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(result.uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Compartir resumen de Betto',
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        toast.success('PDF guardado en el dispositivo.', 'Listo');
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'No se pudo descargar.', 'Error');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   return (
     <View>
@@ -349,6 +399,55 @@ function ListoView({ data, sesionId }: { data: ResumenPayload; sesionId: string 
           </Pressable>
         </View>
       ) : null}
+
+      {/* Descargar PDF del resumen (nativo) */}
+      <View style={styles.section}>
+        <Pressable
+          onPress={descargarPdf}
+          disabled={downloadingPdf}
+          style={({ pressed }) => [
+            pressed && !downloadingPdf && { transform: [{ scale: 0.98 }], opacity: 0.95 },
+            downloadingPdf && { opacity: 0.7 },
+          ]}
+        >
+          <LinearGradient
+            colors={[brandScale[500], '#E8721C', brandScale[700]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.recordingCard}
+          >
+            <Ionicons
+              name="document-text" size={140} color="rgba(255,255,255,0.12)"
+              style={styles.recordingDecor}
+            />
+            <View style={styles.recordingHead}>
+              <View style={styles.recordingIconWrap}>
+                <Ionicons
+                  name={downloadingPdf ? 'hourglass' : 'download'}
+                  size={28}
+                  color="#FFFFFF"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.recordingEyebrow}>
+                  {downloadingPdf ? 'GENERANDO PDF…' : 'DESCARGAR PDF'}
+                </Text>
+                <Text style={styles.recordingTitle}>
+                  {downloadingPdf ? 'Un momento' : 'Resumen offline'}
+                </Text>
+              </View>
+              <View style={styles.recordingArrow}>
+                <Ionicons name="share-outline" size={18} color="#FFFFFF" />
+              </View>
+            </View>
+            <Text style={styles.recordingFile} numberOfLines={2}>
+              {downloadingPdf
+                ? 'Preparando archivo para compartir o guardar…'
+                : 'Compartí, guardá en Drive o imprimí · sin salir de la app'}
+            </Text>
+          </LinearGradient>
+        </Pressable>
+      </View>
 
       {/* Resumen ejecutivo */}
       {data.resumen_md ? (

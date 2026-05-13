@@ -179,6 +179,7 @@ class EventosView(_AuthenticatedBase):
     """GET /api/v1/public/account/events/?tab=mios|disponibles"""
 
     def get(self, request):
+        from core.models import ResumenSesion, EstadoProcesamiento
         p = self.get_participante()
         tab = request.query_params.get('tab', 'mios')
         today = timezone.localdate()
@@ -188,14 +189,22 @@ class EventosView(_AuthenticatedBase):
         mis_ids = confirmados_ids | asistidos_ids
 
         if tab == 'disponibles':
-            eventos = (SesionAsistencia.objects
+            eventos = list(SesionAsistencia.objects
                 .filter(activa=True, fecha__gte=today)
                 .exclude(id__in=mis_ids)
                 .order_by('fecha', 'hora_inicio'))
         else:
-            eventos = (SesionAsistencia.objects
+            eventos = list(SesionAsistencia.objects
                 .filter(id__in=mis_ids)
                 .order_by('-fecha', '-hora_inicio'))
+
+        # Sesiones con resumen IA listo (para badge "Resumen de Betto")
+        ids_eventos = [e.id for e in eventos]
+        resumen_listo_ids = set(
+            ResumenSesion.objects
+            .filter(estado=EstadoProcesamiento.LISTO, sesion_id__in=ids_eventos)
+            .values_list('sesion_id', flat=True)
+        )
 
         results = []
         for e in eventos:
@@ -205,6 +214,7 @@ class EventosView(_AuthenticatedBase):
                 data['status'] = 'no_asisti' if e.fecha < today else 'inscrito'
             else:
                 data['status'] = 'disponible'
+            data['has_resumen'] = e.id in resumen_listo_ids
             results.append(data)
 
         return Response({
@@ -244,8 +254,15 @@ class EventoDetailView(_AuthenticatedBase):
         # Capacidad
         cupos_ocupados = ConfirmacionAsistencia.objects.filter(sesion=sesion).count()
 
+        # Flag de resumen IA listo (para mostrar CTA "Resumen de Betto")
+        from core.models import ResumenSesion, EstadoProcesamiento
+        has_resumen = ResumenSesion.objects.filter(
+            sesion=sesion, estado=EstadoProcesamiento.LISTO,
+        ).exists()
+
         data = SesionMobileSerializer(sesion).data
         data['status'] = status_value
+        data['has_resumen'] = has_resumen
         data['lote_nombre'] = sesion.lote.nombre_lote if sesion.lote else None
         data['horas'] = getattr(sesion.lote, 'horas_validas', None) if sesion.lote else None
         data['capacidad'] = sesion.capacidad

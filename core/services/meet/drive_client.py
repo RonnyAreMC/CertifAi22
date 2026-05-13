@@ -144,8 +144,10 @@ def find_transcript_for_session(sesion) -> TranscriptFile | None:
     if fecha_fin_local <= fecha_local:
         fecha_fin_local += timedelta(days=1)
 
-    # Drive usa UTC para createdTime
-    after = (fecha_local - timedelta(hours=1)).astimezone()
+    # Ventana amplia: 7 días hacia atrás + 24h hacia adelante. Permite que
+    # eventos creados con fecha futura, pero que ya se realizaron antes,
+    # encuentren su transcript (el matching final se afina por título).
+    after = (fecha_local - timedelta(days=7)).astimezone()
     before = (fecha_fin_local + timedelta(hours=24)).astimezone()
 
     docs = _list_candidate_docs(after, before)
@@ -218,7 +220,8 @@ def find_recording_for_session(sesion) -> RecordingFile | None:
     if fecha_fin_local <= fecha_local:
         fecha_fin_local += timedelta(days=1)
 
-    after = (fecha_local - timedelta(hours=1)).astimezone()
+    # Ventana amplia (ver `find_transcript_for_session`)
+    after = (fecha_local - timedelta(days=7)).astimezone()
     before = (fecha_fin_local + timedelta(hours=24)).astimezone()
 
     service = _drive_service()

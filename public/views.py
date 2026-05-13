@@ -7,8 +7,9 @@ para evitar la dependencia de JS al inicio.
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.text import slugify
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -467,6 +468,43 @@ def evento_resumen_view(request, sesion_id: int):
             ) if resumen else False
         ),
     })
+
+
+@account_auth.login_required
+def evento_resumen_pdf_view(request, sesion_id: int):
+    """Descarga el resumen IA como PDF profesional.
+
+    Acceso: cualquier participante inscrito (o que asistió). Genera el PDF
+    on-the-fly usando `core.services.pdf.resumen_pdf.generar_resumen_pdf`.
+    """
+    p: Participante = request.participante
+    try:
+        sesion = SesionAsistencia.objects.get(pk=sesion_id, activa=True)
+    except SesionAsistencia.DoesNotExist:
+        raise Http404
+
+    inscrito = ConfirmacionAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    asistio  = RegistroAsistencia.objects.filter(participante=p, sesion=sesion).exists()
+    if not (inscrito or asistio):
+        messages.error(request, 'Solo podés descargar el resumen si te inscribiste al evento.')
+        return redirect('public:account_eventos')
+
+    resumen = ResumenSesion.objects.filter(sesion=sesion).first()
+    if not resumen or resumen.estado != EstadoProcesamiento.LISTO:
+        messages.info(request, 'El resumen aún no está listo. Volvé en unos minutos.')
+        return redirect('public:account_evento_resumen', sesion_id=sesion.id)
+
+    from core.services.pdf.resumen_pdf import generar_resumen_pdf
+    pdf_bytes = generar_resumen_pdf(resumen)
+
+    titulo_slug = slugify(sesion.titulo or sesion.dia_semana or 'evento')[:50] or 'resumen'
+    fecha_slug = sesion.fecha.strftime('%Y-%m-%d') if sesion.fecha else 'sf'
+    filename = f'Resumen-Betto-{titulo_slug}-{fecha_slug}.pdf'
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    response['Content-Length'] = len(pdf_bytes)
+    return response
 
 
 @account_auth.login_required

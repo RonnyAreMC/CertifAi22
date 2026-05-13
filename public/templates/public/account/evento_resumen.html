@@ -382,6 +382,36 @@
             </a>
             {% endif %}
 
+            <!-- Descargar PDF (siempre visible si hay resumen LISTO) -->
+            <a href="{% url 'public:account_evento_resumen_pdf' sesion.id %}"
+               target="_blank" rel="noopener"
+               class="block rounded-3xl p-5 text-white relative overflow-hidden group transition-all hover:-translate-y-1"
+               style="background:
+                   radial-gradient(circle at 85% 15%, rgba(255,255,255,0.18) 0%, transparent 55%),
+                   linear-gradient(135deg, var(--ds-brand) 0%, #E8721C 50%, var(--ds-brand-dark) 100%);">
+                <div class="absolute -right-6 -bottom-6 opacity-15 pointer-events-none">
+                    <i class="fa-solid fa-file-pdf text-[120px]"></i>
+                </div>
+                <div class="relative">
+                    <div class="flex items-start gap-3 mb-3">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md inline-flex items-center justify-center ring-1 ring-white/30">
+                            <i class="fa-solid fa-download text-white text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-white/85">Descargar PDF</p>
+                            <p class="font-black text-base tracking-tight leading-tight mt-0.5">Resumen offline</p>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-white/85 line-clamp-2 leading-snug">
+                        Llevá el resumen completo + cuestionario para imprimir o leer sin conexión.
+                    </p>
+                    <div class="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-white/95 group-hover:text-white">
+                        <span>Generar PDF</span>
+                        <i class="fa-solid fa-file-arrow-down text-[10px]"></i>
+                    </div>
+                </div>
+            </a>
+
             <!-- Puntos clave -->
             {% if resumen.puntos_clave %}
             <div class="betto-card rounded-3xl p-5">

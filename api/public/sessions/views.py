@@ -240,6 +240,47 @@ class PublicSesionViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
     @action(
+        detail=True, methods=['get'], url_path='resumen/pdf',
+        authentication_classes=[ParticipanteTokenAuthentication, SessionAuthentication],
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def resumen_pdf(self, request, pk=None):
+        """Devuelve el PDF del resumen IA — autenticado con ParticipanteToken.
+
+        Diferencia con la versión web (`/cuenta/eventos/<id>/resumen/pdf/`):
+        esta acepta el header `Authorization: Token <key>` que envía el
+        mobile, así no requiere sesión Django. Devuelve el PDF como bytes
+        con Content-Type apropiado para que el cliente lo guarde y comparta.
+        """
+        from django.http import HttpResponse
+        from django.utils.text import slugify
+        from core.services.pdf.resumen_pdf import generar_resumen_pdf
+
+        sesion = self.get_object()
+        participante = getattr(request.user, 'participante', None)
+        if participante is None:
+            return Response({'ok': False, 'error': 'Auth requerida.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        inscrito = ConfirmacionAsistencia.objects.filter(participante=participante, sesion=sesion).exists()
+        asistio  = RegistroAsistencia.objects.filter(participante=participante, sesion=sesion).exists()
+        if not (inscrito or asistio):
+            return Response({'ok': False, 'error': 'Sin acceso al resumen.'}, status=status.HTTP_403_FORBIDDEN)
+
+        resumen = ResumenSesion.objects.filter(sesion=sesion).first()
+        if not resumen or resumen.estado != 'listo':
+            return Response({'ok': False, 'error': 'El resumen aún no está listo.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        pdf_bytes = generar_resumen_pdf(resumen)
+        titulo_slug = slugify(sesion.titulo or sesion.dia_semana or 'evento')[:50] or 'resumen'
+        fecha_slug = sesion.fecha.strftime('%Y-%m-%d') if sesion.fecha else 'sf'
+        filename = f'Resumen-Betto-{titulo_slug}-{fecha_slug}.pdf'
+
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = len(pdf_bytes)
+        return response
+
+    @action(
         detail=True, methods=['post'], url_path='cuestionario/submit',
         authentication_classes=[ParticipanteTokenAuthentication, SessionAuthentication],
         permission_classes=[permissions.IsAuthenticated],

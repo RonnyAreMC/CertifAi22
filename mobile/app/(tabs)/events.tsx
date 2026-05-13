@@ -37,6 +37,7 @@ type Evento = {
   banner_url: string | null;
   activa: boolean;
   status: Status;
+  has_resumen?: boolean;
 };
 type EventosResponse = {
   tab: 'mios' | 'disponibles';
@@ -168,8 +169,17 @@ function EventoCard({ evento }: { evento: Evento }) {
   const theme = useTheme();
   const t = themed(theme);
 
-  function openDetail() {
-    router.push({ pathname: '/event/[id]', params: { id: String(evento.id) } });
+  // Si hay resumen IA listo y soy parte del evento (inscrito/asistí/no asistí),
+  // la card abre directo al resumen. Sino, abre el detalle normal.
+  const verResumenDirecto =
+    evento.has_resumen && evento.status !== 'disponible';
+
+  function onTap() {
+    if (verResumenDirecto) {
+      router.push({ pathname: '/event/resumen/[id]', params: { id: String(evento.id) } });
+    } else {
+      router.push({ pathname: '/event/[id]', params: { id: String(evento.id) } });
+    }
   }
 
   // Hero gradient según modalidad (mismo estilo del web)
@@ -183,7 +193,7 @@ function EventoCard({ evento }: { evento: Evento }) {
 
   return (
     <Pressable
-      onPress={openDetail}
+      onPress={onTap}
       style={({ pressed }) => [
         styles.card,
         { backgroundColor: t.cardSoft, borderColor: t.border },
@@ -248,10 +258,23 @@ function EventoCard({ evento }: { evento: Evento }) {
             {dayLabel} · {time}
           </Text>
         </View>
-        {evento.lugar && !evento.es_virtual ? (
+        {evento.lugar && !evento.es_virtual && !verResumenDirecto ? (
           <View style={styles.cardMetaRow}>
             <Ionicons name="location" size={11} color={colors.brand} />
             <Text style={[styles.cardMeta, { color: t.textMuted }]} numberOfLines={1}>{evento.lugar}</Text>
+          </View>
+        ) : null}
+
+        {/* Footer CTA al resumen IA — reemplaza meta cuando hay resumen listo */}
+        {verResumenDirecto ? (
+          <View style={styles.cardBettoFooter}>
+            <View style={styles.cardBettoBadge}>
+              <Ionicons name="sparkles" size={9} color="#FFFFFF" />
+            </View>
+            <Text style={styles.cardBettoText} numberOfLines={1}>
+              Ver con Betto
+            </Text>
+            <Ionicons name="arrow-forward" size={11} color={colors.brand} />
           </View>
         ) : null}
       </View>
@@ -427,5 +450,29 @@ const styles = StyleSheet.create({
     fontSize: typography.xs,
     fontWeight: typography.medium,
     flex: 1,
+  },
+
+  cardBettoFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(245,136,48,0.20)',
+  },
+  cardBettoBadge: {
+    width: 16, height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardBettoText: {
+    flex: 1,
+    fontSize: typography.xs,
+    fontWeight: typography.black,
+    color: colors.brand,
+    letterSpacing: 0.2,
   },
 });

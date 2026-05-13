@@ -14,15 +14,13 @@ Diagrama entidad-relación (ERD) generado a partir del esquema actual.
 
 ```mermaid
 erDiagram
-    %% ════════════════════════════════════════════════════════════
-    %% USUARIOS DEL SISTEMA (admin panel)
-    %% ════════════════════════════════════════════════════════════
+
     USUARIO {
         int id PK
         string username UK
         string email
         string password
-        string rol "superadmin|admin"
+        string rol
         string facultad
         string telefono
         bool is_active
@@ -36,16 +34,13 @@ erDiagram
         string email UK
         string telefono
         string facultad
-        string estado "pendiente|aprobado|rechazado"
+        string estado
         int usuario_creado_id FK
         int aprobado_por_id FK
         datetime fecha_solicitud
         text motivo_rechazo
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% CATÁLOGOS (tablas lookup editables)
-    %% ════════════════════════════════════════════════════════════
     FACULTAD {
         int id PK
         string codigo UK
@@ -55,9 +50,6 @@ erDiagram
         bool activa
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% PARTICIPANTES (usuarios finales)
-    %% ════════════════════════════════════════════════════════════
     PARTICIPANTE {
         int id PK
         string cedula UK
@@ -80,9 +72,6 @@ erDiagram
         string user_agent
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% CERTIFICADOS Y DISEÑO
-    %% ════════════════════════════════════════════════════════════
     LOTE_CERTIFICADOS {
         int id PK
         string nombre_lote
@@ -122,7 +111,7 @@ erDiagram
         int id PK
         string nombre
         string cargo
-        text imagen "base64 ⚠ migrar a ImageField"
+        text imagen_base64
         bool activa
         int orden
     }
@@ -136,16 +125,13 @@ erDiagram
         int firma_inst_3_id FK
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% SESIONES Y ASISTENCIA
-    %% ════════════════════════════════════════════════════════════
     SESION_ASISTENCIA {
         int id PK
         int lote_id FK
         string titulo
         text descripcion
         image imagen_banner
-        string modalidad "presencial|virtual"
+        string modalidad
         string plataforma_virtual
         url enlace_virtual
         string lugar
@@ -186,12 +172,9 @@ erDiagram
         datetime fecha_confirmacion
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% PIPELINE IA (resumen + cuestionario)
-    %% ════════════════════════════════════════════════════════════
     RESUMEN_SESION {
         int id PK
-        int sesion_id FK_UK
+        int sesion_id FK
         string drive_file_id
         string drive_file_name
         text transcript_raw
@@ -200,7 +183,7 @@ erDiagram
         json proximos_pasos
         json cuestionario
         int duracion_minutos
-        string estado "pendiente|buscando|procesando|listo|fallido"
+        string estado
         text error_msg
         string ai_model
         int ai_input_tokens
@@ -218,101 +201,82 @@ erDiagram
         datetime created_at
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% INTEGRACIONES (Google + IA)
-    %% ════════════════════════════════════════════════════════════
     GOOGLE_CREDENTIAL {
         int id PK
         string email UK
-        text access_token "🔐 Fernet"
-        text refresh_token "🔐 Fernet"
+        text access_token_cifrado
+        text refresh_token_cifrado
         url token_uri
         string client_id
-        string client_secret "🔐 Fernet"
+        string client_secret_cifrado
         json scopes
         datetime expiry
     }
     AI_CONFIG {
-        int id PK_singleton
-        string provider "claude|openai|groq"
+        int id PK
+        string provider
         string model
-        string api_key "🔐 Fernet"
+        string api_key_cifrado
         float temperature
         int max_tokens
         text system_prompt_override
         bool enabled
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% AUDITORÍA Y DISEÑO UI
-    %% ════════════════════════════════════════════════════════════
     AUDITORIA {
         int id PK
         int usuario_id FK
-        string accion "CREAR|EDITAR|ELIMINAR|..."
+        string accion
         text detalle
         int content_type_id FK
         int object_id
-        json cambios "diff antes/después"
+        json cambios
         ip ip
         string user_agent
         datetime fecha
     }
     UI_DESIGN_TOKENS {
-        int id PK_singleton
+        int id PK
         string color_brand
         string color_brand_dark
         string color_accent
     }
 
-    %% ════════════════════════════════════════════════════════════
-    %% RELACIONES
-    %% ════════════════════════════════════════════════════════════
+    SOLICITUD_ACCESO ||--o| USUARIO : se_aprueba_como
+    SOLICITUD_ACCESO }o--o| USUARIO : aprobada_por
 
-    %% Solicitudes ↔ Usuario
-    SOLICITUD_ACCESO ||--o| USUARIO : "se aprueba como"
-    SOLICITUD_ACCESO }o--o| USUARIO : "aprobada por"
+    PARTICIPANTE ||--o{ PARTICIPANTE_TOKEN : tiene_sesiones
+    PARTICIPANTE ||--o{ CONFIRMACION_ASISTENCIA : se_inscribe
+    PARTICIPANTE ||--o{ REGISTRO_ASISTENCIA : asiste
+    PARTICIPANTE ||--o{ CERTIFICADO : recibe
+    PARTICIPANTE ||--o{ INTENTO_CUESTIONARIO : intenta
 
-    %% Participante ↔ todo lo del participante
-    PARTICIPANTE ||--o{ PARTICIPANTE_TOKEN : "sesiones mobile"
-    PARTICIPANTE ||--o{ CONFIRMACION_ASISTENCIA : "se inscribe"
-    PARTICIPANTE ||--o{ REGISTRO_ASISTENCIA : "asiste"
-    PARTICIPANTE ||--o{ CERTIFICADO : "recibe"
-    PARTICIPANTE ||--o{ INTENTO_CUESTIONARIO : "intenta"
+    LOTE_CERTIFICADOS ||--o{ CERTIFICADO : contiene
+    LOTE_CERTIFICADOS ||--o{ SESION_ASISTENCIA : tiene_sesiones
+    LOTE_CERTIFICADOS }o--o| USUARIO : creado_por
+    LOTE_CERTIFICADOS }o--o| FIRMA_INSTITUCIONAL : firma_1_a_4
 
-    %% Lote ↔ Certificado ↔ Sesion
-    LOTE_CERTIFICADOS ||--o{ CERTIFICADO : "contiene"
-    LOTE_CERTIFICADOS ||--o{ SESION_ASISTENCIA : "tiene sesiones"
-    LOTE_CERTIFICADOS }o--o| USUARIO : "creado por"
-    LOTE_CERTIFICADOS }o--o| FIRMA_INSTITUCIONAL : "firma 1..4 ⚠"
+    DISENO_GLOBAL }o--o| FIRMA_INSTITUCIONAL : firma_1_a_3
 
-    %% Diseño global ↔ Firmas
-    DISENO_GLOBAL }o--o| FIRMA_INSTITUCIONAL : "firma 1..3 ⚠"
+    SESION_ASISTENCIA ||--o{ PONENTE : tiene_ponentes
+    SESION_ASISTENCIA ||--o{ REGISTRO_ASISTENCIA : asistencias
+    SESION_ASISTENCIA ||--o{ CONFIRMACION_ASISTENCIA : inscritos
+    SESION_ASISTENCIA ||--|| RESUMEN_SESION : tiene_resumen
+    SESION_ASISTENCIA ||--o{ INTENTO_CUESTIONARIO : cuestionarios
 
-    %% Sesión ↔ Asistencia ↔ Resumen
-    SESION_ASISTENCIA ||--o{ PONENTE : "tiene"
-    SESION_ASISTENCIA ||--o{ REGISTRO_ASISTENCIA : "asistencias"
-    SESION_ASISTENCIA ||--o{ CONFIRMACION_ASISTENCIA : "inscritos"
-    SESION_ASISTENCIA ||--|| RESUMEN_SESION : "1:1 resumen IA"
-    SESION_ASISTENCIA ||--o{ INTENTO_CUESTIONARIO : "cuestionarios"
-
-    %% Auditoría
-    USUARIO ||--o{ AUDITORIA : "ejecuta acciones"
+    USUARIO ||--o{ AUDITORIA : ejecuta_acciones
 ```
 
 ---
 
-## Leyenda de notaciones
+## Leyenda
 
-| Símbolo | Significado |
+| Notación | Significado |
 |---|---|
 | `PK` | Primary Key |
-| `UK` | Unique Key |
+| `UK` | Unique Key (constraint UNIQUE) |
 | `FK` | Foreign Key |
-| `FK_UK` | FK con constraint único (relación 1:1) |
-| `PK_singleton` | Singleton (siempre `pk=1`) |
-| 🔐 Fernet | Campo cifrado at-rest |
-| ⚠ | Pendiente de refactor (firmas repetidas / base64) |
+| `_cifrado` | Campo cifrado at-rest con Fernet (AES-128 + HMAC) |
 
 ### Cardinalidades Mermaid
 
@@ -322,7 +286,6 @@ erDiagram
 | `||--||` | Uno a uno obligatorio (1:1) |
 | `||--o|` | Uno a uno opcional |
 | `}o--o|` | Muchos a uno opcional |
-| `}o--||` | Muchos a uno obligatorio |
 
 ---
 
@@ -335,98 +298,85 @@ erDiagram
 | Singletons | 3 (`DisenoGlobal`, `AIConfig`, `UIDesignTokens`) |
 | Relaciones 1:1 | 2 (`Sesion ↔ Resumen`, `Solicitud ↔ Usuario`) |
 | Relaciones 1:N principales | 12 |
-| Campos cifrados (Fernet) | 4 (`api_key`, `access_token`, `refresh_token`, `client_secret`) |
-| Índices declarados explícitos | ~25 |
+| Campos cifrados (Fernet) | 4 (api_key + 3 tokens Google) |
+| Índices declarados | ~25 |
 
 ---
 
 ## Dominios funcionales
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        CertifAI · Dominios                       │
-├──────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌─────────────────┐      ┌─────────────────┐                  │
-│   │ ADMINISTRACIÓN  │      │  CATÁLOGOS      │                  │
-│   │  · Usuario      │      │  · Facultad     │                  │
-│   │  · Solicitud    │      │  · (TextChoices)│                  │
-│   └────────┬────────┘      └─────────────────┘                  │
-│            │                                                     │
-│            ▼                                                     │
-│   ┌─────────────────────────────────────────┐                   │
-│   │           PARTICIPANTES                  │                   │
-│   │  · Participante                          │                   │
-│   │  · ParticipanteToken (auth mobile)       │                   │
-│   └────────┬──────────────┬──────────────────┘                   │
-│            │              │                                       │
-│            ▼              ▼                                       │
-│   ┌─────────────┐  ┌──────────────────┐                          │
-│   │ CERTIFICADOS │  │   SESIONES        │                         │
-│   │ · Lote       │──│   · Sesión        │                         │
-│   │ · Certificado│  │   · Ponente       │                         │
-│   │ · FirmaInst  │  │   · Confirmación  │                         │
-│   │ · Diseño     │  │   · Registro      │                         │
-│   └─────────────┘  └────┬─────────────┬┘                         │
-│                         │             │                          │
-│                         ▼             ▼                          │
-│              ┌──────────────────┐  ┌──────────────────┐          │
-│              │   PIPELINE IA    │  │   INTEGRACIONES  │          │
-│              │   · ResumenSes   │  │   · GoogleCred   │ 🔐       │
-│              │   · IntentoQuiz  │◀─│   · AIConfig     │ 🔐       │
-│              └──────────────────┘  └──────────────────┘          │
-│                                                                  │
-│                  ┌──────────────────┐                            │
-│                  │    AUDITORÍA     │  (cross-domain)            │
-│                  │  · Auditoría     │                            │
-│                  │    (ContentType) │                            │
-│                  └──────────────────┘                            │
-│                                                                  │
-└──────────────────────────────────────────────────────────────────┘
+ADMINISTRACIÓN          CATÁLOGOS
+ - Usuario               - Facultad
+ - SolicitudAcceso       - (TextChoices)
+       |
+       v
+ PARTICIPANTES
+  - Participante
+  - ParticipanteToken
+       |
+       +----------------+----------------+
+       v                v                v
+ CERTIFICADOS      SESIONES        PIPELINE IA
+  - Lote            - Sesion         - ResumenSesion
+  - Certificado     - Ponente        - IntentoCuestionario
+  - FirmaInst       - Confirmacion         |
+  - DisenoGlobal    - Registro             v
+                                     INTEGRACIONES (cifradas)
+                                      - GoogleCredential
+                                      - AIConfig
+
+ AUDITORIA (transversal con ContentType + diff JSON)
 ```
 
 ---
 
-## Flujos principales (lectura cruzada del ERD)
+## Flujos principales
 
-### 1. Flujo de certificación
+### 1. Certificación
 ```
-Usuario admin → crea LoteCertificados → carga Excel
-       ↓
-   genera N × Certificado (uno por Participante)
-       ↓
-   participante consulta via /verify/<hash>/  →  Certificado.descargas_count++
-```
-
-### 2. Flujo de evento + asistencia
-```
-Usuario admin → crea SesionAsistencia (vinculada a Lote opcionalmente)
-       ↓                          ↓
-agrega Ponentes        Participante escanea QR → RegistroAsistencia
-       ↓
-si transcripcion_habilitada=True:
-   Celery Beat (30min) → busca transcript en Drive → genera ResumenSesion
-       ↓
-   Participante hace cuestionario → IntentoCuestionario
+Admin -> crea LoteCertificados -> carga Excel
+        |
+        v
+    genera N Certificados (uno por Participante)
+        |
+        v
+    Participante consulta via /verify/<hash>/  =>  descargas_count++
 ```
 
-### 3. Flujo de IA (resumen + Q&A)
+### 2. Evento + asistencia
+```
+Admin -> crea SesionAsistencia (con Ponentes)
+        |
+        v
+    Participante escanea QR -> RegistroAsistencia
+        |
+        v
+    Si transcripcion_habilitada:
+        Celery Beat (cada 30 min) -> busca transcript Drive
+            -> genera ResumenSesion (estado=listo)
+        |
+        v
+    Participante hace Cuestionario -> IntentoCuestionario (max 2)
+```
+
+### 3. Pipeline IA
 ```
 SesionAsistencia
-   └─→ ResumenSesion (1:1, lazy)
-         ├─→ resumen_md (Markdown)
-         ├─→ puntos_clave (JSON list)
-         ├─→ proximos_pasos (JSON list)
-         └─→ cuestionario (JSON: [{pregunta, opciones, correcta_idx, explicacion}])
-                  └─→ IntentoCuestionario (N por Participante, máx 2)
+   --> ResumenSesion (1:1)
+         - resumen_md (Markdown)
+         - puntos_clave (JSON list)
+         - proximos_pasos (JSON list)
+         - cuestionario (JSON con preguntas + opciones + correcta_idx)
+              --> IntentoCuestionario (N por Participante)
 ```
 
 ---
 
-## Mejoras pendientes (refactor futuro)
+## Pendientes de refactor
 
 | # | Mejora | Impacto |
 |---|---|---|
-| ⚠ 1 | Firmas 1..4 en `LoteCertificados` / `DisenoGlobal` → tabla pivote `LoteFirma` | Normalización 1NF |
-| ⚠ 2 | `FirmaInstitucional.imagen` base64 (TextField) → `ImageField` con archivo en media | Performance + storage |
-| ⚠ 3 | `RegistroAsistencia.certificado` / `participante` nullable redundante (legacy) | Limpieza |
+| 1 | Firmas 1..4 en `LoteCertificados` / `DisenoGlobal` -> tabla pivote `LoteFirma` | Normalización 1NF |
+| 2 | `FirmaInstitucional.imagen` base64 (TextField) -> `ImageField` con archivo en media | Performance + storage |
+| 3 | `RegistroAsistencia.certificado` / `participante` nullable redundante (legacy) | Limpieza |
