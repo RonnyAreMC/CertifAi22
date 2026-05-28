@@ -126,10 +126,11 @@ function drawWheel() {
             const flip = norm > Math.PI / 2 && norm < 3 * Math.PI / 2;
             ctx.fillStyle = '#ffffff';
             ctx.textBaseline = 'middle';
-            const fontSize = n <= 2 ? 20 : Math.max(9, Math.min(18, seg * 90));
+            const fontSize = n <= 2 ? 14 : Math.max(8, Math.min(14, seg * 70));
             ctx.font = `700 ${fontSize}px Outfit, sans-serif`;
             let txt = PARTICIPANTES[i].nombre;
-            const maxLen = Math.floor(radius / (fontSize * 0.5));
+            // deja libre el centro (hub) para que el nombre no se encime con la estrella
+            const maxLen = Math.floor((radius - 80) / (fontSize * 0.6));
             if (txt.length > maxLen) txt = txt.slice(0, maxLen - 1) + '…';
             if (flip) {
                 ctx.rotate(Math.PI);
