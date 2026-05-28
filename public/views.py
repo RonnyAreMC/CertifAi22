@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.db import IntegrityError
 from django.db.models import Q
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.views.decorators.clickjacking import xframe_options_exempt
@@ -360,8 +361,125 @@ def qr_checkin(request, codigo_qr):
     })
 
 
+# ═══════════════════════════════════════════════════════════════════
+# Flujo NUEVO: check-in por cédula (entrada abierta para eventos en vivo)
+# ═══════════════════════════════════════════════════════════════════
+
+@require_POST
+def qr_checkin_verify(request, codigo_qr):
+    """AJAX: verifica si una cédula ya existe en la base de datos."""
+    sesion = get_object_or_404(SesionAsistencia, codigo_qr=codigo_qr, activa=True)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, AttributeError):
+        data = request.POST
+
+    cedula = (data.get('cedula') or '').strip()
+    if not cedula:
+        return JsonResponse({'ok': False, 'error': 'Ingresa tu número de cédula.'}, status=400)
+
+    participante = Participante.objects.filter(cedula=cedula).first()
+    if participante:
+        already = RegistroAsistencia.objects.filter(
+            sesion=sesion, participante=participante
+        ).exists()
+        return JsonResponse({
+            'ok': True,
+            'found': True,
+            'id': participante.id,
+            'nombre': f'{participante.nombres} {participante.apellidos}'.strip(),
+            'already_registered': already,
+        })
+
+    return JsonResponse({'ok': True, 'found': False, 'cedula': cedula})
+
+
+@require_POST
+def qr_checkin_register_open(request, codigo_qr):
+    """Registra asistencia vía QR (entrada abierta para eventos en vivo).
+
+    Acepta un participante existente (por cédula) o crea uno nuevo con los
+    datos enviados. No exige reserva previa ni revisa cuentas bloqueadas.
+    """
+    sesion = get_object_or_404(SesionAsistencia, codigo_qr=codigo_qr, activa=True)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, AttributeError):
+        data = request.POST
+
+    cedula = (data.get('cedula') or '').strip()
+    if not cedula:
+        return JsonResponse({'ok': False, 'error': 'Ingresa tu número de cédula.'}, status=400)
+
+    # 1. Buscar participante existente por cédula
+    participante = Participante.objects.filter(cedula=cedula).first()
+
+    # 2. Si no existe, crearlo con los datos del formulario
+    if not participante:
+        nombres = (data.get('nombres') or '').strip()
+        apellidos = (data.get('apellidos') or '').strip()
+        email = (data.get('email') or '').strip().lower()
+
+        if not (nombres and apellidos and email):
+            return JsonResponse(
+                {'ok': False, 'error': 'Completa nombres, apellidos y correo.'},
+                status=400,
+            )
+
+        # ¿El correo ya pertenece a otra persona?
+        if Participante.objects.filter(email=email).exists():
+            return JsonResponse(
+                {'ok': False, 'error': 'Ese correo ya está registrado con otra cédula. Verifica tus datos.'},
+                status=400,
+            )
+
+        try:
+            participante = Participante.objects.create(
+                cedula=cedula, nombres=nombres, apellidos=apellidos, email=email,
+            )
+        except IntegrityError:
+            return JsonResponse(
+                {'ok': False, 'error': 'No se pudo registrar: esa cédula o correo ya existe.'},
+                status=400,
+            )
+
+    # 3. Registrar asistencia (sin requerir reserva previa)
+    registro, created = RegistroAsistencia.objects.get_or_create(
+        sesion=sesion,
+        participante=participante,
+        defaults={'ip_address': _get_client_ip(request)},
+    )
+
+    nombre = f'{participante.nombres} {participante.apellidos}'.strip()
+
+    if not created:
+        return JsonResponse({
+            'ok': True,
+            'already': True,
+            'message': '¡Ya habías registrado tu asistencia!',
+            'nombre': nombre,
+            'hora': timezone.localtime(registro.fecha_registro).strftime('%H:%M'),
+        })
+
+    return JsonResponse({
+        'ok': True,
+        'already': False,
+        'message': '¡Gracias por estar aquí! Tu asistencia fue registrada.',
+        'nombre': nombre,
+        'hora': timezone.localtime().strftime('%H:%M'),
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Flujo LEGACY: búsqueda por nombre + registro con reserva previa.
+# Ya no lo usa la página de check-in, pero se conserva por si el admin
+# quiere volver a habilitarlo (URLs: .../search/ y .../register/).
+# ═══════════════════════════════════════════════════════════════════
+
 def qr_checkin_search(request, codigo_qr):
-    """AJAX: Search for a person during QR check-in."""
+    """[LEGACY] AJAX: Search for a person during QR check-in."""
     sesion = get_object_or_404(SesionAsistencia, codigo_qr=codigo_qr, activa=True)
     query = request.GET.get('q', '').strip()
 
@@ -399,7 +517,7 @@ def qr_checkin_search(request, codigo_qr):
 
 @require_POST
 def qr_checkin_register(request, codigo_qr):
-    """Register attendance via QR scan — marks the person present."""
+    """[LEGACY] Register attendance via QR scan — requires prior reservation."""
     sesion = get_object_or_404(SesionAsistencia, codigo_qr=codigo_qr, activa=True)
 
     try:

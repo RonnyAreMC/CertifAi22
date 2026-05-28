@@ -907,7 +907,7 @@ def session_attendees_api(request, id):
             'nombre': nombre,
             'cedula': cedula,
             'email': email,
-            'hora': r.fecha_registro.strftime('%H:%M:%S'),
+            'hora': timezone.localtime(r.fecha_registro).strftime('%H:%M:%S'),
             'timestamp': r.fecha_registro.isoformat(),
         })
     
@@ -915,6 +915,39 @@ def session_attendees_api(request, id):
         'total': total,
         'attendees': attendees,
         'server_time': timezone.now().isoformat(),
+    })
+
+
+@login_required
+@user_passes_test(_is_admin)
+def session_raffle(request, id):
+    """Ruleta / sorteo aleatorio entre los asistentes registrados de la sesión."""
+    sesion = get_object_or_404(SesionAsistencia, id=id)
+
+    registros = (
+        RegistroAsistencia.objects
+        .filter(sesion=sesion)
+        .select_related('participante', 'certificado')
+        .order_by('fecha_registro')
+    )
+
+    participantes = []
+    for r in registros:
+        p = r.participante
+        c = r.certificado
+        nombre = f'{p.nombres} {p.apellidos}' if p else (f'{c.nombres} {c.apellidos}' if c else '?')
+        cedula = p.cedula if p else (c.cedula if c else '')
+        participantes.append({
+            'id': r.id,
+            'nombre': nombre.strip(),
+            'cedula': cedula,
+        })
+
+    return render(request, 'panel/sessions/raffle.html', {
+        'sesion': sesion,
+        'participantes': participantes,
+        'participantes_json': json.dumps(participantes),
+        'total': len(participantes),
     })
 
 

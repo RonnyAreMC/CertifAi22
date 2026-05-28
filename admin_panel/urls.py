@@ -43,6 +43,7 @@ urlpatterns = [
     path('sessions/<int:id>/toggle/', views.session_toggle, name='session_toggle'),
     path('sessions/<int:id>/delete/', views.session_delete, name='session_delete'),
     path('sessions/<int:id>/qr/', views.session_qr_display, name='session_qr_display'),
+    path('sessions/<int:id>/raffle/', views.session_raffle, name='session_raffle'),
     path('sessions/<int:id>/attendees/', views.session_attendees_api, name='session_attendees_api'),
     path('sessions/<int:id>/bulk-pdf/', views.session_bulk_pdf, name='session_bulk_pdf'),
     path('sessions/<int:id>/generate-batch/', views.session_generate_batch, name='session_generate_batch'),

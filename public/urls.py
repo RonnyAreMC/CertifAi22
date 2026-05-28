@@ -15,8 +15,11 @@ urlpatterns = [
     path('attendance/confirm/', views.attendance_confirm, name='attendance_confirm'),
     path('attendance/update-phone/', views.attendance_update_phone, name='attendance_update_phone'),
 
-    # QR Check-in (public scan)
+    # QR Check-in (public scan) — flujo NUEVO por cédula
     path('checkin/<str:codigo_qr>/', views.qr_checkin, name='qr_checkin'),
+    path('checkin/<str:codigo_qr>/verify/', views.qr_checkin_verify, name='qr_checkin_verify'),
+    path('checkin/<str:codigo_qr>/register-open/', views.qr_checkin_register_open, name='qr_checkin_register_open'),
+    # QR Check-in — flujo LEGACY (búsqueda + reserva). Conservado por si se reactiva.
     path('checkin/<str:codigo_qr>/search/', views.qr_checkin_search, name='qr_checkin_search'),
     path('checkin/<str:codigo_qr>/register/', views.qr_checkin_register, name='qr_checkin_register'),
 

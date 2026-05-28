@@ -1,0 +1,205 @@
+{% extends 'panel/base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl lg:text-4xl font-black text-[#162054] dark:text-white tracking-tight flex items-center gap-3">
+                <i class="fa-solid fa-trophy text-[#F58830]"></i>
+                Sorteo Aleatorio
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 font-medium mt-1">
+                {{ sesion.dia_semana }} · {{ sesion.fecha|date:"d/m/Y" }} ·
+                <span class="font-bold text-[#F58830]">{{ total }}</span> asistente{{ total|pluralize }}
+            </p>
+        </div>
+        <a href="{% url 'panel:session_qr_display' sesion.id %}"
+           class="inline-flex items-center gap-2 bg-gray-100 dark:bg-[#0F163A] text-gray-700 dark:text-gray-300 font-bold px-5 py-2.5 rounded-2xl hover:bg-gray-200 dark:hover:bg-[#162054] transition">
+            <i class="fa-solid fa-arrow-left"></i>
+            Volver al QR
+        </a>
+    </div>
+
+    {% if total == 0 %}
+    <!-- Empty state -->
+    <div class="bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-gray-100 dark:border-blue-900/30 p-16 text-center">
+        <i class="fa-solid fa-users-slash text-6xl text-gray-300 dark:text-gray-600 mb-4 block"></i>
+        <h2 class="text-xl font-black text-gray-800 dark:text-white mb-2">Aún no hay asistentes</h2>
+        <p class="text-gray-500 dark:text-gray-400">Cuando los participantes escaneen el QR aparecerán aquí para el sorteo.</p>
+    </div>
+    {% else %}
+
+    <div class="bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-gray-100 dark:border-blue-900/30 p-6 lg:p-10 flex flex-col items-center">
+
+        <!-- Wheel -->
+        <div class="relative w-full flex justify-center" style="max-width: 520px;">
+            <!-- Pointer -->
+            <div class="absolute -top-2 left-1/2 -translate-x-1/2 z-20" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,.3));">
+                <div style="width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:34px solid #162054;"></div>
+            </div>
+            <canvas id="wheel" width="520" height="520" class="max-w-full h-auto"></canvas>
+            <!-- Center hub -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-16 h-16 rounded-full bg-[#162054] dark:bg-[#F58830] border-4 border-white dark:border-[#0F163A] shadow-xl flex items-center justify-center">
+                <i class="fa-solid fa-star text-white text-xl"></i>
+            </div>
+        </div>
+
+        <!-- Spin Button -->
+        <button id="spin-btn"
+                class="mt-8 inline-flex items-center gap-3 bg-gradient-to-r from-[#F58830] to-orange-500 hover:from-orange-500 hover:to-[#F58830] text-white font-black text-lg px-10 py-4 rounded-2xl shadow-lg shadow-orange-500/30 transition-all hover:scale-105 active:scale-95 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+            <i class="fa-solid fa-rotate-right"></i>
+            ¡Girar!
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Winner Modal -->
+<div id="winner-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-[#162054] rounded-3xl shadow-2xl border border-gray-100 dark:border-blue-900/30 p-10 max-w-md w-full text-center animate__animated animate__zoomIn">
+        <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[#F58830] to-orange-500 flex items-center justify-center mb-5 shadow-lg shadow-orange-500/40">
+            <i class="fa-solid fa-trophy text-white text-3xl"></i>
+        </div>
+        <p class="text-sm font-bold text-[#F58830] uppercase tracking-widest mb-1">¡Ganador!</p>
+        <h2 id="winner-name" class="text-3xl font-black text-[#162054] dark:text-white mb-1"></h2>
+        <p id="winner-cedula" class="text-gray-500 dark:text-gray-400 font-medium mb-6"></p>
+        <div class="flex gap-3 justify-center">
+            <button id="modal-close"
+                    class="bg-gray-100 dark:bg-[#0F163A] text-gray-700 dark:text-gray-300 font-bold px-6 py-3 rounded-2xl hover:bg-gray-200 dark:hover:bg-[#0a0f2a] transition">
+                Cerrar
+            </button>
+            <button id="modal-again"
+                    class="bg-[#162054] dark:bg-[#F58830] text-white font-bold px-6 py-3 rounded-2xl hover:opacity-90 transition inline-flex items-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i>
+                Girar de nuevo
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if total > 0 %}
+<script>
+const PARTICIPANTES = {{ participantes_json|safe }};
+const COLORS = ['#162054', '#F58830', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#14B8A6', '#EF4444'];
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const size = canvas.width;
+const center = size / 2;
+const radius = center - 6;
+const n = PARTICIPANTES.length;
+const seg = (2 * Math.PI) / n;
+
+let rotation = 0;        // ángulo actual de la rueda (rad)
+let spinning = false;
+
+function drawWheel() {
+    ctx.clearRect(0, 0, size, size);
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(rotation);
+
+    for (let i = 0; i < n; i++) {
+        const start = i * seg;
+        const end = start + seg;
+
+        // Segmento
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = COLORS[i % COLORS.length];
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Texto (solo si el segmento es suficientemente ancho)
+        if (seg > 0.12) {
+            ctx.save();
+            ctx.rotate(start + seg / 2);
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            const fontSize = Math.max(9, Math.min(18, seg * 90));
+            ctx.font = `700 ${fontSize}px Outfit, sans-serif`;
+            let txt = PARTICIPANTES[i].nombre;
+            const maxLen = Math.floor(radius / (fontSize * 0.55));
+            if (txt.length > maxLen) txt = txt.slice(0, maxLen - 1) + '…';
+            ctx.fillText(txt, radius - 16, 0);
+            ctx.restore();
+        }
+    }
+    ctx.restore();
+}
+
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function spin() {
+    if (spinning) return;
+    hideModal();   // asegura que el modal esté cerrado mientras gira la ruleta
+    spinning = true;
+    document.getElementById('spin-btn').disabled = true;
+
+    const winnerIndex = Math.floor(Math.random() * n);
+
+    // El puntero está arriba (-90° = -PI/2). Queremos el centro del segmento ganador ahí.
+    const segCenter = winnerIndex * seg + seg / 2;
+    const targetMod = (-Math.PI / 2 - segCenter) % (2 * Math.PI);
+    const extraTurns = 6 + Math.floor(Math.random() * 3); // 6-8 vueltas completas
+    const current = rotation % (2 * Math.PI);
+    const finalRotation = rotation - current + targetMod + extraTurns * 2 * Math.PI;
+
+    const startRotation = rotation;
+    const delta = finalRotation - startRotation;
+    const duration = 5200;
+    const startTime = performance.now();
+
+    function frame(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+        rotation = startRotation + delta * easeOutCubic(t);
+        drawWheel();
+        if (t < 1) {
+            requestAnimationFrame(frame);
+        } else {
+            spinning = false;
+            showWinner(PARTICIPANTES[winnerIndex]);
+        }
+    }
+    requestAnimationFrame(frame);
+}
+
+function showWinner(p) {
+    document.getElementById('winner-name').textContent = p.nombre;
+    document.getElementById('winner-cedula').textContent = p.cedula ? ('Cédula: ' + p.cedula) : '';
+    const modal = document.getElementById('winner-modal');
+    modal.style.display = 'flex';   // inline gana sobre cualquier clase
+    // reactiva la animación de aparición cada vez
+    const card = modal.firstElementChild;
+    card.classList.remove('animate__zoomIn');
+    void card.offsetWidth;
+    card.classList.add('animate__zoomIn');
+}
+
+function hideModal() {
+    document.getElementById('winner-modal').style.display = 'none';
+}
+
+function closeModal() {
+    hideModal();
+    document.getElementById('spin-btn').disabled = false;
+}
+
+document.getElementById('spin-btn').addEventListener('click', spin);
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-again').addEventListener('click', () => {
+    hideModal();                  // oculta el modal para ver girar la ruleta
+    setTimeout(spin, 350);        // breve pausa y vuelve a girar
+});
+
+drawWheel();
+</script>
+{% endif %}
+{% endblock %}
