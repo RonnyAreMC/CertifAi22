@@ -82,7 +82,8 @@
 {% if total > 0 %}
 <script>
 const PARTICIPANTES = {{ participantes_json|safe }};
-const COLORS = ['#162054', '#F58830', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#14B8A6', '#EF4444'];
+// Paleta vibrante (sin azul marino para que no se confunda con el fondo de la tarjeta)
+const COLORS = ['#F58830', '#10B981', '#6366F1', '#EC4899', '#8B5CF6', '#14B8A6', '#EF4444', '#3B82F6', '#F59E0B'];
 
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
@@ -112,23 +113,32 @@ function drawWheel() {
         ctx.closePath();
         ctx.fillStyle = COLORS[i % COLORS.length];
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Texto (solo si el segmento es suficientemente ancho)
+        // Etiqueta con el nombre (legible: se voltea en la mitad izquierda)
         if (seg > 0.12) {
             ctx.save();
-            ctx.rotate(start + seg / 2);
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
+            const mid = start + seg / 2;
+            ctx.rotate(mid);
+            const norm = ((mid % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const flip = norm > Math.PI / 2 && norm < 3 * Math.PI / 2;
             ctx.fillStyle = '#ffffff';
-            const fontSize = Math.max(9, Math.min(18, seg * 90));
+            ctx.textBaseline = 'middle';
+            const fontSize = n <= 2 ? 20 : Math.max(9, Math.min(18, seg * 90));
             ctx.font = `700 ${fontSize}px Outfit, sans-serif`;
             let txt = PARTICIPANTES[i].nombre;
-            const maxLen = Math.floor(radius / (fontSize * 0.55));
+            const maxLen = Math.floor(radius / (fontSize * 0.5));
             if (txt.length > maxLen) txt = txt.slice(0, maxLen - 1) + '…';
-            ctx.fillText(txt, radius - 16, 0);
+            if (flip) {
+                ctx.rotate(Math.PI);
+                ctx.textAlign = 'left';
+                ctx.fillText(txt, -(radius - 16), 0);
+            } else {
+                ctx.textAlign = 'right';
+                ctx.fillText(txt, radius - 16, 0);
+            }
             ctx.restore();
         }
     }
